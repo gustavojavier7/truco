@@ -11,27 +11,26 @@ body {
 }
 
 .arcade-screen {
-    width: 100vw; /* Ocupa todo el ancho de la ventana */
-    height: 100vh; /* Ocupa todo el alto de la ventana */
-    background-color: #008000; /* Fondo verde */
-    border: 2vw solid #0000FF; /* Borde azul de 2vw */
-    box-sizing: border-box; /* Incluye padding y border en el tamaño total */
-    padding: 1vw; /* Espaciado interno de 1vw */
-    display: grid; /* Define un contenedor de grilla */
-    grid-template-columns: repeat(6, 1fr); /* 6 columnas de igual tamaño */
-    grid-template-rows: repeat(4, 1fr); /* 4 filas de igual tamaño */
-    gap: 1vw; /* Espacio entre filas y columnas */
-    position: relative; /* Contexto posicional relativo */
-    overflow: hidden; /* Oculta cualquier contenido que se desborde */
-}
-
-
-#cardContainer {
-    grid-column: 1 / -1;
-    grid-row: 1 / -1;
+    width: 100vw;
+    height: 100vh;
+    background-color: #008000;
+    border: 2vw solid #0000FF;
+    box-sizing: border-box;
+    padding: 1vw;
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     grid-template-rows: repeat(4, 1fr);
+    gap: 1vw;
+    position: relative;
+    overflow: hidden;
+}
+
+#cardContainer {
+    grid-column: 1 / -1;
+    grid-row: 1 / 3; /* Ocupa las primeras 2 filas */
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(2, 1fr); /* Ajustado a 2 filas */
     gap: 1vw;
 }
 
@@ -49,33 +48,28 @@ body {
     transition: opacity 0.5s;
 }
 
-.truco-text, .coin-slot, .credit-display, .version-display, .coin-counter {
-    position: absolute;
-}
-
 .truco-text {
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    grid-column: 2 / 6; /* Centrado en las columnas 2 a 5 */
+    grid-row: 3 / 4; /* En la tercera fila */
     font-size: 4vw;
     font-weight: bold;
     color: #FFFF00;
     text-shadow: 0.2vw 0.2vw 0 #000;
+    text-align: center; /* Centrar el texto */
 }
 
 .version-display {
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    grid-column: 2 / 6; /* Centrado en las columnas 2 a 5 */
+    grid-row: 4 / 5; /* En la cuarta fila */
     font-size: 2vw;
     color: #FFFF00;
     text-shadow: 0.1vw 0.1vw 0 #000;
+    text-align: center; /* Centrar el texto */
 }
 
 .coin-slot {
-    bottom: 10vw;
-    left: 50%;
-    transform: translateX(-50%);
+    grid-column: 1 / 4; /* Ocupa las primeras 3 columnas */
+    grid-row: 4 / 5; /* En la cuarta fila */
     background-color: #8B4513;
     border: 0.2vw solid #A0522D;
     color: black;
@@ -85,33 +79,30 @@ body {
     font-size: 1.5vw;
     opacity: 1;
     transition: opacity 1s;
-}
-
-.coin-counter {
-    bottom: 8vw; /* Ajustar para que esté debajo del botón */
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 1.2vw;
-    color: yellow;
-    text-align: center;
+    justify-self: center;
 }
 
 .credit-display {
-    bottom: -2vw; /* Ajusta para colocar debajo de la "coin-slot" */
-    left: 50%;
-    transform: translateX(-50%);
+    grid-column: 4 / -1; /* Ocupa las últimas 3 columnas */
+    grid-row: 4 / 5; /* En la cuarta fila */
     font-size: 1.2vw;
     color: yellow;
     text-align: center;
-    position: absolute;
+    justify-self: center;
+}
+
+.coin-counter {
+    grid-column: 1 / -1;
+    grid-row: 3/4;
+    font-size: 1.2vw;
+    color: yellow;
+    text-align: center;
+    align-self: end;
 }
 
 #comenzarJuego {
-    position: absolute; /* Cambiado de relative a absolute */
-    bottom: 15vw; /* Separación suficiente del botón "Insertar Moneda" */
-    left: 50%;
-    transform: translateX(-50%);
-    text-align: center;
+    grid-column: 2 / 6; /* Centrado en las columnas 2 a 5 */
+    grid-row: 4 / 5; /* En la cuarta fila */
     padding: 1vw 2vw;
     font-size: 1.5vw;
     background-color: #4CAF50;
@@ -120,6 +111,8 @@ body {
     border-radius: 0.5vw;
     cursor: pointer;
     transition: background-color 0.3s;
+    justify-self: center;
+    align-self: start;
 }
 
 #comenzarJuego:hover {
