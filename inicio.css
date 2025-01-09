@@ -11,19 +11,24 @@ body {
 }
 
 .arcade-screen {
-    width: 100vw;
-    height: 100vh;
-    background-color: #008000;
-    border: 2vw solid #0000FF;
-    box-sizing: border-box;
-    padding: 1vw;
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    grid-template-rows: 400px 400px 400px 400px; /* Todas las filas tendrán 200px de alto */
-    gap: 1vw;
-    position: relative;
-    overflow: hidden;
+    width: 100vw; /* Ocupa todo el ancho de la ventana */
+    height: 100vh; /* Ocupa todo el alto de la ventana */
+    background-color: #008000; /* Fondo verde */
+    border: 2vw solid #0000FF; /* Borde azul */
+    box-sizing: border-box; /* Incluye borde y padding en el tamaño */
+    padding: 1vw; /* Espaciado interno */
+    display: grid; /* Configuración de grilla */
+    grid-template-columns: repeat(6, 1fr); /* Seis columnas iguales */
+    grid-template-rows: repeat(4, 1fr); /* Cuatro filas de igual altura */
+    gap: 1vw; /* Espaciado entre filas y columnas */
+    position: fixed; /* Mantiene la posición fija en la ventana */
+    top: 0;
+    left: 0;
+    overflow: hidden; /* Oculta contenido que exceda los límites */
+    align-items: stretch; /* Asegura que las filas ocupen todo el espacio */
+    justify-items: stretch; /* Asegura que las columnas ocupen todo el espacio */
 }
+
 
 #cardContainer {
     grid-column: 1 / -1;
