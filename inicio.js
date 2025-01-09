@@ -39,17 +39,22 @@ function showElements() {
 function insertCoin() {
     credits++;
     document.getElementById('creditDisplay').textContent = `Créditos: ${credits}`;
-    const comenzarJuegoBtn = document.createElement('button');
-    comenzarJuegoBtn.id = 'comenzarJuego';
-    comenzarJuegoBtn.textContent = 'Comenzar Juego';
-    comenzarJuegoBtn.style.position = 'absolute';
-    comenzarJuegoBtn.style.bottom = '10vw';
-    comenzarJuegoBtn.style.left = '50%';
-    comenzarJuegoBtn.style.transform = 'translateX(-50%)';
-    comenzarJuegoBtn.style.padding = '1vw';
-    comenzarJuegoBtn.style.fontSize = '1.5vw';
-    comenzarJuegoBtn.onclick = () => (window.location.href = 'index.html');
-    document.body.appendChild(comenzarJuegoBtn);
+    document.getElementById('coinCounter').textContent = `Monedas Insertadas: ${credits}`;
+
+    let comenzarJuegoBtn = document.getElementById('comenzarJuego');
+    if (!comenzarJuegoBtn) {
+        comenzarJuegoBtn = document.createElement('button');
+        comenzarJuegoBtn.id = 'comenzarJuego';
+        comenzarJuegoBtn.textContent = 'Comenzar Juego';
+        comenzarJuegoBtn.style.position = 'absolute';
+        comenzarJuegoBtn.style.bottom = '13vw'; /* Mover hacia arriba */
+        comenzarJuegoBtn.style.left = '50%';
+        comenzarJuegoBtn.style.transform = 'translateX(-50%)';
+        comenzarJuegoBtn.style.padding = '1vw';
+        comenzarJuegoBtn.style.fontSize = '1.5vw';
+        comenzarJuegoBtn.onclick = () => (window.location.href = 'index.html');
+        document.body.appendChild(comenzarJuegoBtn);
+    }
 }
 
 createCards();
