@@ -1,5 +1,4 @@
 const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
 
 function positionCanvas(){
   canvas.width = (innerHeight * 1.5)|0;
