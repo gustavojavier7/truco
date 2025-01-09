@@ -88,22 +88,14 @@ body {
     transition: opacity 1s;
 }
 
-.coin-counter {
+.credit-display {
     bottom: 8vw; /* Ajustar para que esté debajo del botón */
     left: 50%;
     transform: translateX(-50%);
     font-size: 1.2vw;
     color: yellow;
     text-align: center;
-}
-
-.credit-display {
-    position: relative;
-    top: 2vw; /* Mueve el texto "Créditos" debajo del botón de "Insertar Moneda" */
-    text-align: center;
-    font-size: 1.5vw;
-    margin-top: 2vw; /* Agrega espacio extra si es necesario */
-    color: yellow;
+    position: absolute; /* Asegura que se posicione correctamente en relación con el contenedor */
 }
 
 #comenzarJuego {
