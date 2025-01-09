@@ -80,6 +80,7 @@ body {
     cursor: pointer;
     margin: 1vw auto;
     transition: background-color 0.3s;
+    margin-top: 2vw; /* Espacio entre los créditos y el botón */
 }
 
 .btn-action:hover {
