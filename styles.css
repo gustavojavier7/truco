@@ -1,79 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 body {
     background-color: black;
     color: white;
-    font-family: 'Courier', monospace;
+    font-family: 'Press Start 2P', cursive;
+    margin: 0;
+    overflow: hidden; /* Evita scrollbars innecesarios */
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    margin: 0;
+    min-height: 100vh; /* Asegura que el body ocupa toda la altura */
 }
-.arcade-menu {
-    text-align: center;
-    border: 2px solid #FFF;
-    padding: 20px;
-    width: 300px;
-    background-color: #333;
-}
+
 .coin-slot {
-    background-color: #8B4513; /* Color de madera */
-    border: 2px solid #A0522D;
+    background-color: #8B4513;
+    border: 0.2vw solid #A0522D;
     color: black;
-    padding: 10px;
-    margin: 10px auto;
+    padding: 1vw;
+    text-align: center;
     cursor: pointer;
-    width: 150px;
+    font-size: 1.5vw;
+    opacity: 1; /* Para que sea visible desde el principio */
+    margin: 10px auto; /* Centrar horizontalmente */
 }
+
 .credit-display {
+    text-align: center;
+    font-size: 1.5vw;
+    opacity: 1; /* Para que sea visible desde el principio */
     margin-top: 20px;
-    font-size: 1.2em;
 }
+
 .hidden {
     display: none;
 }
+
 .tablero {
     display: grid;
-    grid-template-rows: 1fr auto 1fr;
+    grid-template-rows: auto 1fr auto; /* Ajuste para el título */
     grid-template-columns: repeat(5, 1fr);
-    gap: 20px;
-    height: 100vh;
-    padding: 20px;
+    gap: 1vw; /* Usando vw para mantener la proporción */
+    padding: 2vw; /* Usando vw para mantener la proporción */
+    height: auto; /* Permite que el tablero se ajuste al contenido */
+    max-width: 90vw; /* Evita que el tablero sea demasiado ancho */
+    max-height: 80vh; /* Evita que el tablero sea demasiado alto */
 }
+
 .carta {
-    width: 60px;
-    height: 100px;
-    background-color: #663399; /* Púrpura */
-    border: 3px solid #0000FF; /* Azul */
-    border-radius: 5px;
+    background-color: #00008B;
+    border: 0.2vw solid #0000FF;
     display: flex;
     justify-content: center;
     align-items: center;
+    font-size: 1.5vw;
+    font-weight: bold;
     color: white;
-    font-size: 12px;
-    transition: transform 0.3s;
+    text-align: center;
+    width: 8vw; /* Ancho fijo relativo al viewport */
+    height: 12vw; /* Alto fijo relativo al viewport */
+    transition: transform 0.3s; /* Mantiene la transición al pasar el mouse */
 }
+
 .carta:hover {
     transform: scale(1.1);
 }
+
 .titulo {
     grid-column: span 5;
-    font-size: 3rem;
-    color: #FF0000; /* Rojo para la T */
+    font-size: 4vw;
+    font-weight: bold;
+    color: #FFFF00;
+    text-shadow: 0.2vw 0.2vw 0 #000;
+    text-align: center; /* Centrar el título */
+    margin-bottom: 1vw; /* Espacio debajo del título */
 }
+
 .titulo span {
-    color: #00FFFF; /* Azul para las demás letras */
+    color: #FFFF00;
 }
+
 .btn-action {
     background-color: #4CAF50;
     color: white;
     border: none;
-    padding: 10px 20px;
-    font-size: 16px;
-    border-radius: 5px;
+    padding: 1vw 2vw;
+    font-size: 1.5vw;
+    border-radius: 0.5vw;
     cursor: pointer;
-    margin-top: 20px;
+    margin: 1vw auto; /* Centrar y agregar márgenes */
     transition: background-color 0.3s;
 }
+
 .btn-action:hover {
     background-color: #45a049;
 }
