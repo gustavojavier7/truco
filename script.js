@@ -1,63 +1,58 @@
- const version = "1.5.0"; // Definir la versión en una variable
+const version = "1.5.0"; // Definir la versión en una variable
 
-        const jugadorHumano = "Jugador Humano";
-        const jugadorCPU = "Jugador CPU";
+const jugadorHumano = "Jugador Humano";
+const jugadorCPU = "Jugador CPU";
 
-        // Completar el mazo de 40 cartas de la baraja española
-        const mazoCompleto = [
-            "1 de Espada", "2 de Espada", "3 de Espada", "4 de Espada", "5 de Espada", "6 de Espada", "7 de Espada", "10 de Espada", "11 de Espada", "12 de Espada",
-            "1 de Basto", "2 de Basto", "3 de Basto", "4 de Basto", "5 de Basto", "6 de Basto", "7 de Basto", "10 de Basto", "11 de Basto", "12 de Basto",
-            "1 de Oro", "2 de Oro", "3 de Oro", "4 de Oro", "5 de Oro", "6 de Oro", "7 de Oro", "10 de Oro", "11 de Oro", "12 de Oro",
-            "1 de Copa", "2 de Copa", "3 de Copa", "4 de Copa", "5 de Copa", "6 de Copa", "7 de Copa", "10 de Copa", "11 de Copa", "12 de Copa"
-        ];
+// Completar el mazo de 40 cartas de la baraja española
+const mazoCompleto = [
+    "1 de Espada", "2 de Espada", "3 de Espada", "4 de Espada", "5 de Espada", "6 de Espada", "7 de Espada", "10 de Espada", "11 de Espada", "12 de Espada",
+    "1 de Basto", "2 de Basto", "3 de Basto", "4 de Basto", "5 de Basto", "6 de Basto", "7 de Basto", "10 de Basto", "11 de Basto", "12 de Basto",
+    "1 de Oro", "2 de Oro", "3 de Oro", "4 de Oro", "5 de Oro", "6 de Oro", "7 de Oro", "10 de Oro", "11 de Oro", "12 de Oro",
+    "1 de Copa", "2 de Copa", "3 de Copa", "4 de Copa", "5 de Copa", "6 de Copa", "7 de Copa", "10 de Copa", "11 de Copa", "12 de Copa"
+];
 
-        const cartas = { // Valores completos de las cartas
-            "1 de Espada": 14, "1 de Basto": 13, "7 de Espada": 12, "7 de Oro": 11, "3 de Espada": 10,
-            "1 de Oro": 9, "3 de Basto": 8, "3 de Copa": 7, "2 de Espada": 6, "2 de Oro": 5,
-            "2 de Copa": 4, "1 de Copa": 3, "12 de Espada": 2, "12 de Basto": 2, "12 de Oro": 1, "12 de Copa": 1,
-            "11 de Espada": 2, "11 de Basto": 2, "11 de Oro": 1, "11 de Copa": 1,
-            "10 de Espada": 2, "10 de Basto": 2, "10 de Oro": 1, "10 de Copa": 1,
-            "7 de Copa": 0, "6 de Espada": 0, "6 de Basto": 0, "6 de Oro": 0, "6 de Copa": 0,
-            "5 de Espada": 0, "5 de Basto": 0, "5 de Oro": 0, "5 de Copa": 0,
-            "4 de Espada": 0, "4 de Basto": 0, "4 de Oro": 0, "4 de Copa": 0
-        };
+const cartas = { // Valores completos de las cartas
+    "1 de Espada": 14, "1 de Basto": 13, "7 de Espada": 12, "7 de Oro": 11, "3 de Espada": 10,
+    "1 de Oro": 9, "3 de Basto": 8, "3 de Copa": 7, "2 de Espada": 6, "2 de Oro": 5,
+    "2 de Copa": 4, "1 de Copa": 3, "12 de Espada": 2, "12 de Basto": 2, "12 de Oro": 1, "12 de Copa": 1,
+    "11 de Espada": 2, "11 de Basto": 2, "11 de Oro": 1, "11 de Copa": 1,
+    "10 de Espada": 2, "10 de Basto": 2, "10 de Oro": 1, "10 de Copa": 1,
+    "7 de Copa": 0, "6 de Espada": 0, "6 de Basto": 0, "6 de Oro": 0, "6 de Copa": 0,
+    "5 de Espada": 0, "5 de Basto": 0, "5 de Oro": 0, "5 de Copa": 0,
+    "4 de Espada": 0, "4 de Basto": 0, "4 de Oro": 0, "4 de Copa": 0
+};
 
-        const elementos = {
-            jugadorHumanoDiv: document.getElementById("jugadorHumano"),
-            jugadorHumanoHeader: document.getElementById("jugadorHumanoHeader"),
-            jugadorCPUDiv: document.getElementById("jugadorCPU"),
-            jugadorCPUHeader: document.getElementById("jugadorCPUHeader"),
-            marcadorDiv: document.getElementById("marcador"),
-            marcadorHeader: document.getElementById("marcadorHeader"),
-            resultadoDiv: document.getElementById("resultado"),
-            comenzarJuegoBtn: document.getElementById("comenzarJuego"),
-            btnQuiero: document.getElementById("btnQuiero"),
-            btnNoQuiero: document.getElementById("btnNoQuiero"),
-            btnTruco: document.getElementById("btnTruco"),
-            btnRetruco: document.getElementById("btnRetruco"),
-            btnValeCuatro: document.getElementById("btnValeCuatro"),
-            rondasDiv: document.getElementById("rondas")
-        };
+const elementos = {
+    jugadorHumanoDiv: document.getElementById("jugadorHumano"),
+    jugadorHumanoHeader: document.getElementById("jugadorHumanoHeader"),
+    jugadorCPUDiv: document.getElementById("jugadorCPU"),
+    jugadorCPUHeader: document.getElementById("jugadorCPUHeader"),
+    marcadorDiv: document.getElementById("marcador"),
+    marcadorHeader: document.getElementById("marcadorHeader"),
+    resultadoDiv: document.getElementById("resultado"),
+    comenzarJuegoBtn: document.getElementById("comenzarJuego"),
+    btnQuiero: document.getElementById("btnQuiero"),
+    btnNoQuiero: document.getElementById("btnNoQuiero"),
+    btnTruco: document.getElementById("btnTruco"),
+    btnRetruco: document.getElementById("btnRetruco"),
+    btnValeCuatro: document.getElementById("btnValeCuatro"),
+    rondasDiv: document.getElementById("rondas")
+};
 
-        let marcadorJugadorHumano = 0;
-        let marcadorCPU = 0;
-        let envidoActivo = false;
-        let trucoActivo = false;
-        let puntosTruco = 1;
-        let turnoJugadorHumano = true;
-        let manoHumano, manoCPU; // Mantener referencia a las manos
-        let cartaJugadaHumano;
-        let cartaJugadaCPU;
-        let rondasJugadas = 0; // Conteo de rondas jugadas
-        let bazaActual = []; // Array para almacenar las cartas jugadas en la baza actual
-        let bazasGanadasHumano = 0;
-        let bazasGanadasCPU = 0;
+let marcadorJugadorHumano = 0;
+let marcadorCPU = 0;
+let envidoActivo = false;
+let trucoActivo = false;
+let puntosTruco = 1;
+let turnoJugadorHumano = true;
+let manoHumano, manoCPU; // Mantener referencia a las manos
+let cartaJugadaHumano;
+let cartaJugadaCPU;
+let rondasJugadas = 0; // Conteo de rondas jugadas
+let bazaActual = []; // Array para almacenar las cartas jugadas en la baza actual
+let bazasGanadasHumano = 0;
+let bazasGanadasCPU = 0;
 
-        /**
-         * Función para calcular los puntos del Envido.
-         * @param {Array} mano - Array de cartas de la mano.
-         * @returns {number} - Puntos del Envido.
-         */
         function calcularPuntosEnvido(mano) {
             let puntos = 0;
             const palos = {};
