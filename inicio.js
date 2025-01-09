@@ -6,47 +6,51 @@ const barajaEspanola = [
 ];
 
 let credits = 0;
+let cards = [];
+let currentCardIndex = 0;
 
-/**
- * Función para manejar la inserción de monedas
- * Incrementa créditos y actualiza el contador en pantalla.
- */
+function createCards() {
+    const cardContainer = document.getElementById('cardContainer');
+    const cartasGrilla = barajaEspanola.slice(0, 24); // Seleccionar solo 24 cartas
+    cartasGrilla.forEach(carta => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.textContent = carta;
+        cards.push(card);
+        cardContainer.appendChild(card);
+    });
+}
+
+function showCards() {
+    if (currentCardIndex < cards.length) {
+        cards[currentCardIndex].style.opacity = '1';
+        currentCardIndex++;
+        setTimeout(showCards, 50);
+    } else {
+        setTimeout(showElements, 500);
+    }
+}
+
+function showElements() {
+    document.querySelector('.coin-slot').style.opacity = '1';
+    document.getElementById('creditDisplay').style.opacity = '1';
+}
+
 function insertCoin() {
     credits++;
     document.getElementById('creditDisplay').textContent = `Créditos: ${credits}`;
-
-    const comenzarJuegoBtn = document.getElementById('comenzarJuego');
-    if (credits > 0 && comenzarJuegoBtn) {
-        comenzarJuegoBtn.classList.remove('hidden'); // Muestra el botón "Comenzar Juego"
-    }
+    const comenzarJuegoBtn = document.createElement('button');
+    comenzarJuegoBtn.id = 'comenzarJuego';
+    comenzarJuegoBtn.textContent = 'Comenzar Juego';
+    comenzarJuegoBtn.style.position = 'absolute';
+    comenzarJuegoBtn.style.bottom = '10vw';
+    comenzarJuegoBtn.style.left = '50%';
+    comenzarJuegoBtn.style.transform = 'translateX(-50%)';
+    comenzarJuegoBtn.style.padding = '1vw';
+    comenzarJuegoBtn.style.fontSize = '1.5vw';
+    comenzarJuegoBtn.onclick = () => (window.location.href = 'index.html');
+    document.body.appendChild(comenzarJuegoBtn);
 }
 
-/**
- * Función para redirigir a la pantalla del juego.
- * Se asegura de que haya créditos antes de redirigir.
- */
-function comenzarJuego() {
-    if (credits > 0) {
-        window.location.href = "index.html"; // Redirige al archivo index.html
-    } else {
-        alert("Inserta una moneda para jugar."); // Muestra un mensaje si no hay créditos
-    }
-}
-
-/**
- * Llama las funciones necesarias al cargar la pantalla inicial
- */
-function setupEventListeners() {
-    const coinSlot = document.querySelector('.coin-slot');
-    if (coinSlot) {
-        coinSlot.addEventListener('click', insertCoin); // Vincula el clic en "Insertar Moneda"
-    }
-
-    const comenzarJuegoBtn = document.getElementById('comenzarJuego');
-    if (comenzarJuegoBtn) {
-        comenzarJuegoBtn.addEventListener('click', comenzarJuego); // Vincula el clic en "Comenzar Juego"
-    }
-}
-
-// Configura los eventos al cargar el documento
-window.onload = setupEventListeners;
+createCards();
+showCards();
