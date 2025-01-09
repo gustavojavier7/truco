@@ -6,6 +6,29 @@ const barajaEspanola = [
 ];
 
 let credits = 0;
+const comenzarJuegoBtn = document.getElementById('comenzarJuego');
+
+function insertCoin() {
+    credits++;
+    document.getElementById('creditDisplay').textContent = `Créditos: ${credits}`;
+    document.getElementById('coinCounter').textContent = `Monedas Insertadas: ${credits}`;
+
+    if (credits > 0) {
+        comenzarJuegoBtn.classList.remove('hidden');
+    }
+}
+
+function comenzarJuego() {
+    if (credits > 0) {
+        window.location.href = "index2.html";
+    } else {
+        alert("Inserta una moneda para jugar.");
+    }
+}
+
+comenzarJuegoBtn.addEventListener('click', comenzarJuego);
+
+// Funciones para la visualización de las cartas en la grilla
 let cards = [];
 let currentCardIndex = 0;
 
@@ -26,34 +49,6 @@ function showCards() {
         cards[currentCardIndex].style.opacity = '1';
         currentCardIndex++;
         setTimeout(showCards, 50);
-    } else {
-        setTimeout(showElements, 500);
-    }
-}
-
-function showElements() {
-    document.querySelector('.coin-slot').style.opacity = '1';
-    document.getElementById('creditDisplay').style.opacity = '1';
-}
-
-function insertCoin() {
-    credits++;
-    document.getElementById('creditDisplay').textContent = `Créditos: ${credits}`;
-    document.getElementById('coinCounter').textContent = `Monedas Insertadas: ${credits}`;
-
-    let comenzarJuegoBtn = document.getElementById('comenzarJuego');
-    if (!comenzarJuegoBtn) {
-        comenzarJuegoBtn = document.createElement('button');
-        comenzarJuegoBtn.id = 'comenzarJuego';
-        comenzarJuegoBtn.textContent = 'Comenzar Juego';
-        comenzarJuegoBtn.style.position = 'absolute';
-        comenzarJuegoBtn.style.bottom = '13vw'; /* Mover hacia arriba */
-        comenzarJuegoBtn.style.left = '50%';
-        comenzarJuegoBtn.style.transform = 'translateX(-50%)';
-        comenzarJuegoBtn.style.padding = '1vw';
-        comenzarJuegoBtn.style.fontSize = '1.5vw';
-        comenzarJuegoBtn.onclick = () => (window.location.href = 'index.html');
-        document.body.appendChild(comenzarJuegoBtn);
     }
 }
 
