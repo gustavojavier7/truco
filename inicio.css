@@ -50,7 +50,7 @@ body {
     transition: opacity 0.5s;
 }
 
-.truco-text, .coin-slot, .credit-display, .version-display {
+.truco-text, .coin-slot, .credit-display, .version-display, .coin-counter {
     position: absolute;
 }
 
@@ -74,7 +74,7 @@ body {
 }
 
 .coin-slot {
-    bottom: 5vw;
+    bottom: 10vw;
     left: 50%;
     transform: translateX(-50%);
     background-color: #8B4513;
@@ -84,8 +84,17 @@ body {
     text-align: center;
     cursor: pointer;
     font-size: 1.5vw;
-    opacity: 0;
+    opacity: 1;
     transition: opacity 1s;
+}
+
+.coin-counter {
+    bottom: 8vw; /* Ajustar para que esté debajo del botón */
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.2vw;
+    color: white;
+    text-align: center;
 }
 
 .credit-display {
@@ -94,6 +103,15 @@ body {
     transform: translateX(-50%);
     text-align: center;
     font-size: 1.5vw;
-    opacity: 0;
+    opacity: 1;
     transition: opacity 1s;
+}
+
+#comenzarJuego {
+    position: absolute;
+    bottom: 10vw; /* Mover hacia arriba */
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 1vw;
+    font-size: 1.5vw;
 }
