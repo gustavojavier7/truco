@@ -108,11 +108,9 @@ body {
 }
 
 #comenzarJuego {
-    position: absolute;
-    bottom: 24vw; /* Lo movemos más arriba para evitar el solapamiento */
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 1vw;
+    position: relative;
+    margin-top: 3vw; /* Espacio encima del botón */
+    padding: 1vw 2vw;
     font-size: 1.5vw;
     background-color: #4CAF50;
     color: white;
