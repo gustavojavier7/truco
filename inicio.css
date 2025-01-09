@@ -24,6 +24,7 @@ body {
     position: fixed;
     top: 0;
     left: 0;
+    overflow: hidden;
 }
 
 #cardContainer {
@@ -43,19 +44,20 @@ body {
     align-items: center;
     font-size: 1.5vw;
     font-weight: bold;
+    color: white;
     text-align: center;
     opacity: 0;
     transition: opacity 0.5s;
 }
 
-.truco-text, .coin-slot, .credit-display, .version-display {
+.truco-text, .coin-slot, .credit-display, .version-display, .coin-counter {
     position: absolute;
-    transform: translateX(-50%);
 }
 
 .truco-text {
     top: 40%;
     left: 50%;
+    transform: translate(-50%, -50%);
     font-size: 4vw;
     font-weight: bold;
     color: #FFFF00;
@@ -65,6 +67,7 @@ body {
 .version-display {
     top: 50%;
     left: 50%;
+    transform: translate(-50%, -50%);
     font-size: 2vw;
     color: #FFFF00;
     text-shadow: 0.1vw 0.1vw 0 #000;
@@ -73,6 +76,7 @@ body {
 .coin-slot {
     bottom: 10vw;
     left: 50%;
+    transform: translateX(-50%);
     background-color: #8B4513;
     border: 0.2vw solid #A0522D;
     color: black;
@@ -84,17 +88,21 @@ body {
     transition: opacity 1s;
 }
 
-.credit-display {
-    bottom: 8vw;
+.coin-counter {
+    bottom: 8vw; /* Ajustar para que esté debajo del botón */
     left: 50%;
+    transform: translateX(-50%);
     font-size: 1.2vw;
     color: yellow;
     text-align: center;
 }
 
 #comenzarJuego {
-    bottom: 15vw;
+    position: absolute; /* Cambiado de relative a absolute */
+    bottom: 15vw; /* Separación suficiente del botón "Insertar Moneda" */
     left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
     padding: 1vw 2vw;
     font-size: 1.5vw;
     background-color: #4CAF50;
