@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
 body {
     background-color: black;
     color: white;
@@ -20,96 +18,25 @@ body {
     box-sizing: border-box;
     padding: 1vw;
     display: grid;
-    grid-template-areas:
-        "titulo titulo titulo titulo titulo titulo"
-        ". . . . . ."
-        ". . . . . ."
-        "creditos creditos creditos monedas monedas monedas";
     grid-template-columns: repeat(6, 1fr);
     grid-template-rows: repeat(4, 1fr);
-    overflow: hidden; /* Evita scrollbars */
-}
-
-.truco-text {
-    grid-area: titulo;
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 4vw;
-    font-weight: bold;
-    color: #FFFF00;
-    text-shadow: 0.2vw 0.2vw 0 #000;
-}
-
-.coin-slot {
-    grid-area: monedas;
-    bottom: auto;
-    left: auto;
-    transform: none;
-    justify-self: center;
-    align-self: end;
-    opacity: 1;
-    background-color: #8B4513;
-    border: 0.2vw solid #A0522D;
-    color: black;
-    padding: 1vw;
-    text-align: center;
-    cursor: pointer;
-    font-size: 1.5vw;
-}
-
-.credit-display {
-    grid-area: creditos;
-    top: auto;
-    left: auto;
-    transform: none;
-    justify-self: center;
-    align-self: end;
-    opacity: 1;
-    text-align: center;
-    font-size: 1.5vw;
-}
-
-.btn-action {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 1vw 2vw;
-    font-size: 1.5vw;
-    border-radius: 0.5vw;
-    cursor: pointer;
-    margin: 1vw auto;
-    transition: background-color 0.3s;
-    margin-top: 2vw; /* Espacio entre los créditos y el botón */
-}
-
-.btn-action:hover {
-    background-color: #45a049;
-}
-
-.hidden {
-    display: none;
-}
-
-.tablero {
-    display: grid;
-    grid-template-rows: auto auto 1fr auto;
-    grid-template-columns: 1fr;
-    gap: 2vw;
-    padding: 2vw;
-    height: auto;
-    max-width: 90vw;
-    max-height: 80vh;
-}
-
-.mano {
-    display: flex;
-    justify-content: center;
     gap: 1vw;
-    margin-bottom: 2vw;
+    position: fixed;
+    top: 0;
+    left: 0;
+    overflow: hidden;
 }
 
-.carta {
+#cardContainer {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 1vw;
+}
+
+.card {
     background-color: #00008B;
     border: 0.2vw solid #0000FF;
     display: flex;
@@ -119,17 +46,54 @@ body {
     font-weight: bold;
     color: white;
     text-align: center;
-    width: 8vw;
-    height: 12vw;
-    transition: transform 0.3s;
+    opacity: 0;
+    transition: opacity 0.5s;
 }
 
-.carta:hover {
-    transform: scale(1.1);
+.truco-text, .coin-slot, .credit-display, .version-display {
+    position: absolute;
 }
 
-.carta-boca-abajo {
-    background-color: #808080;
-    border: 0.2vw solid #A9A9A9;
-    color: transparent;
+.truco-text {
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 4vw;
+    font-weight: bold;
+    color: #FFFF00;
+    text-shadow: 0.2vw 0.2vw 0 #000;
+}
+
+.version-display {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2vw;
+    color: #FFFF00;
+    text-shadow: 0.1vw 0.1vw 0 #000;
+}
+
+.coin-slot {
+    bottom: 5vw;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #8B4513;
+    border: 0.2vw solid #A0522D;
+    color: black;
+    padding: 1vw;
+    text-align: center;
+    cursor: pointer;
+    font-size: 1.5vw;
+    opacity: 0;
+    transition: opacity 1s;
+}
+
+.credit-display {
+    top: 5vw;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    font-size: 1.5vw;
+    opacity: 0;
+    transition: opacity 1s;
 }
