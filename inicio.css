@@ -19,7 +19,7 @@ body {
     padding: 1vw;
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    grid-template-rows: repeat(4, 1fr);
+    grid-template-rows: 200px 200px 200px 200px; /* Todas las filas tendrán 200px de alto */
     gap: 1vw;
     position: relative;
     overflow: hidden;
