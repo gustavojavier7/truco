@@ -6,49 +6,47 @@ const barajaEspanola = [
 ];
 
 let credits = 0;
-let gameStarted = false;
 
+/**
+ * Función para manejar la inserción de monedas
+ * Incrementa créditos y actualiza el contador en pantalla.
+ */
 function insertCoin() {
     credits++;
     document.getElementById('creditDisplay').textContent = `Créditos: ${credits}`;
 
     const comenzarJuegoBtn = document.getElementById('comenzarJuego');
     if (credits > 0 && comenzarJuegoBtn) {
-        comenzarJuegoBtn.classList.remove('hidden');
+        comenzarJuegoBtn.classList.remove('hidden'); // Muestra el botón "Comenzar Juego"
     }
 }
 
+/**
+ * Función para redirigir a la pantalla del juego.
+ * Se asegura de que haya créditos antes de redirigir.
+ */
 function comenzarJuego() {
     if (credits > 0) {
-        gameStarted = true;
-        document.getElementById('pantallaInicio').classList.add('hidden');
-        document.getElementById('gameBoard').classList.remove('hidden');
-        crearCartasTablero();
+        window.location.href = "index.html"; // Redirige al archivo index.html
     } else {
-        alert("Inserta una moneda para jugar.");
+        alert("Inserta una moneda para jugar."); // Muestra un mensaje si no hay créditos
     }
 }
 
-function crearCartasTablero() {
-    const tablero = document.getElementById('gameBoard');
-    const cartasUsuario = barajaEspanola.slice(0, 3);
-    const cartasCPU = barajaEspanola.slice(3, 6);
+/**
+ * Llama las funciones necesarias al cargar la pantalla inicial
+ */
+function setupEventListeners() {
+    const coinSlot = document.querySelector('.coin-slot');
+    if (coinSlot) {
+        coinSlot.addEventListener('click', insertCoin); // Vincula el clic en "Insertar Moneda"
+    }
 
-    const manoUsuario = document.createElement('div');
-    manoUsuario.className = 'mano';
-    manoUsuario.id = 'manoUsuario';
-    tablero.appendChild(manoUsuario);
+    const comenzarJuegoBtn = document.getElementById('comenzarJuego');
+    if (comenzarJuegoBtn) {
+        comenzarJuegoBtn.addEventListener('click', comenzarJuego); // Vincula el clic en "Comenzar Juego"
+    }
+}
 
-    cartasUsuario.forEach(cartaTexto => {
-        const carta = document.createElement('div');
-        carta.className = 'carta';
-        carta.textContent = cartaTexto;
-        manoUsuario.appendChild(carta);
-    });
-
-    const manoCPU = document.createElement('div');
-    manoCPU.className = 'mano';
-    manoCPU.id = 'manoCPU';
-    tablero.appendChild(manoCPU);
-
-    cartasCPU.forEach(() =>
+// Configura los eventos al cargar el documento
+window.onload = setupEventListeners;
