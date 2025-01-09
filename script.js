@@ -1,3 +1,5 @@
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 var ctx = canvas.getContext("2d");
 
 function positionCanvas(){
