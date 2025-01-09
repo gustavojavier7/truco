@@ -93,7 +93,7 @@ body {
     left: 50%;
     transform: translateX(-50%);
     font-size: 1.2vw;
-    color: white;
+    color: yellow;
     text-align: center;
 }
 
@@ -103,11 +103,12 @@ body {
     text-align: center;
     font-size: 1.5vw;
     margin-top: 2vw; /* Agrega espacio extra si es necesario */
-    color: white;
+    color: yellow;
 }
 
 #comenzarJuego {
     position: relative;
+    text-align: center;
     display: block;
     margin: 3vw auto; /* Espacio arriba y centrado horizontalmente */
     padding: 1vw 2vw;
