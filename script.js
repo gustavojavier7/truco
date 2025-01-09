@@ -1,4 +1,18 @@
 const canvas = document.getElementById("canvas");
+document.addEventListener("DOMContentLoaded", () => {
+    const canvas = document.getElementById("canvas");
+
+    function positionCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    // Llamar a la función para inicializar el canvas
+    positionCanvas();
+
+    // Opcional: ajustar el tamaño del canvas cuando la ventana cambie de tamaño
+    window.addEventListener("resize", positionCanvas);
+});
 
 function positionCanvas(){
   canvas.width = (innerHeight * 1.5)|0;
