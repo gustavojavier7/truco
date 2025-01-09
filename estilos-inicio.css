@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+body {
+    background-color: black;
+    color: white;
+    font-family: 'Press Start 2P', cursive;
+    margin: 0;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.arcade-screen {
+    width: 100vw;
+    height: 100vh;
+    background-color: #008000;
+    border: 2vw solid #0000FF;
+    box-sizing: border-box;
+    padding: 1vw;
+    display: grid;
+    grid-template-areas:
+        "titulo titulo titulo titulo titulo titulo"
+        ". . . . . ."
+        ". . . . . ."
+        "creditos creditos creditos monedas monedas monedas";
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    overflow: hidden; /* Evita scrollbars */
+}
+
+.truco-text {
+    grid-area: titulo;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 4vw;
+    font-weight: bold;
+    color: #FFFF00;
+    text-shadow: 0.2vw 0.2vw 0 #000;
+}
+
+.coin-slot {
+    grid-area: monedas;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    justify-self: center;
+    align-self: end;
+    opacity: 1;
+    background-color: #8B4513;
+    border: 0.2vw solid #A0522D;
+    color: black;
+    padding: 1vw;
+    text-align: center;
+    cursor: pointer;
+    font-size: 1.5vw;
+}
+
+.credit-display {
+    grid-area: creditos;
+    top: auto;
+    left: auto;
+    transform: none;
+    justify-self: center;
+    align-self: end;
+    opacity: 1;
+    text-align: center;
+    font-size: 1.5vw;
+}
+
+.btn-action {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 1vw 2vw;
+    font-size: 1.5vw;
+    border-radius: 0.5vw;
+    cursor: pointer;
+    margin: 1vw auto;
+    transition: background-color 0.3s;
+}
+
+.btn-action:hover {
+    background-color: #45a049;
+}
+
+.hidden {
+    display: none;
+}
+
+.tablero {
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-columns: 1fr;
+    gap: 2vw;
+    padding: 2vw;
+    height: auto;
+    max-width: 90vw;
+    max-height: 80vh;
+}
+
+.mano {
+    display: flex;
+    justify-content: center;
+    gap: 1vw;
+    margin-bottom: 2vw;
+}
+
+.carta {
+    background-color: #00008B;
+    border: 0.2vw solid #0000FF;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5vw;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+    width: 8vw;
+    height: 12vw;
+    transition: transform 0.3s;
+}
+
+.carta:hover {
+    transform: scale(1.1);
+}
+
+.carta-boca-abajo {
+    background-color: #808080;
+    border: 0.2vw solid #A9A9A9;
+    color: transparent;
+}
