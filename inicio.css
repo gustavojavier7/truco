@@ -115,21 +115,10 @@ body {
 }
 
 #comenzarJuego {
-    grid-column: 2 / 6; /* Centrado en las columnas 2 a 5 */
-    grid-row: 4 / 5; /* En la cuarta fila */
-    padding: 1vw 2vw;
-    font-size: 1.5vw;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 0.5vw;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    justify-self: center;
-    align-self: start;
-    position: absolute;
-    bottom: 15vw; /* Ajuste para posición específica */
-    z-index: 10; /* Asegura que se superponga */
+    grid-column: 2 / 5; /* Ocupa las columnas 2 a 4 */
+    grid-row: 4 / 5; /* Ocupa la fila 4 */
+    justify-self: center; /* Centra horizontalmente */
+    align-self: center; /* Centra verticalmente */
 }
 
 #comenzarJuego:hover {
