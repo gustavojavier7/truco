@@ -65,6 +65,15 @@ body {
     transform: scale(1.1);
 }
 
+.cartas-container {
+    display: flex; /* Activa Flexbox */
+    justify-content: center; /* Centra horizontalmente las cartas */
+    align-items: center; /* Alinea las cartas verticalmente */
+    gap: 10px; /* Espaciado entre cartas */
+    margin: 2vw auto; /* Margen automático para centrar en el eje principal */
+}
+
+
 .titulo {
     grid-column: span 5;
     font-size: 4vw;
