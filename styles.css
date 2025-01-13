@@ -16,7 +16,7 @@ body {
     display: flex; /* Organiza el contenido en columnas */
     flex-direction: column; /* Dirección de los elementos: vertical */
     align-items: center; /* Centra horizontalmente */
-    gap: 150px; /* Separación vertical entre las filas de cartas */
+    gap: 20px; /* Separación vertical ajustada entre filas */
 }
 
 .truco-text {
@@ -25,7 +25,7 @@ body {
     color: #FFFF00;
     text-shadow: 0.2vw 0.2vw 0 #000;
     text-align: center;
-    margin-bottom: 20px; /* Espacio debajo del título */
+    margin-bottom: 10px; /* Espacio reducido debajo del título */
 }
 
 .cartas-container {
