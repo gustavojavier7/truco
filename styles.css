@@ -12,21 +12,20 @@ body {
     min-height: 100vh; /* Asegura que el body ocupa toda la altura */
 }
 
-.coin-slot {
-    background-color: #8B4513;
-    border: 0.2vw solid #A0522D;
-    color: black;
-    padding: 1vw;
-    text-align: center;
-    cursor: pointer;
-    font-size: 1.5vw;
-    margin: 10px auto; /* Centrar horizontalmente */
+.tablero {
+    display: flex; /* Organiza el contenido en columnas */
+    flex-direction: column; /* Dirección de los elementos: vertical */
+    align-items: center; /* Centra horizontalmente */
+    gap: 150px; /* Separación vertical entre las filas de cartas */
 }
 
-.credit-display {
+.truco-text {
+    font-size: 4vw;
+    font-weight: bold;
+    color: #FFFF00;
+    text-shadow: 0.2vw 0.2vw 0 #000;
     text-align: center;
-    font-size: 1.5vw;
-    margin-top: 20px;
+    margin-bottom: 20px; /* Espacio debajo del título */
 }
 
 .cartas-container {
@@ -53,6 +52,23 @@ body {
 
 .carta:hover {
     transform: scale(1.1);
+}
+
+.coin-slot {
+    background-color: #8B4513;
+    border: 0.2vw solid #A0522D;
+    color: black;
+    padding: 1vw;
+    text-align: center;
+    cursor: pointer;
+    font-size: 1.5vw;
+    margin: 10px auto; /* Centrar horizontalmente */
+}
+
+.credit-display {
+    text-align: center;
+    font-size: 1.5vw;
+    margin-top: 20px;
 }
 
 .btn-action {
