@@ -3,32 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menú Arcade - TRUCO Argentino v1.5.0</title>
+    <title>Truco Argentino - Juego</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="coin-slot" onclick="insertCoin()">Insertar Moneda</div>
-    <div class="credit-display" id="creditDisplay">Créditos: 0</div>
-
-    <div class="tablero hidden" id="gameBoard">
+    <!-- Tablero principal -->
+    <div class="tablero" id="gameBoard">
+        <!-- Título del juego -->
         <div class="titulo">
             <span>T</span>RUCO
         </div>
-        <div class="carta"></div>
-        <div class="carta"></div>
-        <div class="carta"></div>
-        <div class="carta"></div>
-        <div class="carta"></div>
-        <div class="carta"></div>
-        <div class="carta"></div>
-        <div class="carta"></div>
-        <div class="carta"></div>
-        <div class="carta"></div>
-        <div class="carta"></div>
-        <div class="carta"></div>
+        <!-- Cartas -->
+        <div class="cartas-container">
+            <div class="carta"></div>
+            <div class="carta"></div>
+            <div class="carta"></div>
+            <div class="carta"></div>
+            <div class="carta"></div>
+            <div class="carta"></div>
+            <div class="carta"></div>
+            <div class="carta"></div>
+            <div class="carta"></div>
+            <div class="carta"></div>
+            <div class="carta"></div>
+            <div class="carta"></div>
+        </div>
     </div>
-
-    <button id="comenzarJuego" class="btn-action hidden" aria-label="Comenzar Juego">Comenzar</button>
     <script src="script.js"></script>
 </body>
 </html>
