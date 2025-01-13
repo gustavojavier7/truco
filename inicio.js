@@ -7,20 +7,15 @@ const comenzarJuegoBtn = document.getElementById('comenzarJuego');
  */
 function insertCoin() {
     credits++;
-    creditDisplay.textContent = `Créditos: ${credits}`;
-    if (credits > 0) {
-        comenzarJuegoBtn.classList.remove('hidden'); // Muestra el botón
-    }
+    document.getElementById('creditDisplay').textContent = `Créditos: ${credits}`;
 }
 
-/**
- * Redirige a la página de juego "index2.html".
- */
+// Nueva función para manejar el clic en "Iniciar Juego"
 function iniciarJuego() {
     if (credits > 0) {
-        window.location.href = "index2.html";
+        window.location.href = "index2.html"; // Redirige a la nueva página
     } else {
-        alert("Inserta una moneda para jugar.");
+        alert("Error: Inserta al menos una moneda para iniciar el juego."); // Muestra mensaje de error
     }
 }
 
