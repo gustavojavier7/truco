@@ -29,10 +29,10 @@ body {
 }
 
 .cartas-container {
-    display: flex; /* Activa Flexbox */
-    justify-content: center; /* Centra horizontalmente las cartas */
-    align-items: center; /* Alinea las cartas verticalmente */
-    gap: 10px; /* Espaciado entre cartas */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
 }
 
 .carta {
