@@ -19,5 +19,6 @@ function iniciarJuego() {
     }
 }
 
-// Configura los eventos del DOM
+// Vincula eventos a los elementos
+document.querySelector('.coin-slot').addEventListener('click', insertCoin);
 comenzarJuegoBtn.addEventListener('click', iniciarJuego);
