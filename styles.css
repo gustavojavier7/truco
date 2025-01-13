@@ -20,30 +20,20 @@ body {
     text-align: center;
     cursor: pointer;
     font-size: 1.5vw;
-    opacity: 1; /* Para que sea visible desde el principio */
     margin: 10px auto; /* Centrar horizontalmente */
 }
 
 .credit-display {
     text-align: center;
     font-size: 1.5vw;
-    opacity: 1; /* Para que sea visible desde el principio */
     margin-top: 20px;
 }
 
-.hidden {
-    display: none;
-}
-
-.tablero {
-    display: grid;
-    grid-template-rows: auto 1fr auto; /* Ajuste para el título */
-    grid-template-columns: repeat(5, 1fr);
-    gap: 1vw; /* Usando vw para mantener la proporción */
-    padding: 2vw; /* Usando vw para mantener la proporción */
-    height: auto; /* Permite que el tablero se ajuste al contenido */
-    max-width: 90vw; /* Evita que el tablero sea demasiado ancho */
-    max-height: 80vh; /* Evita que el tablero sea demasiado alto */
+.cartas-container {
+    display: flex; /* Activa Flexbox */
+    justify-content: center; /* Centra horizontalmente las cartas */
+    align-items: center; /* Alinea las cartas verticalmente */
+    gap: 10px; /* Espaciado entre cartas */
 }
 
 .carta {
@@ -56,36 +46,13 @@ body {
     font-weight: bold;
     color: white;
     text-align: center;
-    width: 8vw; /* Ancho fijo relativo al viewport */
-    height: 12vw; /* Alto fijo relativo al viewport */
-    transition: transform 0.3s; /* Mantiene la transición al pasar el mouse */
+    width: 100px; /* Ajuste del tamaño de carta */
+    height: 150px; /* Ajuste del tamaño de carta */
+    transition: transform 0.3s;
 }
 
 .carta:hover {
     transform: scale(1.1);
-}
-
-.cartas-container {
-    display: flex; /* Activa Flexbox */
-    justify-content: center; /* Centra horizontalmente las cartas */
-    align-items: center; /* Alinea las cartas verticalmente */
-    gap: 10px; /* Espaciado entre cartas */
-    margin: 2vw auto; /* Margen automático para centrar en el eje principal */
-}
-
-
-.titulo {
-    grid-column: span 5;
-    font-size: 4vw;
-    font-weight: bold;
-    color: #FFFF00;
-    text-shadow: 0.2vw 0.2vw 0 #000;
-    text-align: center; /* Centrar el título */
-    margin-bottom: 1vw; /* Espacio debajo del título */
-}
-
-.titulo span {
-    color: #FFFF00;
 }
 
 .btn-action {
@@ -96,7 +63,7 @@ body {
     font-size: 1.5vw;
     border-radius: 0.5vw;
     cursor: pointer;
-    margin: 1vw auto; /* Centrar y agregar márgenes */
+    margin: 1vw auto;
     transition: background-color 0.3s;
 }
 
