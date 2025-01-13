@@ -16,12 +16,17 @@ function insertCoin() {
  */
 function iniciarJuego() {
     if (credits > 0) {
-        window.location.href = "index2.html"; // Redirige a la nueva página
+        credits -= 1; // Resta un crédito al iniciar el juego
+        creditDisplay.textContent = `Créditos: ${credits}`;
+        window.location.href = "index2.html";
     } else {
-        alert("Error: Inserta al menos una moneda para iniciar el juego."); // Muestra mensaje de error
+        alert("Error: Inserta al menos una moneda para iniciar el juego.");
+    }
+    // Si se quedan sin créditos, podrías ocultar el botón de nuevo
+    if (credits === 0) {
+        comenzarJuegoBtn.classList.add('hidden');
     }
 }
-
 // Asegura que los eventos se vinculen una sola vez
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.coin-slot').addEventListener('click', insertCoin);
