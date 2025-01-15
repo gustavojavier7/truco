@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 body {
     background-color: black;
     color: white;
@@ -12,15 +14,14 @@ body {
 
 .arcade-screen {
     display: flex;
-    flex-direction: row;
     justify-content: space-between;
     align-items: center;
     width: 100vw;
     height: 100vh;
     background-color: #008000;
     border: 2vw solid #0000FF;
-    box-sizing: border-box;
     padding: 1vw;
+    box-sizing: border-box;
 }
 
 .cartas-container {
@@ -34,7 +35,6 @@ body {
 
 .cpu-cards, .player-cards {
     display: flex;
-    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
     width: 100%;
@@ -43,35 +43,26 @@ body {
 
 .carta-back, .carta {
     width: 8vw;
-    height: 14.4vw; /* 12vw * 1.2 */
+    height: 14.4vw; /* Proporción ajustada */
     margin: 0.5vw;
     display: flex;
     justify-content: center;
     align-items: center;
     border: 0.2vw solid #0000FF;
-    border-radius: 1vw; /* Añadir esquinas redondeadas */
-    background-color: #FF00FF;
+    border-radius: 1vw; /* Esquinas redondeadas */
     transition: transform 0.3s;
 }
 
-.carta-back {
-    background-color: #FF00FF; /* Mantén un color sólido para identificar las cartas del CPU */
-    border: 0.2vw solid #0000FF; /* Borde azul */
-    border-radius: 1vw; /* Esquinas redondeadas */
-    position: relative; /* Necesario para centrar elementos dentro */
-}
-
 .carta-back::after {
-    content: ""; /* Crea el rectángulo interior */
-    display: block;
+    content: "";
     position: absolute;
-    width: 80%; /* Ajusta el tamaño del rectángulo interior */
-    height: 80%; /* Mantén proporción para simetría */
-    background-color: #0000FF; /* Color azul del rectángulo */
-    border: 0.1vw solid #FFFFFF; /* Borde blanco alrededor del rectángulo */
-    top: 10%; /* Centrado verticalmente */
-    left: 10%; /* Centrado horizontalmente */
-    border-radius: 0.5vw; /* Esquinas redondeadas para el rectángulo interior */
+    width: 80%;
+    height: 80%;
+    background-color: #0000FF;
+    border: 0.1vw solid #FFFFFF;
+    top: 10%;
+    left: 10%;
+    border-radius: 0.5vw;
 }
 
 .carta img {
@@ -85,7 +76,6 @@ body {
     font-size: 2vw;
     color: #FFFF00;
     text-shadow: 0.1vw 0.1vw 0 #000;
-    width: 100%;
     text-align: center;
     margin-top: 1vw;
 }
@@ -118,7 +108,6 @@ body {
 .option {
     background-color: #4CAF50;
     color: white;
-    border: none;
     padding: 1vw 2vw;
     font-size: 1.5vw;
     cursor: pointer;
