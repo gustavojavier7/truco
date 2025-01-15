@@ -1,59 +1,114 @@
-.arcade-screen {
-  width: 100vw;
-  height: 100vh;
-  margin: 0;
-  padding: 0;
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: flex;
-  flex-direction: row;
-  border: 2px solid white;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-.cpu-area, .player-area {
-    flex: 2; /* Ocupa el doble de espacio en comparación al área central */
+/* Estilo base para el cuerpo de la página */
+body {
+    background-color: black;
+    color: white;
+    font-family: 'Press Start 2P', cursive;
+    margin: 0;
+    overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #00FF00; /* Verde */
+    min-height: 100vh;
 }
 
-.cpu-area {
-    border-right: 2px solid white; /* Línea divisoria derecha */
+/* Pantalla de juego en estilo arcade */
+.arcade-screen {
+    width: 100vw;
+    height: 100vh;
+    background-color: #008000;
+    border: 2vw solid #0000FF;
+    box-sizing: border-box;
+    padding: 1vw;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    position: relative;
 }
 
-.info-area {
-    flex: 1; /* Ocupa menos espacio */
+/* Área de cartas para CPU y Jugador */
+.cpu-area, .player-area {
+    flex: 2;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    background-color: #0000FF; /* Azul */
-    border-left: 2px solid white; /* Línea divisoria izquierda */
+    position: relative;
+    background-color: #008000;
+    border: 2px solid white;
 }
 
+/* Etiqueta de área (CPU o Jugador) */
+.area-label {
+    position: absolute;
+    top: 1vw;
+    font-size: 2vw;
+    color: #FFFF00;
+    text-shadow: 0.1vw 0.1vw 0 #000;
+    width: 100%;
+    text-align: center;
+}
+
+/* Cartas */
 .carta-back, .carta {
-    width: 8vw; /* Tamaño proporcional al ancho de la pantalla */
-    height: 12vw; /* Tamaño proporcional al ancho de la pantalla */
-    margin: 0.5vw; /* Espaciado entre cartas */
+    width: 8vw;
+    height: 12vw;
+    margin: 0.5vw;
     display: flex;
     justify-content: center;
     align-items: center;
-    border: 2px solid #0000FF; /* Borde azul */
+    border: 0.2vw solid #0000FF;
 }
 
+/* Dorso de la carta */
 .carta-back {
-    background-color: #FF00FF; /* Rosa */
+    background-color: #FF00FF;
     background-image: url('data:image/svg+xml,<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="%23FF00FF"/><path d="M10 10h130v130H10z" fill="none" stroke="%230000FF" stroke-width="2"/></svg>');
     background-size: cover;
 }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
+/* Cara de la carta */
+.carta img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Área de información y controles */
+.info-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #0000FF;
+    border-left: 2px solid white;
+    border-right: 2px solid white;
+}
+
+/* Mostrar créditos */
+.credit-display {
+    font-size: 1.5vw;
+    color: yellow;
+    margin-bottom: 2vw;
+}
+
+/* Opciones de juego */
+.game-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1vw;
+}
+
+.option {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 1vw 2vw;
+    font-size: 1.5vw;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.option:hover {
+    background-color: #45a049;
 }
