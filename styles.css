@@ -5,70 +5,67 @@ body {
     color: white;
     font-family: 'Press Start 2P', cursive;
     margin: 0;
-    overflow: hidden; /* Evita scrollbars innecesarios */
+    overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh; /* Asegura que el body ocupa toda la altura */
+    min-height: 100vh;
 }
 
-.tablero {
-    display: flex; /* Organiza el contenido en columnas */
-    flex-direction: column; /* Dirección de los elementos: vertical */
-    align-items: center; /* Centra horizontalmente */
-    gap: 20px; /* Separación vertical ajustada entre filas */
-}
-
-.truco-text {
-    font-size: 4vw;
-    font-weight: bold;
-    color: #FFFF00;
-    text-shadow: 0.2vw 0.2vw 0 #000;
-    text-align: center;
-    margin-bottom: 10px; /* Espacio reducido debajo del título */
-}
-
-.cartas-container {
+.arcade-screen {
+    width: 80vw;
+    height: 60vh;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
+    flex-direction: row;
+    border: 2px solid white;
 }
 
-.carta {
-    background-color: #00008B;
-    border: 0.2vw solid #0000FF;
+.cpu-area, .player-area {
+    flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.5vw;
-    font-weight: bold;
-    color: white;
-    text-align: center;
-    width: 100px; /* Ajuste del tamaño de carta */
-    height: 150px; /* Ajuste del tamaño de carta */
-    transition: transform 0.3s;
+    background-color: #00FF00; /* Verde */
 }
 
-.carta:hover {
-    transform: scale(1.1);
+.cpu-area {
+    border-right: 2px solid white;
 }
 
-.coin-slot {
-    background-color: #8B4513;
-    border: 0.2vw solid #A0522D;
-    color: black;
-    padding: 1vw;
-    text-align: center;
-    cursor: pointer;
-    font-size: 1.5vw;
-    margin: 10px auto; /* Centrar horizontalmente */
+.info-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #0000FF; /* Azul */
+    border-left: 2px solid white;
+}
+
+.carta-back, .carta {
+    width: 100px;
+    height: 150px;
+    margin: 0 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid #0000FF; /* Borde azul para las cartas del CPU */
+}
+
+.carta-back {
+    background-color: #FF00FF; /* Rosa */
+    background-image: url('data:image/svg+xml,<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="%23FF00FF"/><path d="M10 10h130v130H10z" fill="none" stroke="%230000FF" stroke-width="2"/></svg>');
+    background-size: cover;
+}
+
+.carta img {
+    max-width: 100%;
+    max-height: 100%;
 }
 
 .credit-display {
-    text-align: center;
-    font-size: 1.5vw;
-    margin-top: 20px;
+    font-size: 2vw;
+    margin-bottom: 20px;
 }
 
 .btn-action {
@@ -85,4 +82,49 @@ body {
 
 .btn-action:hover {
     background-color: #45a049;
+}
+
+/* Añadiendo estilos para el botón de comenzar juego oculto inicialmente */
+.btn-action.hidden {
+    display: none;
+}
+
+/* Estilos para las cartas jugadas */
+.carta-jugada {
+    width: 100px;
+    height: 150px;
+    margin: 10px;
+    background-color: #00008B;
+    border: 2px solid #0000FF;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5vw;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+}
+
+/* Estilos para el área donde se juegan las cartas */
+.juego-area {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Estilo para el área de mensajes o anuncios durante el juego */
+.mensaje-juego {
+    font-size: 1.5vw;
+    margin-top: 20px;
+    text-align: center;
+    color: #FFFF00;
+    text-shadow: 1px 1px 2px black;
+}
+
+/* Estilo para una posible área de puntuación */
+.puntuacion {
+    font-size: 1.5vw;
+    margin-top: 20px;
+    text-align: center;
 }
