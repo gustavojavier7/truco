@@ -12,12 +12,16 @@ function insertCoin() {
 function comenzarJuego() {
     if (credits > 0) {
         alert("¡Iniciando el juego!");
-        // Aquí podrías redirigir a otra página o comenzar el juego
+        credits--; // Resta un crédito al iniciar el juego
+        document.getElementById('creditDisplay').textContent = `Créditos: ${credits}`;
+        // Aquí podrías redirigir o iniciar el juego
+        if (credits === 0) {
+            document.getElementById('comenzarJuego').classList.add('hidden');
+        }
     } else {
         alert("Inserta una moneda para jugar.");
     }
 }
-
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.coin-slot').addEventListener('click', insertCoin);
     document.getElementById('comenzarJuego').addEventListener('click', comenzarJuego);
