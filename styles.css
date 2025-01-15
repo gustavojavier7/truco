@@ -41,15 +41,17 @@ body {
     height: 40%;
 }
 
-/* Estilos para las cartas */
 .carta-back, .carta {
     width: 8vw;
-    height: 12vw;
+    height: 14.4vw; /* 12vw * 1.2 */
     margin: 0.5vw;
     display: flex;
     justify-content: center;
     align-items: center;
     border: 0.2vw solid #0000FF;
+    border-radius: 1vw; /* Añadir esquinas redondeadas */
+    background-color: #FF00FF;
+    transition: transform 0.3s;
 }
 
 .carta-back {
