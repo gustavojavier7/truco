@@ -51,6 +51,7 @@ body {
     border: 0.2vw solid #0000FF;
     border-radius: 1vw; /* Esquinas redondeadas */
     transition: transform 0.3s;
+    z-index: 1;
 }
 
 .carta-back::after {
