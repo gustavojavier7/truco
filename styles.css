@@ -1,4 +1,3 @@
-/* Estilo base para el cuerpo de la página */
 body {
     background-color: black;
     color: white;
@@ -11,44 +10,38 @@ body {
     min-height: 100vh;
 }
 
-/* Pantalla de juego en estilo arcade */
 .arcade-screen {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
     width: 100vw;
     height: 100vh;
     background-color: #008000;
     border: 2vw solid #0000FF;
     box-sizing: border-box;
     padding: 1vw;
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    position: relative;
 }
 
-/* Área de cartas para CPU y Jugador */
-.cpu-area, .player-area {
-    flex: 2;
+.cartas-container {
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
     align-items: center;
-    position: relative;
-    background-color: #008000;
-    border: 2px solid white;
+    width: 60vw;
+    height: 80vh;
 }
 
-/* Etiqueta de área (CPU o Jugador) */
-.area-label {
-    position: absolute;
-    top: 1vw;
-    font-size: 2vw;
-    color: #FFFF00;
-    text-shadow: 0.1vw 0.1vw 0 #000;
+.cpu-cards, .player-cards {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
     width: 100%;
-    text-align: center;
+    height: 40%;
 }
 
-/* Cartas */
+/* Estilos para las cartas */
 .carta-back, .carta {
     width: 8vw;
     height: 12vw;
@@ -59,30 +52,37 @@ body {
     border: 0.2vw solid #0000FF;
 }
 
-/* Dorso de la carta */
 .carta-back {
     background-color: #FF00FF;
     background-image: url('data:image/svg+xml,<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="%23FF00FF"/><path d="M10 10h130v130H10z" fill="none" stroke="%230000FF" stroke-width="2"/></svg>');
     background-size: cover;
 }
 
-/* Cara de la carta */
 .carta img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-/* Área de información y controles */
+/* Etiqueta de área (CPU o Jugador) */
+.area-label {
+    font-size: 2vw;
+    color: #FFFF00;
+    text-shadow: 0.1vw 0.1vw 0 #000;
+    width: 100%;
+    text-align: center;
+    margin-top: 1vw;
+}
+
 .info-area {
-    flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    width: 20vw;
+    height: 80vh;
     background-color: #0000FF;
     border-left: 2px solid white;
-    border-right: 2px solid white;
 }
 
 /* Mostrar créditos */
