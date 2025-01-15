@@ -30,7 +30,7 @@ body {
     justify-content: space-between;
     align-items: center;
     width: 60vw;
-    height: 80vh;
+    height: 100vh; /* Ajusta la altura para ocupar toda la pantalla */
 }
 
 .cpu-cards, .player-cards {
@@ -39,12 +39,12 @@ body {
     align-items: center;
     width: 100%;
     height: 40%;
-    position: relative; /* Para posicionar .area-label */
+    position: relative;
 }
 
 .carta-back, .carta {
     width: 8vw;
-    height: 14.4vw; /* Proporción ajustada */
+    height: 14.4vw;
     margin: 0.5vw;
     display: flex;
     justify-content: center;
@@ -52,11 +52,10 @@ body {
     border: 0.2vw solid #0000FF;
     border-radius: 1vw;
     transition: transform 0.3s;
-    position: relative; /* Para usar z-index */
-    z-index: 1; /* Asegura que las cartas estén por encima del label */
+    position: relative;
+    z-index: 1;
 }
 
-/* Cambio en el estilo del dorso de la carta */
 .carta-back {
     background-color: #FF00FF;
     background-image: url('data:image/svg+xml,<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="%23FF00FF"/><path d="M10 10h130v130H10z" fill="none" stroke="%230000FF" stroke-width="2"/></svg>');
@@ -69,38 +68,36 @@ body {
     object-fit: cover;
 }
 
-/* Etiqueta de área (CPU o Jugador) */
 .area-label {
     font-size: 2vw;
     color: #FFFF00;
     text-shadow: 0.1vw 0.1vw 0 #000;
     text-align: center;
     margin-top: 1vw;
-    position: absolute; /* Posicionamiento absoluto dentro de .cpu-cards o .player-cards */
+    position: absolute;
     width: 100%;
-    top: 0; /* Ajusta según necesites, aquí está en la parte superior */
-    z-index: 0; /* Debajo de las cartas */
+    top: 0;
+    z-index: 0;
 }
 
+/* Cambio aquí para ajustar el .info-area */
 .info-area {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     width: 20vw;
-    height: 80vh;
-    background-color: #0000FF;
+    height: 100vh; /* Ajusta la altura para ocupar toda la pantalla */
+    background-color: #008000; /* Cambia el color de fondo a verde para que no se note el cambio */
     border-left: 2px solid white;
 }
 
-/* Mostrar créditos */
 .credit-display {
     font-size: 1.5vw;
     color: yellow;
     margin-bottom: 2vw;
 }
 
-/* Opciones de juego */
 .game-options {
     display: flex;
     flex-direction: column;
