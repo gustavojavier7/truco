@@ -82,18 +82,20 @@ body {
 .info-area {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start; /* Alinea el contenido al inicio */
     align-items: center;
     width: 20vw;
     height: 100vh; /* Ajusta la altura para ocupar toda la pantalla */
     background-color: #008000; /* Cambia el color de fondo a verde para que no se note el cambio */
     border-left: 2px solid white;
+    padding-top: 1vw; /* Añade un padding superior para mover el texto de créditos al borde superior */
 }
 
 .credit-display {
     font-size: 1.5vw;
     color: yellow;
     margin-bottom: 2vw;
+    align-self: flex-start; /* Alinea el texto de créditos al inicio */
 }
 
 .game-options {
