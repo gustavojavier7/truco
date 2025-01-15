@@ -1,13 +1,17 @@
 .arcade-screen {
-    width: 100vw; /* Ocupa todo el ancho de la ventana */
-    height: 100vh; /* Ocupa todo el alto de la ventana */
-    display: flex;
-    flex-direction: row; /* Organización en filas principales */
-    border: 2px solid white;
-    box-sizing: border-box; /* Incluye padding y borde en las dimensiones */
-    overflow: hidden; /* Oculta cualquier contenido que sobresalga */
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: row;
+  border: 2px solid white;
+  box-sizing: border-box;
+  overflow: hidden;
 }
-
 .cpu-area, .player-area {
     flex: 2; /* Ocupa el doble de espacio en comparación al área central */
     display: flex;
