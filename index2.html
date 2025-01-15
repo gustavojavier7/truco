@@ -7,22 +7,28 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Tablero principal -->
-    <div class="tablero" id="gameBoard">
- <!-- Título del juego -->
-        <div class="truco-text" id="trucoText">TRUCO</div>        
-        <!-- Cartas del jugador CPU -->
-        <div class="cartas-container cpu-cards">
-            <div class="carta">CPU 1</div>
-            <div class="carta">CPU 2</div>
-            <div class="carta">CPU 3</div>
+    <div class="arcade-screen">
+        <!-- Área de cartas del CPU -->
+        <div class="cpu-area">
+            <div class="carta-back"></div>
+            <div class="carta-back"></div>
+            <div class="carta-back"></div>
         </div>
-
-          <!-- Cartas del jugador humano -->
-        <div class="cartas-container human-cards">
-            <div class="carta">Carta 1</div>
-            <div class="carta">Carta 2</div>
-            <div class="carta">Carta 3</div>
+        
+        <!-- Área de información y controles -->
+        <div class="info-area">
+            <div class="credit-display" id="creditDisplay">CRÉDITOS: 0</div>
+            <div class="game-options">
+                <div class="option">CONTINUAR</div>
+                <div class="option">CONTRA FLOR</div>
+            </div>
+        </div>
+        
+        <!-- Área de cartas del jugador -->
+        <div class="player-area">
+            <div class="carta"><img src="path/to/your/image1.png" alt="Carta 1"></div>
+            <div class="carta"><img src="path/to/your/image2.png" alt="Carta 2"></div>
+            <div class="carta"><img src="path/to/your/image3.png" alt="Carta 3"></div>
         </div>
     </div>
     <script src="script.js"></script>
