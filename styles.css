@@ -58,8 +58,7 @@ body {
 
 .carta-back {
     background-color: #FF00FF;
-    background-image: url('data:image/svg+xml,<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="%23FF00FF"/><path d="M10 10h130v130H10z" fill="none" stroke="%230000FF" stroke-width="2"/></svg>');
-    background-size: cover;
+    padding: 5px; /* Añade un margen interno de 5 px */
 }
 
 .carta {
