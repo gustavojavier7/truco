@@ -94,7 +94,7 @@ body {
 .credit-display {
     font-size: 1.5vw;
     color: yellow;
-    margin-bottom: 2vw;
+    margin-bottom: 1vw; /* Ajusta el margen inferior para separar del siguiente elemento */
     align-self: flex-start; /* Alinea el texto de créditos al inicio */
 }
 
@@ -102,6 +102,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1vw;
+    align-self: flex-start; /* Alinea las opciones de juego al inicio */
 }
 
 .option {
