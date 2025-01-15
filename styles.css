@@ -1,27 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
-body {
-    background-color: black;
-    color: white;
-    font-family: 'Press Start 2P', cursive;
-    margin: 0;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-}
-
 .arcade-screen {
-    width: 80vw;
-    height: 60vh;
+    width: 100vw; /* Ocupa todo el ancho de la ventana */
+    height: 100vh; /* Ocupa todo el alto de la ventana */
     display: flex;
-    flex-direction: row;
+    flex-direction: row; /* Organización en filas principales */
     border: 2px solid white;
+    box-sizing: border-box; /* Incluye padding y borde en las dimensiones */
+    overflow: hidden; /* Oculta cualquier contenido que sobresalga */
 }
 
 .cpu-area, .player-area {
-    flex: 1;
+    flex: 2; /* Ocupa el doble de espacio en comparación al área central */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -29,102 +17,31 @@ body {
 }
 
 .cpu-area {
-    border-right: 2px solid white;
+    border-right: 2px solid white; /* Línea divisoria derecha */
 }
 
 .info-area {
-    flex: 1;
+    flex: 1; /* Ocupa menos espacio */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     background-color: #0000FF; /* Azul */
-    border-left: 2px solid white;
+    border-left: 2px solid white; /* Línea divisoria izquierda */
 }
 
 .carta-back, .carta {
-    width: 100px;
-    height: 150px;
-    margin: 0 5px;
+    width: 8vw; /* Tamaño proporcional al ancho de la pantalla */
+    height: 12vw; /* Tamaño proporcional al ancho de la pantalla */
+    margin: 0.5vw; /* Espaciado entre cartas */
     display: flex;
     justify-content: center;
     align-items: center;
-    border: 2px solid #0000FF; /* Borde azul para las cartas del CPU */
+    border: 2px solid #0000FF; /* Borde azul */
 }
 
 .carta-back {
     background-color: #FF00FF; /* Rosa */
     background-image: url('data:image/svg+xml,<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="%23FF00FF"/><path d="M10 10h130v130H10z" fill="none" stroke="%230000FF" stroke-width="2"/></svg>');
     background-size: cover;
-}
-
-.carta img {
-    max-width: 100%;
-    max-height: 100%;
-}
-
-.credit-display {
-    font-size: 2vw;
-    margin-bottom: 20px;
-}
-
-.btn-action {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 1vw 2vw;
-    font-size: 1.5vw;
-    border-radius: 0.5vw;
-    cursor: pointer;
-    margin: 1vw auto;
-    transition: background-color 0.3s;
-}
-
-.btn-action:hover {
-    background-color: #45a049;
-}
-
-/* Añadiendo estilos para el botón de comenzar juego oculto inicialmente */
-.btn-action.hidden {
-    display: none;
-}
-
-/* Estilos para las cartas jugadas */
-.carta-jugada {
-    width: 100px;
-    height: 150px;
-    margin: 10px;
-    background-color: #00008B;
-    border: 2px solid #0000FF;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5vw;
-    font-weight: bold;
-    color: white;
-    text-align: center;
-}
-
-/* Estilos para el área donde se juegan las cartas */
-.juego-area {
-    display: flex;
-    justify-content: space-around;
-    width: 100%;
-    margin-top: 20px;
-}
-
-/* Estilo para el área de mensajes o anuncios durante el juego */
-.mensaje-juego {
-    font-size: 1.5vw;
-    margin-top: 20px;
-    text-align: center;
-    color: #FFFF00;
-    text-shadow: 1px 1px 2px black;
-}
-
-/* Estilo para una posible área de puntuación */
-.puntuacion {
-    font-size: 1.5vw;
-    margin-top: 20px;
-    text-align: center;
 }
