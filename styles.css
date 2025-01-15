@@ -61,6 +61,19 @@ body {
     position: relative; /* Necesario para centrar elementos dentro */
 }
 
+.carta-back::after {
+    content: ""; /* Crea el rectángulo interior */
+    display: block;
+    position: absolute;
+    width: 80%; /* Ajusta el tamaño del rectángulo interior */
+    height: 80%; /* Mantén proporción para simetría */
+    background-color: #0000FF; /* Color azul del rectángulo */
+    border: 0.1vw solid #FFFFFF; /* Borde blanco alrededor del rectángulo */
+    top: 10%; /* Centrado verticalmente */
+    left: 10%; /* Centrado horizontalmente */
+    border-radius: 0.5vw; /* Esquinas redondeadas para el rectángulo interior */
+}
+
 .carta img {
     width: 100%;
     height: 100%;
