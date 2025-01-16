@@ -1,6 +1,19 @@
-// script.js v1.01
+// script.js
 
-let credits = 0;
+const NOMBRES_CARTAS = {
+    1: 'As',
+    10: 'Sota',
+    11: 'Caballo',
+    12: 'Rey',
+};
+
+const VALORES_TRUCO = {
+    1: 14, 7: 13, 3: 12, 2: 11,
+    12: 10, 11: 9, 10: 8, 6: 7,
+    5: 6, 4: 5,
+};
+
+const COLORES = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
 
 // Clase para representar una carta
 class Carta {
@@ -10,29 +23,11 @@ class Carta {
     }
 
     obtenerNombre() {
-        const nombres = {
-            1: 'As',
-            10: 'Sota',
-            11: 'Caballo',
-            12: 'Rey'
-        };
-        return nombres[this.valor] || this.valor.toString();
+        return NOMBRES_CARTAS[this.valor] || this.valor.toString();
     }
 
     obtenerValorTruco() {
-        const valoresTruco = {
-            1: 14, // As (Ancho)
-            7: 13, // 7
-            3: 12, // 3
-            2: 11, // 2
-            12: 10, // Rey
-            11: 9, // Caballo
-            10: 8, // Sota
-            6: 7,
-            5: 6,
-            4: 5
-        };
-        return valoresTruco[this.valor] || 0;
+        return VALORES_TRUCO[this.valor] || 0;
     }
 }
 
@@ -147,7 +142,7 @@ class JuegoTruco {
     }
 
     obtenerColorAleatorio() {
-        const colores = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+        const colores = COLORES;
         return colores[Math.floor(Math.random() * colores.length)];
     }
 
