@@ -1,4 +1,4 @@
-// script.js
+// script.js v1.02
 
 let credits = 0;
 let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
