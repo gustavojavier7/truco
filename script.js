@@ -1,19 +1,7 @@
 // script.js
 
-const NOMBRES_CARTAS = {
-    1: 'As',
-    10: 'Sota',
-    11: 'Caballo',
-    12: 'Rey',
-};
-
-const VALORES_TRUCO = {
-    1: 14, 7: 13, 3: 12, 2: 11,
-    12: 10, 11: 9, 10: 8, 6: 7,
-    5: 6, 4: 5,
-};
-
-const COLORES = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+let credits = 0;
+let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
 
 // Clase para representar una carta
 class Carta {
@@ -23,11 +11,22 @@ class Carta {
     }
 
     obtenerNombre() {
-        return NOMBRES_CARTAS[this.valor] || this.valor.toString();
+        const nombres = {
+            1: 'As',
+            10: 'Sota',
+            11: 'Caballo',
+            12: 'Rey'
+        };
+        return nombres[this.valor] || this.valor.toString();
     }
 
     obtenerValorTruco() {
-        return VALORES_TRUCO[this.valor] || 0;
+        const valoresTruco = {
+            1: 14, 7: 13, 3: 12, 2: 11,
+            12: 10, 11: 9, 10: 8, 6: 7,
+            5: 6, 4: 5
+        };
+        return valoresTruco[this.valor] || 0;
     }
 }
 
@@ -118,7 +117,12 @@ class JuegoTruco {
     }
 
     iniciarJuego() {
-        // Mostrar cartas del jugador y ocultar las de la CPU
+        this.mostrarCartas();
+        this.actualizarCreditos();
+        this.mostrarOpciones();
+    }
+
+    mostrarCartas() {
         const playerCardsContainer = document.querySelector('.player-cards');
         playerCardsContainer.innerHTML = '';
         this.jugador.mostrarMano().forEach(carta => {
@@ -136,24 +140,64 @@ class JuegoTruco {
             cartaDiv.classList.add('carta-back');
             cpuCardsContainer.appendChild(cartaDiv);
         }
+    }
 
-        // Actualizar créditos (puntos)
-        document.getElementById('creditDisplay').textContent = `Créditos: ${this.jugador.obtenerPuntos()}`;
+    actualizarCreditos() {
+        document.getElementById('creditDisplay').textContent = `CRÉDITOS: ${this.jugador.obtenerPuntos()}`;
+    }
+
+    mostrarOpciones() {
+        // Aquí puedes cambiar las opciones según el turno
+        const opciones = document.querySelector('.game-options');
+        opciones.innerHTML = '';
+
+        if (this.turno === 'jugador') {
+            opciones.innerHTML = `
+                <div class="option" id="trucoBtn">TRUCO</div>
+                <div class="option" id="envidoBtn">ENVIDO</div>
+                <div class="option" id="florBtn">FLOR</div>
+                <div class="option" id="retirarseBtn">RETIRARSE</div>
+            `;
+        } else {
+            opciones.innerHTML = `
+                <div class="option" id="cpuTrucoBtn">TRUCO</div>
+                <div class="option" id="cpuEnvidoBtn">ENVIDO</div>
+                <div class="option" id="cpuFlorBtn">FLOR</div>
+                <div class="option" id="cpuRetirarseBtn">RETIRARSE</div>
+            `;
+        }
+
+        // Añadir event listeners a los nuevos botones
+        document.getElementById('trucoBtn').addEventListener('click', () => this.jugarTruco('jugador'));
+        document.getElementById('envidoBtn').addEventListener('click', () => this.jugarEnvido('jugador'));
+        document.getElementById('florBtn').addEventListener('click', () => this.jugarFlor('jugador'));
+        document.getElementById('retirarseBtn').addEventListener('click', () => this.retirarse('jugador'));
+
+        document.getElementById('cpuTrucoBtn').addEventListener('click', () => this.jugarTruco('cpu'));
+        document.getElementById('cpuEnvidoBtn').addEventListener('click', () => this.jugarEnvido('cpu'));
+        document.getElementById('cpuFlorBtn').addEventListener('click', () => this.jugarFlor('cpu'));
+        document.getElementById('cpuRetirarseBtn').addEventListener('click', () => this.retirarse('cpu'));
+    }
+
+    jugarTruco(jugador) {
+        // Implementar lógica de Truco
+    }
+
+    jugarEnvido(jugador) {
+        // Implementar lógica de Envido
+    }
+
+    jugarFlor(jugador) {
+        // Implementar lógica de Flor
+    }
+
+    retirarse(jugador) {
+        // Implementar lógica de retirarse
     }
 
     obtenerColorAleatorio() {
-        const colores = COLORES;
+        const colores = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
         return colores[Math.floor(Math.random() * colores.length)];
-    }
-
-    manejarTurno() {
-        // Implementación básica: jugador juega primero
-        const cartaJugada = this.jugador.elegirCarta();
-        // Aquí podrías manejar la lógica de la jugada del jugador
-        // Luego, la CPU juega
-        const cartaCPU = this.cpu.elegirCarta();
-        // Determinar el ganador del truco
-        // Actualizar puntos y verificar si el juego ha terminado
     }
 }
 
@@ -162,9 +206,3 @@ const jugador = new Jugador('Humano');
 const cpu = new CPU('CPU');
 const juego = new JuegoTruco(jugador, cpu);
 juego.iniciarJuego();
-
-// Event listeners
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelector('.coin-slot').addEventListener('click', insertCoin);
-    document.getElementById('comenzarJuego').addEventListener('click', comenzarJuego);
-});
