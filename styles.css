@@ -2,8 +2,8 @@
 
 /* Estilos generales */
 body {
-    background-color: black;
-    color: white;
+    background-color: #000000;
+    color: #FFFFFF;
     font-family: 'Press Start 2P', cursive;
     margin: 0;
     overflow: hidden;
@@ -11,11 +11,16 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    /* Mejoras de accesibilidad */
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* Área de la pantalla de arcade */
 .arcade-screen {
     display: flex;
+    flex-direction: row;
     justify-content: space-between;
     align-items: center;
     width: 100vw;
@@ -25,6 +30,8 @@ body {
     padding: 1vw;
     box-sizing: border-box;
     position: relative;
+    /* Transición para cambios de tamaño */
+    transition: background-color 0.3s, border 0.3s;
 }
 
 /* Contenedor de cartas */
@@ -33,8 +40,15 @@ body {
     flex-direction: column;
     justify-content: space-between;
     align-items: center;
-    width: 60vw;
-    height: 100vh;
+    width: 60%;
+    height: 100%;
+    /* Ajustes para pantallas más pequeñas */
+    @media (max-width: 800px) {
+        width: 80%;
+    }
+    @media (max-width: 600px) {
+        width: 100%;
+    }
 }
 
 /* Cartas del CPU y del jugador */
@@ -45,6 +59,10 @@ body {
     width: 100%;
     height: 40%;
     position: relative;
+    /* Ajustes para pantallas más pequeñas */
+    @media (max-width: 600px) {
+        height: 30%;
+    }
 }
 
 /* Estilos de las cartas */
@@ -57,11 +75,17 @@ body {
     align-items: center;
     border: 0.2vw solid #0000FF;
     border-radius: 1vw;
-    transition: transform 0.3s;
+    transition: transform 0.3s, border-color 0.3s;
     position: relative;
     z-index: 1;
     background-color: #FF00FF;
     background-size: cover;
+    cursor: pointer;
+    /* Efecto de hover para las cartas */
+    &:hover {
+        transform: translateY(-0.5vw);
+        border-color: #FFFFFF;
+    }
 }
 
 /* Etiqueta de área */
@@ -75,6 +99,10 @@ body {
     width: 100%;
     top: 0;
     z-index: 0;
+    /* Ajustes para pantallas más pequeñas */
+    @media (max-width: 600px) {
+        font-size: 3vw;
+    }
 }
 
 /* Área de información */
@@ -83,11 +111,23 @@ body {
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
-    width: 20vw;
-    height: 100vh;
+    width: 20%;
+    height: 100%;
     background-color: #008000;
     border-left: 2px solid white;
     padding-top: 1vw;
+    /* Ajustes para pantallas más pequeñas */
+    @media (max-width: 800px) {
+        width: 25%;
+    }
+    @media (max-width: 600px) {
+        width: 100%;
+        border-left: none;
+        border-top: 2px solid white;
+        flex-direction: row;
+        justify-content: space-around;
+        padding-top: 0;
+    }
 }
 
 /* Créditos */
@@ -96,6 +136,11 @@ body {
     color: yellow;
     margin-bottom: 1vw;
     align-self: flex-start;
+    /* Ajustes para pantallas más pequeñas */
+    @media (max-width: 600px) {
+        font-size: 2vw;
+        margin-bottom: 0;
+    }
 }
 
 /* Opciones de juego */
@@ -104,6 +149,11 @@ body {
     flex-direction: column;
     gap: 1vw;
     align-self: flex-start;
+    /* Ajustes para pantallas más pequeñas */
+    @media (max-width: 600px) {
+        flex-direction: row;
+        gap: 0.5vw;
+    }
 }
 
 /* Estilos de las opciones */
@@ -113,9 +163,15 @@ body {
     padding: 1vw 2vw;
     font-size: 1.5vw;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, transform 0.3s;
+    /* Ajustes para pantallas más pequeñas */
+    @media (max-width: 600px) {
+        padding: 1vw;
+        font-size: 2vw;
+    }
 }
 
 .option:hover {
     background-color: #45a049;
+    transform: scale(1.05);
 }
