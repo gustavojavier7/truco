@@ -1,5 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+/* styles.css */
 
+/* Estilos generales */
 body {
     background-color: black;
     color: white;
@@ -12,6 +13,7 @@ body {
     min-height: 100vh;
 }
 
+/* Área de la pantalla de arcade */
 .arcade-screen {
     display: flex;
     justify-content: space-between;
@@ -22,17 +24,20 @@ body {
     border: 2vw solid #0000FF;
     padding: 1vw;
     box-sizing: border-box;
+    position: relative;
 }
 
+/* Contenedor de cartas */
 .cartas-container {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     align-items: center;
     width: 60vw;
-    height: 100vh; /* Ajusta la altura para ocupar toda la pantalla */
+    height: 100vh;
 }
 
+/* Cartas del CPU y del jugador */
 .cpu-cards, .player-cards {
     display: flex;
     justify-content: center;
@@ -42,6 +47,7 @@ body {
     position: relative;
 }
 
+/* Estilos de las cartas */
 .carta-back, .carta {
     width: 8vw;
     height: 14.4vw;
@@ -54,18 +60,11 @@ body {
     transition: transform 0.3s;
     position: relative;
     z-index: 1;
-}
-
-.carta-back {
-    background-color: #FF00FF;
-    padding: 5px; /* Añade un margen interno de 5 px */
-}
-
-.carta {
     background-color: #FF00FF;
     background-size: cover;
 }
 
+/* Etiqueta de área */
 .area-label {
     font-size: 2vw;
     color: #FFFF00;
@@ -78,33 +77,36 @@ body {
     z-index: 0;
 }
 
-/* Cambio aquí para ajustar el .info-area */
+/* Área de información */
 .info-area {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start; /* Alinea el contenido al inicio */
+    justify-content: flex-start;
     align-items: center;
     width: 20vw;
-    height: 100vh; /* Ajusta la altura para ocupar toda la pantalla */
-    background-color: #008000; /* Cambia el color de fondo a verde para que no se note el cambio */
+    height: 100vh;
+    background-color: #008000;
     border-left: 2px solid white;
-    padding-top: 1vw; /* Añade un padding superior para mover el texto de créditos al borde superior */
+    padding-top: 1vw;
 }
 
+/* Créditos */
 .credit-display {
     font-size: 1.5vw;
     color: yellow;
-    margin-bottom: 1vw; /* Ajusta el margen inferior para separar del siguiente elemento */
-    align-self: flex-start; /* Alinea el texto de créditos al inicio */
+    margin-bottom: 1vw;
+    align-self: flex-start;
 }
 
+/* Opciones de juego */
 .game-options {
     display: flex;
     flex-direction: column;
     gap: 1vw;
-    align-self: flex-start; /* Alinea las opciones de juego al inicio */
+    align-self: flex-start;
 }
 
+/* Estilos de las opciones */
 .option {
     background-color: #4CAF50;
     color: white;
