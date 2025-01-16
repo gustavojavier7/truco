@@ -1,3 +1,4 @@
+<!-- index2.html v1.02 -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -12,28 +13,30 @@
         <div class="cartas-container">
             <!-- Cartas del CPU -->
             <div class="cpu-cards">
-                <div class="carta-back"></div>
-                <div class="carta-back"></div>
-                <div class="carta-back"></div>
+                <!-- Las cartas del CPU se generan dinámicamente -->
                 <div class="area-label">CPU</div>
             </div>
+            
             <!-- Cartas del jugador humano -->
             <div class="player-cards">
-                <div class="carta" style="background-color: red;"></div>
-                <div class="carta" style="background-color: blue;"></div>
-                <div class="carta" style="background-color: green;"></div>
+                <!-- Las cartas del jugador se generan dinámicamente -->
                 <div class="area-label">JUGADOR</div>
             </div>
         </div>
+
         <!-- Área de información y controles -->
         <div class="info-area">
+            <!-- Display de créditos -->
             <div class="credit-display" id="creditDisplay">CRÉDITOS: 0</div>
+
+            <!-- Opciones del juego -->
             <div class="game-options">
-                <div class="option">CONTINUAR</div>
-                <div class="option">CONTRA FLOR</div>
+                <!-- Las opciones del juego se generan dinámicamente -->
             </div>
         </div>
     </div>
+
+    <!-- Scripts -->
     <script src="script.js"></script>
 </body>
 </html>
