@@ -80,7 +80,7 @@ class Jugador {
     }
 
     elegirCarta() {
-        // Implementación para jugador humano: se manejará mediante eventos
+        // Implementación para jugador humano
         return null;
     }
 }
@@ -88,13 +88,11 @@ class Jugador {
 // Clase para representar la CPU
 class CPU extends Jugador {
     elegirCarta() {
-        // Implementación básica: elegir la primera carta
-        return this.mano.shift();
+        return this.mano.shift(); // Implementación básica
     }
 
     decidirApostar(envido) {
-        // Lógica básica: apostar si el envido es alto
-        return envido >= 25 ? 'Quiero' : 'No quiero';
+        return envido >= 25 ? 'Quiero' : 'No quiero'; // Lógica básica
     }
 }
 
@@ -143,11 +141,11 @@ class JuegoTruco {
     }
 
     actualizarCreditos() {
-        document.getElementById('creditDisplay').textContent = `CRÉDITOS: ${this.jugador.obtenerPuntos()}`;
+        const creditDisplay = document.getElementById('creditDisplay');
+        creditDisplay.textContent = `CRÉDITOS: ${this.jugador.obtenerPuntos()}`;
     }
 
     mostrarOpciones() {
-        // Aquí puedes cambiar las opciones según el turno
         const opciones = document.querySelector('.game-options');
         opciones.innerHTML = '';
 
@@ -158,41 +156,28 @@ class JuegoTruco {
                 <div class="option" id="florBtn">FLOR</div>
                 <div class="option" id="retirarseBtn">RETIRARSE</div>
             `;
-        } else {
-            opciones.innerHTML = `
-                <div class="option" id="cpuTrucoBtn">TRUCO</div>
-                <div class="option" id="cpuEnvidoBtn">ENVIDO</div>
-                <div class="option" id="cpuFlorBtn">FLOR</div>
-                <div class="option" id="cpuRetirarseBtn">RETIRARSE</div>
-            `;
         }
 
-        // Añadir event listeners a los nuevos botones
-        document.getElementById('trucoBtn').addEventListener('click', () => this.jugarTruco('jugador'));
-        document.getElementById('envidoBtn').addEventListener('click', () => this.jugarEnvido('jugador'));
-        document.getElementById('florBtn').addEventListener('click', () => this.jugarFlor('jugador'));
-        document.getElementById('retirarseBtn').addEventListener('click', () => this.retirarse('jugador'));
-
-        document.getElementById('cpuTrucoBtn').addEventListener('click', () => this.jugarTruco('cpu'));
-        document.getElementById('cpuEnvidoBtn').addEventListener('click', () => this.jugarEnvido('cpu'));
-        document.getElementById('cpuFlorBtn').addEventListener('click', () => this.jugarFlor('cpu'));
-        document.getElementById('cpuRetirarseBtn').addEventListener('click', () => this.retirarse('cpu'));
+        document.getElementById('trucoBtn')?.addEventListener('click', () => this.jugarTruco('jugador'));
+        document.getElementById('envidoBtn')?.addEventListener('click', () => this.jugarEnvido('jugador'));
+        document.getElementById('florBtn')?.addEventListener('click', () => this.jugarFlor('jugador'));
+        document.getElementById('retirarseBtn')?.addEventListener('click', () => this.retirarse('jugador'));
     }
 
     jugarTruco(jugador) {
-        // Implementar lógica de Truco
+        console.log(`${jugador} juega TRUCO`);
     }
 
     jugarEnvido(jugador) {
-        // Implementar lógica de Envido
+        console.log(`${jugador} juega ENVIDO`);
     }
 
     jugarFlor(jugador) {
-        // Implementar lógica de Flor
+        console.log(`${jugador} juega FLOR`);
     }
 
     retirarse(jugador) {
-        // Implementar lógica de retirarse
+        console.log(`${jugador} se retira`);
     }
 
     obtenerColorAleatorio() {
@@ -201,7 +186,7 @@ class JuegoTruco {
     }
 }
 
-// Ejemplo de uso
+// Inicializar el juego
 const jugador = new Jugador('Humano');
 const cpu = new CPU('CPU');
 const juego = new JuegoTruco(jugador, cpu);
