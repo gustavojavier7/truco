@@ -1,4 +1,4 @@
-// script.js v1.02
+// script.js v1.03
 
 let credits = 0;
 let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
@@ -88,11 +88,13 @@ class Jugador {
 // Clase para representar la CPU
 class CPU extends Jugador {
     elegirCarta() {
-        return this.mano.shift(); // Implementación básica
+        // Implementación básica: elegir la primera carta
+        return this.mano.shift();
     }
 
     decidirApostar(envido) {
-        return envido >= 25 ? 'Quiero' : 'No quiero'; // Lógica básica
+        // Lógica básica: apostar si el envido es alto
+        return envido >= 25 ? 'Quiero' : 'No quiero';
     }
 }
 
@@ -156,8 +158,13 @@ class JuegoTruco {
                 <div class="option" id="florBtn">FLOR</div>
                 <div class="option" id="retirarseBtn">RETIRARSE</div>
             `;
+        } else {
+            // Lógica para la CPU
+            this.jugarCPU();
+            return;
         }
 
+        // Añadir event listeners a los nuevos botones
         document.getElementById('trucoBtn')?.addEventListener('click', () => this.jugarTruco('jugador'));
         document.getElementById('envidoBtn')?.addEventListener('click', () => this.jugarEnvido('jugador'));
         document.getElementById('florBtn')?.addEventListener('click', () => this.jugarFlor('jugador'));
@@ -166,18 +173,40 @@ class JuegoTruco {
 
     jugarTruco(jugador) {
         console.log(`${jugador} juega TRUCO`);
+        // Implementar lógica de Truco
+        this.cambiarTurno();
     }
 
     jugarEnvido(jugador) {
         console.log(`${jugador} juega ENVIDO`);
+        // Implementar lógica de Envido
+        this.cambiarTurno();
     }
 
     jugarFlor(jugador) {
         console.log(`${jugador} juega FLOR`);
+        // Implementar lógica de Flor
+        this.cambiarTurno();
     }
 
     retirarse(jugador) {
         console.log(`${jugador} se retira`);
+        // Implementar lógica de retirarse
+        this.cambiarTurno();
+    }
+
+    cambiarTurno() {
+        this.turno = this.turno === 'jugador' ? 'cpu' : 'jugador';
+        this.mostrarOpciones();
+    }
+
+    jugarCPU() {
+        // Implementar lógica para la CPU
+        console.log('CPU juega');
+        // Simulación de acción de la CPU
+        setTimeout(() => {
+            this.cambiarTurno();
+        }, 1000);
     }
 
     obtenerColorAleatorio() {
