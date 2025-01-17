@@ -92,25 +92,21 @@ body {
 
 /* Patrón para Copas */
 .carta.copa {
-    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0MCIgZmlsbD0iI2ZmMDAwMCIgc3Ryb2tlPSJub25lIi8+PC9zdmc=');
-    background-size: 50%;
-    background-position: center;
-    background-repeat: no-repeat;
+    color: #FF0000; /* Copas: Rojo */
 }
 
 /* Patrón para Bastos */
 .carta.basto {
-    background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMuYmxvY2siIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8IS0tIEVuZCBVcCBFbnZpcm9ubWVudCBDb21wYW55IE1hcmtldCBDb25zdWx0aW5nIEVudHJ5IFNlcmlhbCAtLT4KICA8cGF0aCBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGN4PSIxLjUiIGN5PSIx.liIHI9IjEuNSIvPgo8L3N2Zz4=');
+    color: #008000; /* Bastos: Verde */
 }
 
 /* Patrón para Espadas */
 .carta.espada {
-    background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMuYmxvY2siIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8x.liAvbW0vIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8IS0tIEVuZCBVcCBFbnZpcm9ubWVudCBDb21wYW55IE1hcmtldCBDb25zdWx0aW5nIEVudHJ5IFNlcmlhbCAtLT4KICA8cGF0aCBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGN4PSIxLjUiIGN5PSIx.liIHI9IjEuNSIvPgo8L3N2Zz4=');
+    color: #0000FF; /* Espadas: Azul */
 }
 
-/* Patrón para Oros */
 .carta.oro {
-    background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMuYmxvY2siIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8x.liAvbW0vIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8IS0tIEVuZCBVcCBFbnZpcm9ubWVudCBDb21wYW55IE1hcmtldCBDb25zdWx0aW5nIEVudHJ5IFNlcmlhbCAtLT4KICA8cGF0aCBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGN4PSIx.liIGN5PSIx.liIHI9IjEuNSIvPgo8L3N2Zz4=');
+    color: #FFD700; /* Oro: Dorado */
 }
 
 /* Etiqueta de área */
