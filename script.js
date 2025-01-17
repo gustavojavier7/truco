@@ -122,25 +122,40 @@ class JuegoTruco {
         this.mostrarOpciones();
     }
 
-    mostrarCartas() {
-        const playerCardsContainer = document.querySelector('.player-cards');
-        playerCardsContainer.innerHTML = '';
-        this.jugador.mostrarMano().forEach(carta => {
-            const cartaDiv = document.createElement('div');
-            cartaDiv.classList.add('carta');
-            cartaDiv.style.backgroundColor = this.obtenerColorAleatorio();
-            cartaDiv.textContent = carta.obtenerNombre();
-            playerCardsContainer.appendChild(cartaDiv);
-        });
-
-        const cpuCardsContainer = document.querySelector('.cpu-cards');
-        cpuCardsContainer.innerHTML = '';
-        for (let i = 0; i < 3; i++) {
-            const cartaDiv = document.createElement('div');
-            cartaDiv.classList.add('carta-back');
-            cpuCardsContainer.appendChild(cartaDiv);
+   mostrarCartas() {
+    const playerCardsContainer = document.querySelector('.player-cards');
+    playerCardsContainer.innerHTML = '';
+    this.jugador.mostrarMano().forEach(carta => {
+        const cartaDiv = document.createElement('div');
+        cartaDiv.classList.add('carta');
+        // Añadimos la clase correspondiente al palo
+        switch(carta.palo.toLowerCase()) {
+            case 'oros':
+                cartaDiv.classList.add('oro');
+                break;
+            case 'copas':
+                cartaDiv.classList.add('copa');
+                break;
+            case 'espadas':
+                cartaDiv.classList.add('espada');
+                break;
+            case 'bastos':
+                cartaDiv.classList.add('basto');
+                break;
         }
+        cartaDiv.textContent = carta.obtenerNombre();
+        playerCardsContainer.appendChild(cartaDiv);
+    });
+
+    // El resto del código para las cartas del CPU permanece igual
+    const cpuCardsContainer = document.querySelector('.cpu-cards');
+    cpuCardsContainer.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+        const cartaDiv = document.createElement('div');
+        cartaDiv.classList.add('carta-back');
+        cpuCardsContainer.appendChild(cartaDiv);
     }
+}
 
     actualizarCreditos() {
         const creditDisplay = document.getElementById('creditDisplay');
