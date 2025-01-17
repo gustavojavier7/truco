@@ -128,7 +128,6 @@ class JuegoTruco {
     this.jugador.mostrarMano().forEach(carta => {
         const cartaDiv = document.createElement('div');
         cartaDiv.classList.add('carta');
-        // Agregamos el texto descriptivo del palo
         let paloAbreviado;
         switch (carta.palo.toLowerCase()) {
             case 'oros':
@@ -146,7 +145,6 @@ class JuegoTruco {
             default:
                 paloAbreviado = '?';
         }
-        // Mostrar el nombre y el palo
         cartaDiv.textContent = `${carta.obtenerNombre()} (${paloAbreviado})`;
         playerCardsContainer.appendChild(cartaDiv);
     });
@@ -160,7 +158,6 @@ class JuegoTruco {
         cpuCardsContainer.appendChild(cartaDiv);
     }
 }
-
     actualizarCreditos() {
         const creditDisplay = document.getElementById('creditDisplay');
         creditDisplay.textContent = `CRÉDITOS: ${this.jugador.obtenerPuntos()}`;
