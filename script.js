@@ -122,32 +122,36 @@ class JuegoTruco {
         this.mostrarOpciones();
     }
 
-   mostrarCartas() {
+  mostrarCartas() {
     const playerCardsContainer = document.querySelector('.player-cards');
     playerCardsContainer.innerHTML = '';
     this.jugador.mostrarMano().forEach(carta => {
         const cartaDiv = document.createElement('div');
         cartaDiv.classList.add('carta');
-        // Añadimos la clase correspondiente al palo
-        switch(carta.palo.toLowerCase()) {
+        // Agregamos el texto descriptivo del palo
+        let paloAbreviado;
+        switch (carta.palo.toLowerCase()) {
             case 'oros':
-                cartaDiv.classList.add('oro');
+                paloAbreviado = 'O';
                 break;
             case 'copas':
-                cartaDiv.classList.add('copa');
+                paloAbreviado = 'C';
                 break;
             case 'espadas':
-                cartaDiv.classList.add('espada');
+                paloAbreviado = 'E';
                 break;
             case 'bastos':
-                cartaDiv.classList.add('basto');
+                paloAbreviado = 'B';
                 break;
+            default:
+                paloAbreviado = '?';
         }
-        cartaDiv.textContent = carta.obtenerNombre();
+        // Mostrar el nombre y el palo
+        cartaDiv.textContent = `${carta.obtenerNombre()} (${paloAbreviado})`;
         playerCardsContainer.appendChild(cartaDiv);
     });
 
-    // El resto del código para las cartas del CPU permanece igual
+    // Cartas del CPU
     const cpuCardsContainer = document.querySelector('.cpu-cards');
     cpuCardsContainer.innerHTML = '';
     for (let i = 0; i < 3; i++) {
