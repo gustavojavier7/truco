@@ -92,10 +92,12 @@ class Jugador {
 
 // Clase para representar la CPU
 class CPU extends Jugador {
-    elegirCarta() {
-        // Implementación básica: elegir la primera carta
-        return this.mano.shift();
-    }
+   elegirCarta() {
+    return this.mano.reduce((mejorCarta, carta) => 
+        carta.obtenerValorTruco() > mejorCarta.obtenerValorTruco() ? carta : mejorCarta
+    );
+}
+
 
     decidirApostar(envido) {
         // Lógica básica: apostar si el envido es alto
