@@ -96,7 +96,7 @@ body {
     transition: transform 0.3s, border-color 0.3s;
     position: relative;
     z-index: 2; /* Asegúrate de que el z-index sea adecuado */
-    background-color: #FFFAF0; /* Beige casi blanco */
+    background-color: #F5FFFA;
     background-size: 20px 20px;
     background-repeat: repeat;
     cursor: pointer;
