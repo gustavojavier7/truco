@@ -226,8 +226,55 @@ class JuegoTruco {
 
     jugarEnvido(jugador) {
         console.log(`${jugador} juega ENVIDO`);
-        // Implementar lógica de Envido
+        
+        // Calcula el valor del Envido para el jugador
+        let valorEnvidoJugador = this.calcularEnvido(this.jugador.mostrarMano());
+        let valorEnvidoCPU = this.calcularEnvido(this.cpu.mostrarMano());
+        
+        // Aquí se debería implementar la lógica de apuestas
+        // Para simplificar, asumiremos que el jugador humano siempre quiere y la CPU decide basado en su valor de Envido
+        let respuestaCPU = this.cpu.decidirApostar(valorEnvidoCPU);
+        
+        if (respuestaCPU === 'Quiero') {
+            console.log('CPU acepta el Envido');
+            // Determinar el ganador del Envido
+            if (valorEnvidoJugador > valorEnvidoCPU) {
+                this.jugador.sumarPuntos(2); // Puntos por ganar el Envido
+                console.log('Jugador gana el Envido');
+            } else {
+                this.cpu.sumarPuntos(2); // Puntos por ganar el Envido
+                console.log('CPU gana el Envido');
+            }
+        } else {
+            console.log('CPU no quiere el Envido');
+            this.jugador.sumarPuntos(1); // Punto por rechazo del Envido
+        }
+
         this.cambiarTurno();
+    }
+
+    calcularEnvido(mano) {
+        // Función para calcular el valor del Envido
+        let valores = mano.map(carta => carta.valor);
+        let palos = mano.map(carta => carta.palo);
+        
+        let maxValor = Math.max(...valores.filter(valor => valor < 10)); // Ignoramos figuras (10, 11, 12)
+        
+        // Buscar dos cartas del mismo palo
+        let paloComun = palos.find(palo => palos.filter(p => p === palo).length >= 2);
+        if (paloComun) {
+            let cartasDelMismoPalo = mano.filter(carta => carta.palo === paloComun && carta.valor < 10);
+            if (cartasDelMismoPalo.length === 2) {
+                return cartasDelMismoPalo.reduce((sum, carta) => sum + carta.valor, 0) + 20;
+            } else if (cartasDelMismoPalo.length === 3) {
+                // Si son tres, usamos las dos más altas
+                let dosCartas = cartasDelMismoPalo.sort((a, b) => b.valor - a.valor).slice(0, 2);
+                return dosCartas.reduce((sum, carta) => sum + carta.valor, 0) + 20;
+            }
+        }
+        
+        // Si no hay dos cartas del mismo palo, el Envido es el valor de la carta más alta
+        return maxValor;
     }
 
     jugarFlor(jugador) {
