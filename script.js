@@ -128,28 +128,35 @@ class JuegoTruco {
     this.jugador.mostrarMano().forEach(carta => {
         const cartaDiv = document.createElement('div');
         cartaDiv.classList.add('carta');
-        let paloAbreviado;
-        switch (carta.palo.toLowerCase()) {
+        // Aquí añades la clase según el palo de la carta
+        switch(carta.palo.toLowerCase()) {
             case 'oros':
-                paloAbreviado = 'O';
+                cartaDiv.classList.add('oro');
                 break;
             case 'copas':
-                paloAbreviado = 'C';
+                cartaDiv.classList.add('copa');
                 break;
             case 'espadas':
-                paloAbreviado = 'E';
+                cartaDiv.classList.add('espada');
                 break;
             case 'bastos':
-                paloAbreviado = 'B';
+                cartaDiv.classList.add('basto');
                 break;
-            default:
-                paloAbreviado = '?';
         }
-        cartaDiv.textContent = `${carta.obtenerNombre()} (${paloAbreviado})`;
+        cartaDiv.textContent = `${carta.obtenerNombre()} (${carta.palo.charAt(0).toUpperCase()})`;
+
+        // Añadir el evento de clic
+        cartaDiv.addEventListener('click', function() {
+            // Remover la clase de selección de todas las cartas
+            document.querySelectorAll('.player-cards .carta').forEach(c => c.classList.remove('carta-seleccionada'));
+            // Añadir la clase de selección a la carta clicada
+            this.classList.add('carta-seleccionada');
+        });
+
         playerCardsContainer.appendChild(cartaDiv);
     });
 
-    // Cartas del CPU
+    // El resto del código para las cartas del CPU permanece igual
     const cpuCardsContainer = document.querySelector('.cpu-cards');
     cpuCardsContainer.innerHTML = '';
     for (let i = 0; i < 3; i++) {
@@ -158,6 +165,7 @@ class JuegoTruco {
         cpuCardsContainer.appendChild(cartaDiv);
     }
 }
+    
     actualizarCreditos() {
         const creditDisplay = document.getElementById('creditDisplay');
         creditDisplay.textContent = `CRÉDITOS: ${this.jugador.obtenerPuntos()}`;
