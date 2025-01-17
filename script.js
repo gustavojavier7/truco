@@ -31,12 +31,17 @@ class Carta {
 }
 
 // Clase para representar un mazo
+// Clase para representar un mazo
 class Mazo {
     constructor() {
         this.cartas = [];
         const palos = ['Espadas', 'Bastos', 'Copas', 'Oros'];
         for (let palo of palos) {
-            for (let valor = 1; valor <= 12; valor++) {
+            // Ajuste para 40 cartas: valores del 1 al 7 y del 10 al 12
+            for (let valor = 1; valor <= 7; valor++) {
+                this.cartas.push(new Carta(palo, valor));
+            }
+            for (let valor = 10; valor <= 12; valor++) {
                 this.cartas.push(new Carta(palo, valor));
             }
         }
