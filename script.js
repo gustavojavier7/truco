@@ -111,9 +111,11 @@ class JuegoTruco {
         this.jugador = jugador;
         this.cpu = cpu;
         this.mazo = new Mazo();
-        this.repartirCartas();
-        this.turno = 'jugador';
+        // Determina al azar quién será el mano
+        this.turno = Math.random() < 0.5 ? 'jugador' : 'cpu';
+        this.mano = this.turno === 'jugador' ? 'jugador' : 'cpu'; // El 'mano' es quien empieza
         this.trucoApostado = 1;
+        this.repartirCartas();
     }
 
     repartirCartas() {
