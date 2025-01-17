@@ -1,4 +1,4 @@
-/* styles.css */
+/* styles.css v1.04 */
 
 /* Estilos generales */
 body {
@@ -66,7 +66,25 @@ body {
 }
 
 /* Estilos de las cartas */
-.carta-back, .carta {
+.carta-back {
+    background-color: #008000; /* Fondo verde */
+    background-image: 
+        linear-gradient(to right, red 1px, transparent 1px), /* Líneas verticales */
+        linear-gradient(to bottom, red 1px, transparent 1px); /* Líneas horizontales */
+    background-size: 5px 5px; /* Separación de 5px entre líneas */
+    border: 0.2vw solid #0000FF; /* Borde azul */
+    border-radius: 1vw; /* Bordes redondeados */
+    width: 8vw;
+    height: 14.4vw;
+    margin: 0.5vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.3s, border-color 0.3s;
+    cursor: pointer;
+}
+
+.carta {
     width: 8vw;
     height: 14.4vw;
     margin: 0.5vw;
