@@ -128,9 +128,23 @@ class JuegoTruco {
     iniciarJuego() {
         this.mostrarCartas();
         this.actualizarCreditos();
+        
+        // Mostrar quién es el mano
+        const manoDisplay = document.createElement('div');
+        manoDisplay.id = 'manoDisplay';
+        manoDisplay.style.color = 'yellow'; // Usamos el mismo color que los créditos para consistencia
+        manoDisplay.style.fontSize = '1.5vw'; // Ajustamos el tamaño de fuente para que sea legible
+        if (this.mano === 'cpu') {
+            manoDisplay.textContent = 'Yo soy mano';
+        } else {
+            manoDisplay.textContent = 'Vos sos mano';
+        }
+        // Insertamos el mensaje justo después del display de créditos
+        document.querySelector('.info-area').insertBefore(manoDisplay, document.querySelector('.game-options'));
+
         this.mostrarOpciones();
     }
-
+    
   mostrarCartas() {
     const playerCardsContainer = document.querySelector('.player-cards');
     playerCardsContainer.innerHTML = '';
