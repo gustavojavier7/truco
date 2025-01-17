@@ -289,6 +289,32 @@ class JuegoTruco {
         document.getElementById('retirarseBtn')?.addEventListener('click', () => this.retirarse('jugador'));
     }
 
+    mostrarCartas() {
+        const cpuCardsContainer = document.querySelector('.cpu-cards');
+        const playerCardsContainer = document.querySelector('.player-cards');
+
+        cpuCardsContainer.innerHTML = '';
+        playerCardsContainer.innerHTML = '';
+
+        this.cpu.mostrarMano().forEach(carta => {
+            const cartaElement = document.createElement('div');
+            cartaElement.className = 'carta-back';
+            cpuCardsContainer.appendChild(cartaElement);
+        });
+
+        this.jugador.mostrarMano().forEach(carta => {
+            const cartaElement = document.createElement('div');
+            cartaElement.className = `carta ${carta.palo.toLowerCase()}`;
+            cartaElement.textContent = carta.obtenerNombre();
+            playerCardsContainer.appendChild(cartaElement);
+        });
+    }
+
+    actualizarCreditos() {
+        const creditDisplay = document.getElementById('creditDisplay');
+        creditDisplay.textContent = `CRÉDITOS: ${this.jugador.obtenerPuntos()}`;
+    }
+
     jugarTruco(jugador) {
         console.log(`${jugador} juega TRUCO`);
         // Lógica básica de Truco
