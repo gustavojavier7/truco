@@ -1,5 +1,3 @@
-// script.js v1.05
-
 let credits = 0;
 let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
 
@@ -30,7 +28,6 @@ class Carta {
     }
 }
 
-// Clase para representar un mazo
 // Clase para representar un mazo
 class Mazo {
     constructor() {
@@ -92,20 +89,25 @@ class Jugador {
 
 // Clase para representar la CPU
 class CPU extends Jugador {
-   elegirCarta() {
-    return this.mano.reduce((mejorCarta, carta) => 
-        carta.obtenerValorTruco() > mejorCarta.obtenerValorTruco() ? carta : mejorCarta
-    );
-}
-
+    elegirCarta() {
+        return this.mano.reduce((mejorCarta, carta) =>
+            carta.obtenerValorTruco() > mejorCarta.obtenerValorTruco() ? carta : mejorCarta
+        );
+    }
 
     decidirApostar(envido) {
         // Lógica básica: apostar si el envido es alto
         return envido >= 25 ? 'Quiero' : 'No quiero';
     }
+
+    decidirApostarTruco() {
+        // Lógica simple para decidir si aceptar el Truco
+        // Por ejemplo, si tiene cartas fuertes, acepta
+        const cartaMasAlta = this.elegirCarta();
+        return cartaMasAlta.obtenerValorTruco() >= 12 ? 'Quiero' : 'No quiero';
+    }
 }
 
-// Clase para representar el juego
 // Clase para representar el juego
 class JuegoTruco {
     constructor(jugador, cpu) {
@@ -145,7 +147,7 @@ class JuegoTruco {
     iniciarJuego() {
         this.mostrarCartas();
         this.actualizarCreditos();
-        
+
         // Mostrar quién es el mano
         const manoDisplay = document.createElement('div');
         manoDisplay.id = 'manoDisplay';
@@ -281,7 +283,7 @@ class JuegoTruco {
             return;
         }
 
-                // Añadir event listeners a los nuevos botones
+        // Añadir event listeners a los nuevos botones
         document.getElementById('trucoBtn')?.addEventListener('click', () => this.jugarTruco('jugador'));
         document.getElementById('envidoBtn')?.addEventListener('click', () => this.jugarEnvido('jugador'));
         document.getElementById('retirarseBtn')?.addEventListener('click', () => this.retirarse('jugador'));
@@ -289,20 +291,95 @@ class JuegoTruco {
 
     jugarTruco(jugador) {
         console.log(`${jugador} juega TRUCO`);
-        // Implementar lógica de Truco
-        this.cambiarTurno();
+        // Lógica básica de Truco
+        if (jugador === 'jugador') {
+            const respuestaCPU = this.cpu.decidirApostarTruco();
+            if (respuestaCPU === 'Quiero') {
+                this.trucoApostado = 2;
+                console.log('CPU acepta el Truco');
+                // Aquí se debería implementar la lógica de jugar los trucos
+            } else {
+                console.log('CPU no quiere el Truco');
+                this.jugador.sumarPuntos(1); // Punto por rechazo del Truco
+                this.cambiarTurno();
+            }
+        } else {
+            // Lógica para cuando la CPU juega Truco
+            const respuestaJugador = confirm('La CPU ha dicho Truco. ¿Quieres?');
+            if (respuestaJugador) {
+                this.trucoApostado = 2;
+                console.log('Jugador acepta el Truco');
+                // Aquí se debería implementar la lógica de jugar los trucos
+            } else {
+                console.log('Jugador no quiere el Truco');
+                this.cpu.sumarPuntos(1); // Punto por rechazo del Truco
+                this.cambiarTurno();
+            }
+        }
     }
 
     jugarEnvido(jugador) {
         console.log(`${jugador} juega ENVIDO`);
-        // Implementar lógica de Envido
+        // Lógica básica de Envido
+        if (jugador === 'jugador') {
+            const respuestaCPU = this.cpu.decidirApostar('envido');
+            if (respuestaCPU === 'Quiero') {
+                console.log('CPU acepta el Envido');
+                const valorEnvidoJugador = this.calcularEnvido(this.jugador);
+                const valorEnvidoCPU = this.calcularEnvido(this.cpu);
+                if (valorEnvidoJugador > valorEnvidoCPU) {
+                    this.jugador.sumarPuntos(2); // Puntos por ganar el Envido
+                    console.log('Jugador gana el Envido');
+                } else {
+                    this.cpu.sumarPuntos(2); // Puntos por ganar el Envido
+                    console.log('CPU gana el Envido');
+                }
+            } else {
+                console.log('CPU no quiere el Envido');
+                this.jugador.sumarPuntos(1); // Punto por rechazo del Envido
+            }
+        } else {
+            // Lógica para cuando la CPU juega Envido
+            const respuestaJugador = confirm('La CPU ha dicho Envido. ¿Quieres?');
+            if (respuestaJugador) {
+                console.log('Jugador acepta el Envido');
+                const valorEnvidoJugador = this.calcularEnvido(this.jugador);
+                const valorEnvidoCPU = this.calcularEnvido(this.cpu);
+                if (valorEnvidoJugador > valorEnvidoCPU) {
+                    this.jugador.sumarPuntos(2); // Puntos por ganar el Envido
+                    console.log('Jugador gana el Envido');
+                } else {
+                    this.cpu.sumarPuntos(2); // Puntos por ganar el Envido
+                    console.log('CPU gana el Envido');
+                }
+            } else {
+                console.log('Jugador no quiere el Envido');
+                this.cpu.sumarPuntos(1); // Punto por rechazo del Envido
+            }
+        }
         this.cambiarTurno();
     }
 
-    retirarse(jugador) {
-        console.log(`${jugador} se retira`);
-        // Implementar lógica de retirarse
-        this.cambiarTurno();
+    calcularEnvido(jugador) {
+        const mano = jugador.mostrarMano();
+        let valores = mano.map(carta => carta.valor <= 7 ? carta.valor : 0);
+        let palos = mano.map(carta => carta.palo);
+
+        let maxPalo = palos.reduce((max, palo, index) => {
+            if (palos.filter(p => p === palo).length > 1) {
+                return palo;
+            }
+            return max;
+        }, null);
+
+        if (maxPalo) {
+            let cartasDelMismoPalo = valores.filter((_, index) => palos[index] === maxPalo);
+            if (cartasDelMismoPalo.length >= 2) {
+                return Math.max(...cartasDelMismoPalo.slice(0, 2)) + 20;
+            }
+        }
+
+        return Math.max(...valores);
     }
 
     cambiarTurno() {
@@ -333,7 +410,7 @@ class JuegoTruco {
         // Por ahora, simulamos decisiones básicas
         const acciones = ['truco', 'envido', 'retirarse'];
         const decision = acciones[Math.floor(Math.random() * acciones.length)];
-        
+
         switch(decision) {
             case 'truco':
                 this.jugarTruco('cpu');
@@ -361,6 +438,7 @@ class JuegoTruco {
         return valorFlorCPU >= valorFlorOponente ? 'Quiero' : 'No quiero';
     };
 }
+
 // Inicializar el juego
 const jugador = new Jugador('Humano');
 const cpu = new CPU('CPU');
