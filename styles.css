@@ -157,10 +157,8 @@ body {
     background-color: #008000;
     border-left: 2px solid white;
     padding-top: 1vw;
-    /* Ajustes para pantallas más pequeñas */
-    @media (max-width: 800px) {
-        width: 25%;
-    }
+    gap: 1vw; /* Añade espacio entre los elementos hijos */
+}
     @media (max-width: 600px) {
         width: 100%;
         border-left: none;
