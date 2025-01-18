@@ -393,8 +393,6 @@ class ClaseJuegoTruco {
 
     // Iniciar el juego
     juego.iniciarJuego();
-
-
         this.actualizarCreditos();
         this.cambiarTurno();
     }
