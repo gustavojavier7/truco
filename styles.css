@@ -1,4 +1,4 @@
-/* styles.css */
+/* styles.css v100 */
 
 /* Estilos generales */
 body {
@@ -68,7 +68,7 @@ body {
 /* Estilos de las cartas */
 .carta-back {
     background-color: #008000; /* Fondo verde */
-    background-image: 
+    background-image:
         linear-gradient(to right, red 1px, transparent 1px), /* Líneas verticales */
         linear-gradient(to bottom, red 1px, transparent 1px); /* Líneas horizontales */
     background-size: 5px 5px; /* Separación de 5px entre líneas */
@@ -209,4 +209,9 @@ body {
 .option:hover {
     background-color: #45a049;
     transform: scale(1.05);
+}
+
+/* Estilos para la carta seleccionada */
+.carta-seleccionada {
+    border-color: yellow !important; /* Asegúrate de que este estilo sobrescriba otros */
 }
