@@ -389,7 +389,6 @@ class JuegoTruco {
 }
 
 // Inicializar el juego
-const jugador = new Jugador('Humano');
 const cpu = new CPU('CPU');
 const juego = new JuegoTruco(jugador, cpu);
 juego.iniciarJuego();
