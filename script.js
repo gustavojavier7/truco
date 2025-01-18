@@ -1,8 +1,8 @@
 let credits = 0;
 let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
 
-// Clase para representar una carta
-class Carta {
+// ClaseClase para representar una carta
+class ClaseCarta {
     constructor(palo, valor) {
         this.palo = palo; // Espadas, Bastos, Copas, Oros
         this.valor = valor; // 1-12 (1: As, 10: Sota, 11: Caballo, 12: Rey)
@@ -28,18 +28,18 @@ class Carta {
     }
 }
 
-// Clase para representar un mazo
-class Mazo {
+// ClaseClase para representar un mazo
+class ClaseMazo {
     constructor() {
         this.cartas = [];
         const palos = ['Espadas', 'Bastos', 'Copas', 'Oros'];
         for (let palo of palos) {
             // Ajuste para 40 cartas: valores del 1 al 7 y del 10 al 12
             for (let valor = 1; valor <= 7; valor++) {
-                this.cartas.push(new Carta(palo, valor));
+                this.cartas.push(new ClaseCarta(palo, valor));
             }
             for (let valor = 10; valor <= 12; valor++) {
-                this.cartas.push(new Carta(palo, valor));
+                this.cartas.push(new ClaseCarta(palo, valor));
             }
         }
         this.barajar();
@@ -57,8 +57,8 @@ class Mazo {
     }
 }
 
-// Clase para representar un jugador
-class Jugador {
+// ClaseClase para representar un jugador
+class ClaseJugador {
     constructor(nombre) {
         this.nombre = nombre;
         this.mano = [];
@@ -97,8 +97,8 @@ class Jugador {
     }
 }
 
-// Clase para representar la CPU
-class CPU extends Jugador {
+// ClaseClase para representar la CPU
+class ClaseCPU extends ClaseJugador {
     elegirCarta() {
         // Implementación básica: elegir la primera carta
         return this.mano.shift();
@@ -120,12 +120,12 @@ class CPU extends Jugador {
     }
 }
 
-// Clase para representar el juego
-class JuegoTruco {
+// ClaseClase para representar el juego
+class ClaseJuegoTruco {
     constructor(jugador, cpu) {
         this.jugador = jugador;
         this.cpu = cpu;
-        this.mazo = new Mazo();
+        this.mazo = new ClaseMazo();
         // Determina al azar quién será el mano
         this.turno = Math.random() < 0.5 ? 'jugador' : 'cpu';
         this.mano = this.turno === 'jugador' ? 'jugador' : 'cpu'; // El 'mano' es quien empieza
@@ -331,70 +331,70 @@ class JuegoTruco {
         this.cambiarTurno();
     }
 
-   jugarEnvido(jugador) {
-    console.log(`${jugador} juega ENVIDO`);
+    jugarEnvido(jugador) {
+        console.log(`${jugador} juega ENVIDO`);
 
-    // Calcular valores del Envido
-    let valorEnvidoJugador = this.calcularEnvido(this.jugador.mostrarMano());
-    let valorEnvidoCPU = this.calcularEnvido(this.cpu.mostrarMano());
+        // Calcular valores del Envido
+        let valorEnvidoJugador = this.calcularEnvido(this.jugador.mostrarMano());
+        let valorEnvidoCPU = this.calcularEnvido(this.cpu.mostrarMano());
 
-    // Inicializar apuesta
-    let apuestaActual = 2; // Envido vale inicialmente 2 puntos
-    let envidoActivo = true; // Control del flujo de apuestas
+        // Inicializar apuesta
+        let apuestaActual = 2; // Envido vale inicialmente 2 puntos
+        let envidoActivo = true; // Control del flujo de apuestas
 
-    this.mostrarMensaje(`Envido iniciado. Jugador: ${valorEnvidoJugador}, CPU: ${valorEnvidoCPU}`);
+        this.mostrarMensaje(`Envido iniciado. Jugador: ${valorEnvidoJugador}, CPU: ${valorEnvidoCPU}`);
 
-    // Ciclo de apuestas
-    while (envidoActivo) {
-        if (jugador === 'jugador') {
-            // Simulación: siempre apuesta un Real Envido
-            let deseaAumentar = confirm('¿Deseas aumentar la apuesta (Real Envido o Falta Envido)?');
-            if (deseaAumentar) {
-                apuestaActual += 2; // Incremento por Real Envido
-                this.mostrarMensaje(`Jugador aumenta la apuesta a ${apuestaActual}`);
-            } else {
-                envidoActivo = false;
-                this.mostrarMensaje('Jugador no aumenta la apuesta');
-            }
-        }
-
-        // Respuesta de la CPU
-        let respuestaCPU = this.cpu.decidirApostar(valorEnvidoCPU);
-        if (respuestaCPU === 'Quiero') {
-            this.mostrarMensaje(`CPU acepta la apuesta de ${apuestaActual}`);
+        // Ciclo de apuestas
+        while (envidoActivo) {
             if (jugador === 'jugador') {
-                jugador = 'cpu'; // Cambiar turno de apuesta
-            } else {
-                envidoActivo = false; // CPU no puede aumentar en esta lógica básica
+                // Simulación: siempre apuesta un Real Envido
+                let deseaAumentar = confirm('¿Deseas aumentar la apuesta (Real Envido o Falta Envido)?');
+                if (deseaAumentar) {
+                    apuestaActual += 2; // Incremento por Real Envido
+                    this.mostrarMensaje(`Jugador aumenta la apuesta a ${apuestaActual}`);
+                } else {
+                    envidoActivo = false;
+                    this.mostrarMensaje('Jugador no aumenta la apuesta');
+                }
             }
-        } else {
-            this.mostrarMensaje('CPU no quiere la apuesta');
-            this.jugador.sumarPuntos(1); // Punto por rechazo
-            this.actualizarCreditos();
-            return this.cambiarTurno();
+
+            // Respuesta de la CPU
+            let respuestaCPU = this.cpu.decidirApostar(valorEnvidoCPU);
+            if (respuestaCPU === 'Quiero') {
+                this.mostrarMensaje(`CPU acepta la apuesta de ${apuestaActual}`);
+                if (jugador === 'jugador') {
+                    jugador = 'cpu'; // Cambiar turno de apuesta
+                } else {
+                    envidoActivo = false; // CPU no puede aumentar en esta lógica básica
+                }
+            } else {
+                this.mostrarMensaje('CPU no quiere la apuesta');
+                this.jugador.sumarPuntos(1); // Punto por rechazo
+                this.actualizarCreditos();
+                return this.cambiarTurno();
+            }
         }
+
+        // Resolver el Envido
+        if (valorEnvidoJugador > valorEnvidoCPU) {
+            this.jugador.sumarPuntos(apuestaActual);
+            this.mostrarMensaje(`Jugador gana el Envido y suma ${apuestaActual} puntos`);
+        } else {
+            this.cpu.sumarPuntos(apuestaActual);
+            this.mostrarMensaje(`CPU gana el Envido y suma ${apuestaActual} puntos`);
+        }
+
+        this.actualizarCreditos();
+        this.cambiarTurno();
     }
 
-    // Resolver el Envido
-    if (valorEnvidoJugador > valorEnvidoCPU) {
-        this.jugador.sumarPuntos(apuestaActual);
-        this.mostrarMensaje(`Jugador gana el Envido y suma ${apuestaActual} puntos`);
-    } else {
-        this.cpu.sumarPuntos(apuestaActual);
-        this.mostrarMensaje(`CPU gana el Envido y suma ${apuestaActual} puntos`);
-    }
+    // Crear instancias de los jugadores
+    const jugador = new ClaseJugador('Humano'); // Define el jugador humano
+    const cpu = new ClaseCPU('CPU'); // Define la CPU
 
-    this.actualizarCreditos();
-    this.cambiarTurno();
+    // Crear instancia del juego
+    const juego = new ClaseJuegoTruco(jugador, cpu);
+
+    // Iniciar el juego
+    juego.iniciarJuego();
 }
-
-// Crear instancias de los jugadores
-const jugador = new Jugador('Humano'); // Define el jugador humano
-const cpu = new CPU('CPU'); // Define la CPU
-
-// Crear instancia del juego
-const juego = new JuegoTruco(jugador, cpu);
-
-// Iniciar el juego
-juego.iniciarJuego();
-
