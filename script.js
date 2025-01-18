@@ -331,89 +331,61 @@ class JuegoTruco {
         this.cambiarTurno();
     }
 
-    jugarEnvido(jugador) {
-        console.log(`${jugador} juega ENVIDO`);
+   jugarEnvido(jugador) {
+    console.log(`${jugador} juega ENVIDO`);
 
-        // Calcula el valor del Envido para el jugador
-        let valorEnvidoJugador = this.calcularEnvido(this.jugador.mostrarMano());
-        let valorEnvidoCPU = this.calcularEnvido(this.cpu.mostrarMano());
+    // Calcular valores del Envido
+    let valorEnvidoJugador = this.calcularEnvido(this.jugador.mostrarMano());
+    let valorEnvidoCPU = this.calcularEnvido(this.cpu.mostrarMano());
 
-        // Aquí se debería implementar la lógica de apuestas
-        // Para simplificar, asumiremos que el jugador humano siempre quiere y la CPU decide basado en su valor de Envido
-        let respuestaCPU = this.cpu.decidirApostar(valorEnvidoCPU);
+    // Inicializar apuesta
+    let apuestaActual = 2; // Envido vale inicialmente 2 puntos
+    let envidoActivo = true; // Control del flujo de apuestas
 
-        if (respuestaCPU === 'Quiero') {
-            console.log('CPU acepta el Envido');
-            // Determinar el ganador del Envido
-            if (valorEnvidoJugador > valorEnvidoCPU) {
-                this.jugador.sumarPuntos(2); // Puntos por ganar el Envido
-                console.log('Jugador gana el Envido');
+    this.mostrarMensaje(`Envido iniciado. Jugador: ${valorEnvidoJugador}, CPU: ${valorEnvidoCPU}`);
+
+    // Ciclo de apuestas
+    while (envidoActivo) {
+        if (jugador === 'jugador') {
+            // Simulación: siempre apuesta un Real Envido
+            let deseaAumentar = confirm('¿Deseas aumentar la apuesta (Real Envido o Falta Envido)?');
+            if (deseaAumentar) {
+                apuestaActual += 2; // Incremento por Real Envido
+                this.mostrarMensaje(`Jugador aumenta la apuesta a ${apuestaActual}`);
             } else {
-                this.cpu.sumarPuntos(2); // Puntos por ganar el Envido
-                console.log('CPU gana el Envido');
+                envidoActivo = false;
+                this.mostrarMensaje('Jugador no aumenta la apuesta');
+            }
+        }
+
+        // Respuesta de la CPU
+        let respuestaCPU = this.cpu.decidirApostar(valorEnvidoCPU);
+        if (respuestaCPU === 'Quiero') {
+            this.mostrarMensaje(`CPU acepta la apuesta de ${apuestaActual}`);
+            if (jugador === 'jugador') {
+                jugador = 'cpu'; // Cambiar turno de apuesta
+            } else {
+                envidoActivo = false; // CPU no puede aumentar en esta lógica básica
             }
         } else {
-            console.log('CPU no quiere el Envido');
-            this.jugador.sumarPuntos(1); // Punto por rechazo del Envido
+            this.mostrarMensaje('CPU no quiere la apuesta');
+            this.jugador.sumarPuntos(1); // Punto por rechazo
+            this.actualizarCreditos();
+            return this.cambiarTurno();
         }
-
-        this.cambiarTurno();
     }
 
-    calcularEnvido(mano) {
-        // Función para calcular el valor del Envido
-        let valores = mano.map(carta => carta.valor);
-        let palos = mano.map(carta => carta.palo);
-
-        let maxValor = Math.max(...valores.filter(valor => valor < 10)); // Ignoramos figuras (10, 11, 12)
-
-        // Buscar dos cartas del mismo palo
-        let paloComun = palos.find(palo => palos.filter(p => p === palo).length >= 2);
-        if (paloComun) {
-            let cartasDelMismoPalo = mano.filter(carta => carta.palo === paloComun && carta.valor < 10);
-            if (cartasDelMismoPalo.length === 2) {
-                return cartasDelMismoPalo.reduce((sum, carta) => sum + carta.valor, 0) + 20;
-            } else if (cartasDelMismoPalo.length === 3) {
-                // Si son tres, usamos las dos más altas
-                let dosCartas = cartasDelMismoPalo.sort((a, b) => b.valor - a.valor).slice(0, 2);
-                return dosCartas.reduce((sum, carta) => sum + carta.valor, 0) + 20;
-            }
-        }
-
-        // Si no hay dos cartas del mismo palo, el Envido es el valor de la carta más alta
-        return maxValor;
+    // Resolver el Envido
+    if (valorEnvidoJugador > valorEnvidoCPU) {
+        this.jugador.sumarPuntos(apuestaActual);
+        this.mostrarMensaje(`Jugador gana el Envido y suma ${apuestaActual} puntos`);
+    } else {
+        this.cpu.sumarPuntos(apuestaActual);
+        this.mostrarMensaje(`CPU gana el Envido y suma ${apuestaActual} puntos`);
     }
 
-    jugarFlor(jugador) {
-        console.log(`${jugador} juega FLOR`);
-        // Implementar lógica de Flor
-        this.cambiarTurno();
-    }
-
-    retirarse(jugador) {
-        console.log(`${jugador} se retira`);
-        // Implementar lógica de retirarse
-        this.cambiarTurno();
-    }
-
-    cambiarTurno() {
-        this.turno = this.turno === 'jugador' ? 'cpu' : 'jugador';
-        this.mostrarOpciones();
-    }
-
-    jugarCPU() {
-        // Implementar lógica para la CPU
-        console.log('CPU juega');
-        // Simulación de acción de la CPU
-        setTimeout(() => {
-            this.cambiarTurno();
-        }, 1000);
-    }
-
-    obtenerColorAleatorio() {
-        const colores = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
-        return colores[Math.floor(Math.random() * colores.length)];
-    }
+    this.actualizarCreditos();
+    this.cambiarTurno();
 }
 
 // Inicializar el juego
