@@ -1,5 +1,3 @@
-// script.js v1.05
-
 let credits = 0;
 let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
 
@@ -161,7 +159,7 @@ class JuegoTruco {
     iniciarJuego() {
         this.mostrarCartas();
         this.actualizarCreditos();
-        
+
         // Mostrar quién es el mano
         const manoDisplay = document.getElementById('manoDisplay');
         manoDisplay.textContent = this.mano === 'cpu' ? 'Yo soy mano' : 'Vos sos mano';
@@ -265,6 +263,37 @@ class JuegoTruco {
         return 0;
     }
 
+    mostrarCartas() {
+        const cpuContainer = document.querySelector('.cpu-cards');
+        const playerContainer = document.querySelector('.player-cards');
+
+        // Limpiar contenedores antes de añadir nuevas cartas
+        cpuContainer.innerHTML = '<div class="area-label">CPU</div>';
+        playerContainer.innerHTML = '<div class="area-label">JUGADOR</div>';
+
+        // Mostrar cartas del CPU (boca abajo)
+        this.cpu.mostrarMano().forEach(() => {
+            const cartaBack = document.createElement('div');
+            cartaBack.className = 'carta-back';
+            cpuContainer.appendChild(cartaBack);
+        });
+
+        // Mostrar cartas del jugador (boca arriba)
+        this.jugador.mostrarMano().forEach((carta) => {
+            const cartaElement = document.createElement('div');
+            cartaElement.className = `carta ${carta.palo.toLowerCase()}`;
+            cartaElement.textContent = `${carta.obtenerNombre()} de ${carta.palo}`;
+            playerContainer.appendChild(cartaElement);
+        });
+
+        // Actualizar créditos
+        this.actualizarCreditos();
+    }
+
+    actualizarCreditos() {
+        document.getElementById('creditDisplay').textContent = `CRÉDITOS: ${this.jugador.obtenerPuntos()}`;
+    }
+
     mostrarOpciones() {
         const opciones = document.querySelector('.game-options');
         opciones.innerHTML = '';
@@ -297,15 +326,15 @@ class JuegoTruco {
 
     jugarEnvido(jugador) {
         console.log(`${jugador} juega ENVIDO`);
-        
+
         // Calcula el valor del Envido para el jugador
         let valorEnvidoJugador = this.calcularEnvido(this.jugador.mostrarMano());
         let valorEnvidoCPU = this.calcularEnvido(this.cpu.mostrarMano());
-        
+
         // Aquí se debería implementar la lógica de apuestas
         // Para simplificar, asumiremos que el jugador humano siempre quiere y la CPU decide basado en su valor de Envido
-        let respuestaCPU = this.cpu.decidirApostar(envido);
-        
+        let respuestaCPU = this.cpu.decidirApostar(valorEnvidoCPU);
+
         if (respuestaCPU === 'Quiero') {
             console.log('CPU acepta el Envido');
             // Determinar el ganador del Envido
@@ -328,9 +357,9 @@ class JuegoTruco {
         // Función para calcular el valor del Envido
         let valores = mano.map(carta => carta.valor);
         let palos = mano.map(carta => carta.palo);
-        
+
         let maxValor = Math.max(...valores.filter(valor => valor < 10)); // Ignoramos figuras (10, 11, 12)
-        
+
         // Buscar dos cartas del mismo palo
         let paloComun = palos.find(palo => palos.filter(p => p === palo).length >= 2);
         if (paloComun) {
@@ -343,7 +372,7 @@ class JuegoTruco {
                 return dosCartas.reduce((sum, carta) => sum + carta.valor, 0) + 20;
             }
         }
-        
+
         // Si no hay dos cartas del mismo palo, el Envido es el valor de la carta más alta
         return maxValor;
     }
