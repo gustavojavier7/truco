@@ -1,3 +1,5 @@
+// script.js v1.05
+
 let credits = 0;
 let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
 
@@ -85,26 +87,38 @@ class Jugador {
         // Implementación para jugador humano
         return null;
     }
+
+    decidirAnunciarFlor(valorFlor) {
+        // Implementación básica: siempre quiere anunciar la Flor
+        return true;
+    }
+
+    decidirApostarFlor(valorFlor) {
+        // Implementación básica: siempre quiere
+        return 'Quiero';
+    }
 }
 
 // Clase para representar la CPU
 class CPU extends Jugador {
     elegirCarta() {
-        return this.mano.reduce((mejorCarta, carta) =>
-            carta.obtenerValorTruco() > mejorCarta.obtenerValorTruco() ? carta : mejorCarta
-        );
+        // Implementación básica: elegir la primera carta
+        return this.mano.shift();
+    }
+
+    decidirAnunciarFlor(valorFlor) {
+        // Implementación básica: decide aleatoriamente si anuncia la Flor
+        return Math.random() < 0.5;
+    }
+
+    decidirApostarFlor(valorFlor) {
+        // Implementación básica: decide aleatoriamente si quiere la Flor
+        return Math.random() < 0.5 ? 'Quiero' : 'No quiero';
     }
 
     decidirApostar(envido) {
         // Lógica básica: apostar si el envido es alto
         return envido >= 25 ? 'Quiero' : 'No quiero';
-    }
-
-    decidirApostarTruco() {
-        // Lógica simple para decidir si aceptar el Truco
-        // Por ejemplo, si tiene cartas fuertes, acepta
-        const cartaMasAlta = this.elegirCarta();
-        return cartaMasAlta.obtenerValorTruco() >= 12 ? 'Quiero' : 'No quiero';
     }
 }
 
@@ -147,19 +161,11 @@ class JuegoTruco {
     iniciarJuego() {
         this.mostrarCartas();
         this.actualizarCreditos();
-
+        
         // Mostrar quién es el mano
-        const manoDisplay = document.createElement('div');
-        manoDisplay.id = 'manoDisplay';
-        manoDisplay.style.color = 'yellow';
-        manoDisplay.style.fontSize = '1.5vw';
-        if (this.mano === 'cpu') {
-            manoDisplay.textContent = 'Yo soy mano';
-        } else {
-            manoDisplay.textContent = 'Vos sos mano';
-        }
-        // Insertamos el mensaje justo después del display de créditos
-        document.querySelector('.info-area').insertBefore(manoDisplay, document.querySelector('.game-options'));
+        const manoDisplay = document.getElementById('manoDisplay');
+        manoDisplay.textContent = this.mano === 'cpu' ? 'Yo soy mano' : 'Vos sos mano';
+        manoDisplay.style.display = 'block';
 
         // Manejar la Flor
         this.manejarFlor();
@@ -169,8 +175,14 @@ class JuegoTruco {
         if (this.florJugador) {
             // El jugador tiene Flor
             console.log('El jugador tiene Flor');
-            // Mostrar un cuadro de diálogo para que el jugador decida si anuncia la Flor
-            this.preguntarAnunciarFlor('jugador');
+            // Mostrar el botón para anunciar la Flor
+            document.getElementById('florAnnouncement').style.display = 'block';
+            // Añadir un event listener al botón
+            document.getElementById('anunciarFlorBtn').addEventListener('click', () => {
+                this.anunciarFlor('jugador');
+                // Ocultar el botón después de anunciar la Flor
+                document.getElementById('florAnnouncement').style.display = 'none';
+            });
         } else if (this.florCPU) {
             // La CPU tiene Flor
             console.log('La CPU tiene Flor');
@@ -188,19 +200,6 @@ class JuegoTruco {
         }
     }
 
-    preguntarAnunciarFlor(jugador) {
-        if (jugador === 'jugador') {
-            // Mostrar un cuadro de diálogo al jugador
-            const anuncio = confirm('¿Deseas anunciar la Flor?');
-            if (anuncio) {
-                this.anunciarFlor('jugador');
-            } else {
-                // El jugador decide no anunciar la Flor, procedemos con Envido o Truco
-                this.mostrarOpciones();
-            }
-        }
-    }
-
     anunciarFlor(jugador) {
         if (jugador === 'jugador') {
             // El jugador anuncia la Flor
@@ -213,8 +212,7 @@ class JuegoTruco {
             if (respuestaCPU === 'Quiero') {
                 console.log('CPU quiere la Flor');
                 // Determinar el ganador de la Flor
-                const valorFlorCPU = this.calcularValorFlor(this.cpu);
-                if (valorFlor > valorFlorCPU) {
+                if (valorFlor > this.calcularValorFlor(this.cpu)) {
                     this.jugador.sumarPuntos(3); // Puntos por ganar la Flor
                     console.log('Jugador gana la Flor');
                 } else {
@@ -232,12 +230,11 @@ class JuegoTruco {
             const valorFlorCPU = this.calcularValorFlor(this.cpu);
             console.log(`Valor de la Flor de la CPU: ${valorFlorCPU}`);
             // El jugador decide si quiere la Flor
-            const respuestaJugador = confirm(`La CPU ha anunciado Flor con un valor de ${valorFlorCPU}. ¿Quieres?`);
-            if (respuestaJugador) {
+            const respuestaJugador = this.jugador.decidirApostarFlor(valorFlorCPU);
+            if (respuestaJugador === 'Quiero') {
                 console.log('Jugador quiere la Flor');
                 // Determinar el ganador de la Flor
-                const valorFlorJugador = this.calcularValorFlor(this.jugador);
-                if (valorFlorJugador > valorFlorCPU) {
+                if (this.calcularValorFlor(this.jugador) > valorFlorCPU) {
                     this.jugador.sumarPuntos(3); // Puntos por ganar la Flor
                     console.log('Jugador gana la Flor');
                 } else {
@@ -249,22 +246,23 @@ class JuegoTruco {
                 this.cpu.sumarPuntos(3); // Puntos por la Flor no aceptada
             }
         }
-        // Actualizar créditos después de resolver la Flor
-        this.actualizarCreditos();
-        // Proceder con las opciones de juego después de manejar Flor
-        this.mostrarOpciones();
     }
 
     calcularValorFlor(jugador) {
         const mano = jugador.mostrarMano();
-        const valores = mano.map(carta => {
-            if (carta.valor <= 7) {
-                return carta.valor;
-            } else {
-                return 0; // Figuras (10, 11, 12) valen 0 en la Flor
-            }
+        const valores = mano.map(carta => carta.valor);
+        const palos = mano.map(carta => carta.palo);
+        const frecuencia = {};
+        palos.forEach(palo => {
+            frecuencia[palo] = (frecuencia[palo] || 0) + 1;
         });
-        return valores.reduce((sum, valor) => sum + valor, 0) + 20;
+        for (let palo in frecuencia) {
+            if (frecuencia[palo] === 3) {
+                const cartasDelMismoPalo = mano.filter(carta => carta.palo === palo);
+                return cartasDelMismoPalo.reduce((sum, carta) => sum + carta.valor, 0) + 20;
+            }
+        }
+        return 0;
     }
 
     mostrarOpciones() {
@@ -275,6 +273,7 @@ class JuegoTruco {
             opciones.innerHTML = `
                 <div class="option" id="trucoBtn">TRUCO</div>
                 <div class="option" id="envidoBtn">ENVIDO</div>
+                <div class="option" id="florBtn">FLOR</div>
                 <div class="option" id="retirarseBtn">RETIRARSE</div>
             `;
         } else {
@@ -286,126 +285,79 @@ class JuegoTruco {
         // Añadir event listeners a los nuevos botones
         document.getElementById('trucoBtn')?.addEventListener('click', () => this.jugarTruco('jugador'));
         document.getElementById('envidoBtn')?.addEventListener('click', () => this.jugarEnvido('jugador'));
+        document.getElementById('florBtn')?.addEventListener('click', () => this.jugarFlor('jugador'));
         document.getElementById('retirarseBtn')?.addEventListener('click', () => this.retirarse('jugador'));
-    }
-
-    mostrarCartas() {
-        const cpuCardsContainer = document.querySelector('.cpu-cards');
-        const playerCardsContainer = document.querySelector('.player-cards');
-
-        cpuCardsContainer.innerHTML = '';
-        playerCardsContainer.innerHTML = '';
-
-        this.cpu.mostrarMano().forEach(carta => {
-            const cartaElement = document.createElement('div');
-            cartaElement.className = 'carta-back';
-            cpuCardsContainer.appendChild(cartaElement);
-        });
-
-        this.jugador.mostrarMano().forEach(carta => {
-            const cartaElement = document.createElement('div');
-            cartaElement.className = `carta ${carta.palo.toLowerCase()}`;
-            cartaElement.textContent = carta.obtenerNombre();
-            playerCardsContainer.appendChild(cartaElement);
-        });
-    }
-
-    actualizarCreditos() {
-        const creditDisplay = document.getElementById('creditDisplay');
-        creditDisplay.textContent = `CRÉDITOS: ${this.jugador.obtenerPuntos()}`;
     }
 
     jugarTruco(jugador) {
         console.log(`${jugador} juega TRUCO`);
-        // Lógica básica de Truco
-        if (jugador === 'jugador') {
-            const respuestaCPU = this.cpu.decidirApostarTruco();
-            if (respuestaCPU === 'Quiero') {
-                this.trucoApostado = 2;
-                console.log('CPU acepta el Truco');
-                // Aquí se debería implementar la lógica de jugar los trucos
-            } else {
-                console.log('CPU no quiere el Truco');
-                this.jugador.sumarPuntos(1); // Punto por rechazo del Truco
-                this.cambiarTurno();
-            }
-        } else {
-            // Lógica para cuando la CPU juega Truco
-            const respuestaJugador = confirm('La CPU ha dicho Truco. ¿Quieres?');
-            if (respuestaJugador) {
-                this.trucoApostado = 2;
-                console.log('Jugador acepta el Truco');
-                // Aquí se debería implementar la lógica de jugar los trucos
-            } else {
-                console.log('Jugador no quiere el Truco');
-                this.cpu.sumarPuntos(1); // Punto por rechazo del Truco
-                this.cambiarTurno();
-            }
-        }
+        // Implementar lógica de Truco
+        this.cambiarTurno();
     }
 
     jugarEnvido(jugador) {
         console.log(`${jugador} juega ENVIDO`);
-        // Lógica básica de Envido
-        if (jugador === 'jugador') {
-            const respuestaCPU = this.cpu.decidirApostar('envido');
-            if (respuestaCPU === 'Quiero') {
-                console.log('CPU acepta el Envido');
-                const valorEnvidoJugador = this.calcularEnvido(this.jugador);
-                const valorEnvidoCPU = this.calcularEnvido(this.cpu);
-                if (valorEnvidoJugador > valorEnvidoCPU) {
-                    this.jugador.sumarPuntos(2); // Puntos por ganar el Envido
-                    console.log('Jugador gana el Envido');
-                } else {
-                    this.cpu.sumarPuntos(2); // Puntos por ganar el Envido
-                    console.log('CPU gana el Envido');
-                }
+        
+        // Calcula el valor del Envido para el jugador
+        let valorEnvidoJugador = this.calcularEnvido(this.jugador.mostrarMano());
+        let valorEnvidoCPU = this.calcularEnvido(this.cpu.mostrarMano());
+        
+        // Aquí se debería implementar la lógica de apuestas
+        // Para simplificar, asumiremos que el jugador humano siempre quiere y la CPU decide basado en su valor de Envido
+        let respuestaCPU = this.cpu.decidirApostar(envido);
+        
+        if (respuestaCPU === 'Quiero') {
+            console.log('CPU acepta el Envido');
+            // Determinar el ganador del Envido
+            if (valorEnvidoJugador > valorEnvidoCPU) {
+                this.jugador.sumarPuntos(2); // Puntos por ganar el Envido
+                console.log('Jugador gana el Envido');
             } else {
-                console.log('CPU no quiere el Envido');
-                this.jugador.sumarPuntos(1); // Punto por rechazo del Envido
+                this.cpu.sumarPuntos(2); // Puntos por ganar el Envido
+                console.log('CPU gana el Envido');
             }
         } else {
-            // Lógica para cuando la CPU juega Envido
-            const respuestaJugador = confirm('La CPU ha dicho Envido. ¿Quieres?');
-            if (respuestaJugador) {
-                console.log('Jugador acepta el Envido');
-                const valorEnvidoJugador = this.calcularEnvido(this.jugador);
-                const valorEnvidoCPU = this.calcularEnvido(this.cpu);
-                if (valorEnvidoJugador > valorEnvidoCPU) {
-                    this.jugador.sumarPuntos(2); // Puntos por ganar el Envido
-                    console.log('Jugador gana el Envido');
-                } else {
-                    this.cpu.sumarPuntos(2); // Puntos por ganar el Envido
-                    console.log('CPU gana el Envido');
-                }
-            } else {
-                console.log('Jugador no quiere el Envido');
-                this.cpu.sumarPuntos(1); // Punto por rechazo del Envido
-            }
+            console.log('CPU no quiere el Envido');
+            this.jugador.sumarPuntos(1); // Punto por rechazo del Envido
         }
+
         this.cambiarTurno();
     }
 
-    calcularEnvido(jugador) {
-        const mano = jugador.mostrarMano();
-        let valores = mano.map(carta => carta.valor <= 7 ? carta.valor : 0);
+    calcularEnvido(mano) {
+        // Función para calcular el valor del Envido
+        let valores = mano.map(carta => carta.valor);
         let palos = mano.map(carta => carta.palo);
-
-        let maxPalo = palos.reduce((max, palo, index) => {
-            if (palos.filter(p => p === palo).length > 1) {
-                return palo;
-            }
-            return max;
-        }, null);
-
-        if (maxPalo) {
-            let cartasDelMismoPalo = valores.filter((_, index) => palos[index] === maxPalo);
-            if (cartasDelMismoPalo.length >= 2) {
-                return Math.max(...cartasDelMismoPalo.slice(0, 2)) + 20;
+        
+        let maxValor = Math.max(...valores.filter(valor => valor < 10)); // Ignoramos figuras (10, 11, 12)
+        
+        // Buscar dos cartas del mismo palo
+        let paloComun = palos.find(palo => palos.filter(p => p === palo).length >= 2);
+        if (paloComun) {
+            let cartasDelMismoPalo = mano.filter(carta => carta.palo === paloComun && carta.valor < 10);
+            if (cartasDelMismoPalo.length === 2) {
+                return cartasDelMismoPalo.reduce((sum, carta) => sum + carta.valor, 0) + 20;
+            } else if (cartasDelMismoPalo.length === 3) {
+                // Si son tres, usamos las dos más altas
+                let dosCartas = cartasDelMismoPalo.sort((a, b) => b.valor - a.valor).slice(0, 2);
+                return dosCartas.reduce((sum, carta) => sum + carta.valor, 0) + 20;
             }
         }
+        
+        // Si no hay dos cartas del mismo palo, el Envido es el valor de la carta más alta
+        return maxValor;
+    }
 
-        return Math.max(...valores);
+    jugarFlor(jugador) {
+        console.log(`${jugador} juega FLOR`);
+        // Implementar lógica de Flor
+        this.cambiarTurno();
+    }
+
+    retirarse(jugador) {
+        console.log(`${jugador} se retira`);
+        // Implementar lógica de retirarse
+        this.cambiarTurno();
     }
 
     cambiarTurno() {
@@ -418,51 +370,14 @@ class JuegoTruco {
         console.log('CPU juega');
         // Simulación de acción de la CPU
         setTimeout(() => {
-            if (this.florCPU) {
-                const anunciarCPU = this.cpu.decidirAnunciarFlor(this.florCPU);
-                if (anunciarCPU) {
-                    this.anunciarFlor('cpu');
-                } else {
-                    this.decisionCPU();
-                }
-            } else {
-                this.decisionCPU();
-            }
+            this.cambiarTurno();
         }, 1000);
     }
 
-    decisionCPU() {
-        // Aquí la CPU decide qué hacer basado en su mano
-        // Por ahora, simulamos decisiones básicas
-        const acciones = ['truco', 'envido', 'retirarse'];
-        const decision = acciones[Math.floor(Math.random() * acciones.length)];
-
-        switch(decision) {
-            case 'truco':
-                this.jugarTruco('cpu');
-                break;
-            case 'envido':
-                this.jugarEnvido('cpu');
-                break;
-            case 'retirarse':
-                this.retirarse('cpu');
-                break;
-        }
+    obtenerColorAleatorio() {
+        const colores = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+        return colores[Math.floor(Math.random() * colores.length)];
     }
-
-    // Métodos adicionales para la CPU
-    CPU.prototype.decidirAnunciarFlor = function(palo) {
-        // Lógica simple para decidir si anunciar la Flor
-        // Por ejemplo, si tiene un buen valor de Flor, la anuncia
-        const valorFlor = this.calcularValorFlor(this.mostrarMano());
-        return valorFlor >= 30; // Umbral de decisión arbitrario
-    };
-
-    CPU.prototype.decidirApostarFlor = function(valorFlorOponente) {
-        const valorFlorCPU = this.calcularValorFlor(this.mostrarMano());
-        // Decide si acepta el desafío de la Flor basado en el valor de su propia Flor
-        return valorFlorCPU >= valorFlorOponente ? 'Quiero' : 'No quiero';
-    };
 }
 
 // Inicializar el juego
