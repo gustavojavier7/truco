@@ -1,4 +1,4 @@
-/* styles.css v1.04 */
+/* styles.css */
 
 /* Estilos generales */
 body {
@@ -68,7 +68,7 @@ body {
 /* Estilos de las cartas */
 .carta-back {
     background-color: #008000; /* Fondo verde */
-    background-image:
+    background-image: 
         linear-gradient(to right, red 1px, transparent 1px), /* Líneas verticales */
         linear-gradient(to bottom, red 1px, transparent 1px); /* Líneas horizontales */
     background-size: 5px 5px; /* Separación de 5px entre líneas */
@@ -96,7 +96,7 @@ body {
     transition: transform 0.3s, border-color 0.3s;
     position: relative;
     z-index: 2; /* Asegúrate de que el z-index sea adecuado */
-    background-color: #F5FFFA;
+    background-color: #F5FFFA; /* Beige casi blanco */
     background-size: 20px 20px;
     background-repeat: repeat;
     cursor: pointer;
@@ -125,51 +125,34 @@ body {
     color: #0000FF; /* Espadas: Azul */
 }
 
+/* Patrón para Oros */
 .carta.oro {
     color: #FFD700; /* Oro: Dorado */
 }
 
-/* Etiqueta de área */
-.area-label {
-    font-size: 2vw;
-    color: #FFFF00;
-    text-shadow: 0.1vw 0.1vw 0 #000;
-    text-align: center;
+/* Estilos para el botón de anunciar la Flor */
+.flor-announcement {
     margin-top: 1vw;
-    position: absolute;
-    width: 100%;
-    top: 0;
-    z-index: 0;
-    /* Ajustes para pantallas más pequeñas */
-    @media (max-width: 600px) {
-        font-size: 3vw;
-    }
+    text-align: center;
 }
 
-/* Área de información */
-.info-area {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    width: 20%;
-    height: 100%;
-    background-color: #008000;
-    border-left: 2px solid white;
-    padding-top: 1vw;
-    gap: 1vw; /* Añade espacio entre los elementos hijos */
-}
-    @media (max-width: 600px) {
-        width: 100%;
-        border-left: none;
-        border-top: 2px solid white;
-        flex-direction: row;
-        justify-content: space-around;
-        padding-top: 0;
-    }
+#anunciarFlorBtn {
+    background-color: #FFD700; /* Dorado */
+    color: #000000; /* Negro */
+    padding: 1vw 2vw;
+    font-size: 1.5vw;
+    border: none;
+    border-radius: 0.5vw;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.3s;
 }
 
-/* Créditos */
+#anunciarFlorBtn:hover {
+    background-color: #FFC107; /* Amarillo más claro */
+    transform: scale(1.05);
+}
+
+/* Estilos para el display de créditos */
 .credit-display {
     font-size: 1.5vw;
     color: yellow;
@@ -182,7 +165,20 @@ body {
     }
 }
 
-/* Opciones de juego */
+/* Estilos para el display de mano */
+.mano-display {
+    font-size: 1.5vw;
+    color: yellow;
+    margin-bottom: 1vw;
+    align-self: flex-start;
+    /* Ajustes para pantallas más pequeñas */
+    @media (max-width: 600px) {
+        font-size: 2vw;
+        margin-bottom: 0;
+    }
+}
+
+/* Estilos para las opciones de juego */
 .game-options {
     display: flex;
     flex-direction: column;
@@ -195,7 +191,7 @@ body {
     }
 }
 
-/* Estilos de las opciones */
+/* Estilos para las opciones */
 .option {
     background-color: #4CAF50;
     color: white;
@@ -208,10 +204,6 @@ body {
         padding: 1vw;
         font-size: 2vw;
     }
-}
-
-.carta-seleccionada {
-    border-color: yellow !important; /* Asegúrate de que este estilo sobrescribe otros */
 }
 
 .option:hover {
