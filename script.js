@@ -1,5 +1,14 @@
 let credits = 0;
 let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
+/ Crear instancias de los jugadores
+    const jugador = new ClaseJugador('Humano'); // Define el jugador humano
+    const cpu = new ClaseCPU('CPU'); // Define la CPU
+
+    // Crear instancia del juego
+    const juego = new ClaseJuegoTruco(jugador, cpu);
+
+    // Iniciar el juego
+    juego.iniciarJuego();
 
 // ClaseClase para representar una carta
 class ClaseCarta {
@@ -387,14 +396,4 @@ class ClaseJuegoTruco {
         this.actualizarCreditos();
         this.cambiarTurno();
     }
-
-    // Crear instancias de los jugadores
-    const jugador = new ClaseJugador('Humano'); // Define el jugador humano
-    const cpu = new ClaseCPU('CPU'); // Define la CPU
-
-    // Crear instancia del juego
-    const juego = new ClaseJuegoTruco(jugador, cpu);
-
-    // Iniciar el juego
-    juego.iniciarJuego();
 }
