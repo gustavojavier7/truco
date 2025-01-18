@@ -167,7 +167,7 @@ class ClaseJuegoTruco {
     manejarFlor() {
         if (this.florJugador) {
             // El jugador tiene Flor
-            console.log('El jugador tiene Flor');
+            this.mostrarMensaje('El jugador tiene Flor');
             // Mostrar el botón para anunciar la Flor
             document.getElementById('florAnnouncement').style.display = 'block';
             // Añadir un event listener al botón
@@ -178,7 +178,7 @@ class ClaseJuegoTruco {
             });
         } else if (this.florCPU) {
             // La CPU tiene Flor
-            console.log('La CPU tiene Flor');
+            this.mostrarMensaje('La CPU tiene Flor');
             // La CPU decide si anuncia la Flor
             const anunciarCPU = this.cpu.decidirAnunciarFlor(this.florCPU);
             if (anunciarCPU) {
@@ -196,46 +196,46 @@ class ClaseJuegoTruco {
     anunciarFlor(jugador) {
         if (jugador === 'jugador') {
             // El jugador anuncia la Flor
-            console.log('El jugador anuncia Flor');
+            this.mostrarMensaje('El jugador anuncia Flor');
             // Calcular el valor de la Flor
             const valorFlor = this.calcularValorFlor(this.jugador);
-            console.log(`Valor de la Flor del jugador: ${valorFlor}`);
+            this.mostrarMensaje(`Valor de la Flor del jugador: ${valorFlor}`);
             // La CPU decide si quiere la Flor
             const respuestaCPU = this.cpu.decidirApostarFlor(valorFlor);
             if (respuestaCPU === 'Quiero') {
-                console.log('CPU quiere la Flor');
+                this.mostrarMensaje('CPU quiere la Flor');
                 // Determinar el ganador de la Flor
                 if (valorFlor > this.calcularValorFlor(this.cpu)) {
                     this.jugador.sumarPuntos(3); // Puntos por ganar la Flor
-                    console.log('Jugador gana la Flor');
+                    this.mostrarMensaje('Jugador gana la Flor');
                 } else {
                     this.cpu.sumarPuntos(3); // Puntos por ganar la Flor
-                    console.log('CPU gana la Flor');
+                    this.mostrarMensaje('CPU gana la Flor');
                 }
             } else {
-                console.log('CPU no quiere la Flor');
+                this.mostrarMensaje('CPU no quiere la Flor');
                 this.jugador.sumarPuntos(3); // Puntos por la Flor no aceptada
             }
         } else if (jugador === 'cpu') {
             // La CPU anuncia la Flor
-            console.log('La CPU anuncia Flor');
+            this.mostrarMensaje('La CPU anuncia Flor');
             // Calcular el valor de la Flor de la CPU
             const valorFlorCPU = this.calcularValorFlor(this.cpu);
-            console.log(`Valor de la Flor de la CPU: ${valorFlorCPU}`);
+            this.mostrarMensaje(`Valor de la Flor de la CPU: ${valorFlorCPU}`);
             // El jugador decide si quiere la Flor
             const respuestaJugador = this.jugador.decidirApostarFlor(valorFlorCPU);
             if (respuestaJugador === 'Quiero') {
-                console.log('Jugador quiere la Flor');
+                this.mostrarMensaje('Jugador quiere la Flor');
                 // Determinar el ganador de la Flor
                 if (this.calcularValorFlor(this.jugador) > valorFlorCPU) {
                     this.jugador.sumarPuntos(3); // Puntos por ganar la Flor
-                    console.log('Jugador gana la Flor');
+                    this.mostrarMensaje('Jugador gana la Flor');
                 } else {
                     this.cpu.sumarPuntos(3); // Puntos por ganar la Flor
-                    console.log('CPU gana la Flor');
+                    this.mostrarMensaje('CPU gana la Flor');
                 }
             } else {
-                console.log('Jugador no quiere la Flor');
+                this.mostrarMensaje('Jugador no quiere la Flor');
                 this.cpu.sumarPuntos(3); // Puntos por la Flor no aceptada
             }
         }
@@ -321,13 +321,13 @@ class ClaseJuegoTruco {
     }
 
     jugarTruco(jugador) {
-        console.log(`${jugador} juega TRUCO`);
+        this.mostrarMensaje(`${jugador} juega TRUCO`);
         // Implementar lógica de Truco
         this.cambiarTurno();
     }
 
     jugarEnvido(jugador) {
-        console.log(`${jugador} juega ENVIDO`);
+        this.mostrarMensaje(`${jugador} juega ENVIDO`);
 
         // Calcular valores del Envido
         let valorEnvidoJugador = this.calcularEnvido(this.jugador.mostrarMano());
@@ -400,7 +400,10 @@ class ClaseJuegoTruco {
     }
 
     mostrarMensaje(mensaje) {
-        console.log(mensaje);
+        const gameMessages = document.getElementById('gameMessages');
+        const mensajeElement = document.createElement('div');
+        mensajeElement.textContent = mensaje;
+        gameMessages.appendChild(mensajeElement);
     }
 
     cambiarTurno() {
