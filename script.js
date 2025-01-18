@@ -1,6 +1,6 @@
 let credits = 0;
 let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
-/ Crear instancias de los jugadores
+// Crear instancias de los jugadores
     const jugador = new ClaseJugador('Humano'); // Define el jugador humano
     const cpu = new ClaseCPU('CPU'); // Define la CPU
 
