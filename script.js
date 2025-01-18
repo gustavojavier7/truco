@@ -1,6 +1,9 @@
+// script.js v1.06
+
 let credits = 0;
 let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
 
+// Clase para representar una carta
 class ClaseCarta {
     constructor(palo, valor) {
         this.palo = palo; // Espadas, Bastos, Copas, Oros
@@ -11,7 +14,7 @@ class ClaseCarta {
         const nombres = {
             1: 'As',
             10: 'Sota',
-            11: 'Caballo',
+            11: 'Caballo', // Corregido de "Caballo" a "Caballo"
             12: 'Rey'
         };
         return nombres[this.valor] || this.valor.toString();
@@ -27,6 +30,7 @@ class ClaseCarta {
     }
 }
 
+// Clase para representar un mazo
 class ClaseMazo {
     constructor() {
         this.cartas = [];
@@ -55,6 +59,7 @@ class ClaseMazo {
     }
 }
 
+// Clase para representar un jugador
 class ClaseJugador {
     constructor(nombre) {
         this.nombre = nombre;
@@ -94,6 +99,7 @@ class ClaseJugador {
     }
 }
 
+// Clase para representar la CPU
 class ClaseCPU extends ClaseJugador {
     elegirCarta() {
         // Implementación básica: elegir la primera carta
@@ -116,6 +122,7 @@ class ClaseCPU extends ClaseJugador {
     }
 }
 
+// Clase para representar el juego
 class ClaseJuegoTruco {
     constructor(jugador, cpu) {
         this.jugador = jugador;
@@ -152,18 +159,18 @@ class ClaseJuegoTruco {
     }
 
     iniciarJuego() {
-    this.mostrarCartas();
-    this.actualizarCreditos();
+        this.mostrarCartas();
+        this.actualizarCreditos();
 
-    const manoDisplay = document.getElementById('manoDisplay');
-    manoDisplay.textContent = this.mano === 'cpu' ? 'Yo soy mano' : 'Vos sos mano';
-    manoDisplay.style.display = 'block';
+        const manoDisplay = document.getElementById('manoDisplay');
+        manoDisplay.textContent = this.mano === 'cpu' ? 'Yo soy mano' : 'Vos sos mano';
+        manoDisplay.style.display = 'block';
 
-    this.mostrarMensaje('¡Comienza el juego!');
-    this.mostrarMensaje(`Turno inicial: ${this.turno === 'jugador' ? 'Jugador' : 'CPU'}`);
+        this.mostrarMensaje('¡Comienza el juego!');
+        this.mostrarMensaje(`Turno inicial: ${this.turno === 'jugador' ? 'Jugador' : 'CPU'}`);
 
-    this.manejarFlor();
-}
+        this.manejarFlor();
+    }
 
     manejarFlor() {
         if (this.florJugador) {
@@ -400,24 +407,24 @@ class ClaseJuegoTruco {
         return Math.max(...valores);
     }
 
-   mostrarMensaje(mensaje) {
-    const gameMessages = document.getElementById('gameMessages');
-    if (!gameMessages) {
-        console.warn('El contenedor de mensajes no existe en el DOM.');
-        return;
-    }
+    mostrarMensaje(mensaje) {
+        const gameMessages = document.getElementById('gameMessages');
+        if (!gameMessages) {
+            console.warn('El contenedor de mensajes no existe en el DOM.');
+            return;
+        }
 
-    const mensajeElement = document.createElement('div');
-    mensajeElement.textContent = mensaje;
-    gameMessages.appendChild(mensajeElement);
-    gameMessages.scrollTop = gameMessages.scrollHeight; // Desplaza automáticamente al último mensaje
+        const mensajeElement = document.createElement('div');
+        mensajeElement.textContent = mensaje;
+        gameMessages.appendChild(mensajeElement);
+        gameMessages.scrollTop = gameMessages.scrollHeight; // Desplaza automáticamente al último mensaje
 
-    // Limitar a 5 mensajes
-    const mensajes = gameMessages.getElementsByTagName('div');
-    if (mensajes.length > 5) {
-        gameMessages.removeChild(mensajes[0]);
+        // Limitar a 5 mensajes
+        const mensajes = gameMessages.getElementsByTagName('div');
+        if (mensajes.length > 5) {
+            gameMessages.removeChild(mensajes[0]);
+        }
     }
-}
 
     cambiarTurno() {
         this.turno = this.turno === 'jugador' ? 'cpu' : 'jugador';
