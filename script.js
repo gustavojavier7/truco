@@ -388,12 +388,13 @@ class JuegoTruco {
     this.cambiarTurno();
 }
 
-// Instanciar los jugadores
-const jugador = new Jugador('Humano'); // Crear jugador humano
-const cpu = new CPU('CPU'); // Crear CPU
+// Crear instancias de los jugadores
+const jugador = new Jugador('Humano'); // Define el jugador humano
+const cpu = new CPU('CPU'); // Define la CPU
 
-// Instanciar el juego con los jugadores
+// Crear instancia del juego
 const juego = new JuegoTruco(jugador, cpu);
 
 // Iniciar el juego
 juego.iniciarJuego();
+
