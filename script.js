@@ -116,7 +116,7 @@ class ClaseCPU extends ClaseJugador {
     }
 }
 
-/class ClaseJuegoTruco {
+class ClaseJuegoTruco {
     constructor(jugador, cpu) {
         this.jugador = jugador;
         this.cpu = cpu;
@@ -378,16 +378,50 @@ class ClaseCPU extends ClaseJugador {
             this.cpu.sumarPuntos(apuestaActual);
             this.mostrarMensaje(`CPU gana el Envido y suma ${apuestaActual} puntos`);
         }
-    }
-}
-     // Crear instancias de los jugadores
-    const jugador = new ClaseJugador('Humano'); // Define el jugador humano
-    const cpu = new ClaseCPU('CPU'); // Define la CPU
 
-    // Crear instancia del juego
-    const juego = new ClaseJuegoTruco(jugador, cpu);
-
-    // Iniciar el juego
-    juego.iniciarJuego();
         this.actualizarCreditos();
         this.cambiarTurno();
+    }
+
+    calcularEnvido(mano) {
+        const valores = mano.map(carta => carta.valor);
+        const palos = mano.map(carta => carta.palo);
+        const frecuencia = {};
+        palos.forEach(palo => {
+            frecuencia[palo] = (frecuencia[palo] || 0) + 1;
+        });
+        for (let palo in frecuencia) {
+            if (frecuencia[palo] >= 2) {
+                const cartasDelMismoPalo = mano.filter(carta => carta.palo === palo);
+                return cartasDelMismoPalo.reduce((sum, carta) => sum + carta.valor, 0) + 20;
+            }
+        }
+        return Math.max(...valores);
+    }
+
+    mostrarMensaje(mensaje) {
+        console.log(mensaje);
+    }
+
+    cambiarTurno() {
+        this.turno = this.turno === 'jugador' ? 'cpu' : 'jugador';
+    }
+
+    jugarCPU() {
+        // Implementar lógica para que la CPU juegue su turno
+    }
+
+    retirarse(jugador) {
+        // Implementar lógica para retirarse del juego
+    }
+}
+
+// Crear instancias de los jugadores
+const jugador = new ClaseJugador('Humano'); // Define el jugador humano
+const cpu = new ClaseCPU('CPU'); // Define la CPU
+
+// Crear instancia del juego
+const juego = new ClaseJuegoTruco(jugador, cpu);
+
+// Iniciar el juego
+juego.iniciarJuego();
