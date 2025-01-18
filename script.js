@@ -1,7 +1,6 @@
 let credits = 0;
 let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
 
-// ClaseClase para representar una carta
 class ClaseCarta {
     constructor(palo, valor) {
         this.palo = palo; // Espadas, Bastos, Copas, Oros
@@ -28,7 +27,6 @@ class ClaseCarta {
     }
 }
 
-// ClaseClase para representar un mazo
 class ClaseMazo {
     constructor() {
         this.cartas = [];
@@ -57,7 +55,6 @@ class ClaseMazo {
     }
 }
 
-// ClaseClase para representar un jugador
 class ClaseJugador {
     constructor(nombre) {
         this.nombre = nombre;
@@ -97,7 +94,6 @@ class ClaseJugador {
     }
 }
 
-// ClaseClase para representar la CPU
 class ClaseCPU extends ClaseJugador {
     elegirCarta() {
         // Implementación básica: elegir la primera carta
@@ -120,8 +116,7 @@ class ClaseCPU extends ClaseJugador {
     }
 }
 
-// ClaseClase para representar el juego
-class ClaseJuegoTruco {
+/class ClaseJuegoTruco {
     constructor(jugador, cpu) {
         this.jugador = jugador;
         this.cpu = cpu;
@@ -383,8 +378,9 @@ class ClaseJuegoTruco {
             this.cpu.sumarPuntos(apuestaActual);
             this.mostrarMensaje(`CPU gana el Envido y suma ${apuestaActual} puntos`);
         }
-
-        // Crear instancias de los jugadores
+    }
+}
+     // Crear instancias de los jugadores
     const jugador = new ClaseJugador('Humano'); // Define el jugador humano
     const cpu = new ClaseCPU('CPU'); // Define la CPU
 
@@ -395,5 +391,3 @@ class ClaseJuegoTruco {
     juego.iniciarJuego();
         this.actualizarCreditos();
         this.cambiarTurno();
-    }
-}
