@@ -279,10 +279,17 @@ class JuegoTruco {
         });
 
         // Mostrar cartas del jugador (boca arriba)
-        this.jugador.mostrarMano().forEach((carta) => {
+        this.jugador.mostrarMano().forEach((carta, index) => {
             const cartaElement = document.createElement('div');
             cartaElement.className = `carta ${carta.palo.toLowerCase()}`;
             cartaElement.textContent = `${carta.obtenerNombre()} de ${carta.palo}`;
+            cartaElement.dataset.index = index; // Añadir un data attribute para identificar la carta
+            cartaElement.addEventListener('click', () => {
+                // Quitar la clase 'carta-seleccionada' de todas las cartas del jugador
+                playerContainer.querySelectorAll('.carta').forEach(c => c.classList.remove('carta-seleccionada'));
+                // Añadir la clase 'carta-seleccionada' a la carta clicada
+                cartaElement.classList.add('carta-seleccionada');
+            });
             playerContainer.appendChild(cartaElement);
         });
 
