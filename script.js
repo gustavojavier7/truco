@@ -152,17 +152,18 @@ class ClaseJuegoTruco {
     }
 
     iniciarJuego() {
-        this.mostrarCartas();
-        this.actualizarCreditos();
+    this.mostrarCartas();
+    this.actualizarCreditos();
 
-        // Mostrar quién es el mano
-        const manoDisplay = document.getElementById('manoDisplay');
-        manoDisplay.textContent = this.mano === 'cpu' ? 'Yo soy mano' : 'Vos sos mano';
-        manoDisplay.style.display = 'block';
+    const manoDisplay = document.getElementById('manoDisplay');
+    manoDisplay.textContent = this.mano === 'cpu' ? 'Yo soy mano' : 'Vos sos mano';
+    manoDisplay.style.display = 'block';
 
-        // Manejar la Flor
-        this.manejarFlor();
-    }
+    this.mostrarMensaje('¡Comienza el juego!');
+    this.mostrarMensaje(`Turno inicial: ${this.turno === 'jugador' ? 'Jugador' : 'CPU'}`);
+
+    this.manejarFlor();
+}
 
     manejarFlor() {
         if (this.florJugador) {
@@ -399,12 +400,24 @@ class ClaseJuegoTruco {
         return Math.max(...valores);
     }
 
-    mostrarMensaje(mensaje) {
-        const gameMessages = document.getElementById('gameMessages');
-        const mensajeElement = document.createElement('div');
-        mensajeElement.textContent = mensaje;
-        gameMessages.appendChild(mensajeElement);
+   mostrarMensaje(mensaje) {
+    const gameMessages = document.getElementById('gameMessages');
+    if (!gameMessages) {
+        console.warn('El contenedor de mensajes no existe en el DOM.');
+        return;
     }
+
+    const mensajeElement = document.createElement('div');
+    mensajeElement.textContent = mensaje;
+    gameMessages.appendChild(mensajeElement);
+    gameMessages.scrollTop = gameMessages.scrollHeight; // Desplaza automáticamente al último mensaje
+
+    // Limitar a 5 mensajes
+    const mensajes = gameMessages.getElementsByTagName('div');
+    if (mensajes.length > 5) {
+        gameMessages.removeChild(mensajes[0]);
+    }
+}
 
     cambiarTurno() {
         this.turno = this.turno === 'jugador' ? 'cpu' : 'jugador';
