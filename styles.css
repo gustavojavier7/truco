@@ -11,7 +11,6 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    /* Mejoras de accesibilidad */
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -30,7 +29,6 @@ body {
     padding: 1vw;
     box-sizing: border-box;
     position: relative;
-    /* Transición para cambios de tamaño */
     transition: background-color 0.3s, border 0.3s;
 }
 
@@ -42,11 +40,16 @@ body {
     align-items: center;
     width: 60%;
     height: 100%;
-    /* Ajustes para pantallas más pequeñas */
-    @media (max-width: 800px) {
+}
+
+@media (max-width: 800px) {
+    .cartas-container {
         width: 80%;
     }
-    @media (max-width: 600px) {
+}
+
+@media (max-width: 600px) {
+    .cartas-container {
         width: 100%;
     }
 }
@@ -59,21 +62,23 @@ body {
     width: 100%;
     height: 40%;
     position: relative;
-    /* Ajustes para pantallas más pequeñas */
-    @media (max-width: 600px) {
+}
+
+@media (max-width: 600px) {
+    .cpu-cards, .player-cards {
         height: 30%;
     }
 }
 
 /* Estilos de las cartas */
 .carta-back {
-    background-color: #008000; /* Fondo verde */
+    background-color: #008000;
     background-image:
-        linear-gradient(to right, red 1px, transparent 1px), /* Líneas verticales */
-        linear-gradient(to bottom, red 1px, transparent 1px); /* Líneas horizontales */
-    background-size: 5px 5px; /* Separación de 5px entre líneas */
-    border: 0.2vw solid #0000FF; /* Borde azul */
-    border-radius: 1vw; /* Bordes redondeados */
+        linear-gradient(to right, red 1px, transparent 1px),
+        linear-gradient(to bottom, red 1px, transparent 1px);
+    background-size: 5px 5px;
+    border: 0.2vw solid #0000FF;
+    border-radius: 1vw;
     width: 8vw;
     height: 14.4vw;
     margin: 0.5vw;
@@ -95,39 +100,39 @@ body {
     border-radius: 1vw;
     transition: transform 0.3s, border-color 0.3s;
     position: relative;
-    z-index: 2; /* Asegúrate de que el z-index sea adecuado */
-    background-color: #F5FFFA; /* Beige casi blanco */
+    z-index: 2;
+    background-color: #F5FFFA;
     background-size: 20px 20px;
     background-repeat: repeat;
     cursor: pointer;
-    font-size: 20px; /* Tamaño de fuente para los números */
-    color: #000000; /* Color de texto negro */
-    padding: 5px; /* Añade padding si es necesario */
-    /* Efecto de hover para las cartas */
-    &:hover {
-        transform: translateY(-0.5vw);
-        border-color: #FFFFFF;
-    }
+    font-size: 20px;
+    color: #000000;
+    padding: 5px;
+}
+
+.carta:hover {
+    transform: translateY(-0.5vw);
+    border-color: #FFFFFF;
 }
 
 /* Patrón para Copas */
 .carta.copa {
-    color: #FF0000; /* Copas: Rojo */
+    color: #FF0000;
 }
 
 /* Patrón para Bastos */
 .carta.basto {
-    color: #008000; /* Bastos: Verde */
+    color: #008000;
 }
 
 /* Patrón para Espadas */
 .carta.espada {
-    color: #0000FF; /* Espadas: Azul */
+    color: #0000FF;
 }
 
 /* Patrón para Oros */
 .carta.oro {
-    color: #FFD700; /* Oro: Dorado */
+    color: #FFD700;
 }
 
 /* Estilos para el botón de anunciar la Flor */
@@ -137,8 +142,8 @@ body {
 }
 
 #anunciarFlorBtn {
-    background-color: #FFD700; /* Dorado */
-    color: #000000; /* Negro */
+    background-color: #FFD700;
+    color: #000000;
     padding: 1vw 2vw;
     font-size: 1.5vw;
     border: none;
@@ -148,7 +153,7 @@ body {
 }
 
 #anunciarFlorBtn:hover {
-    background-color: #FFC107; /* Amarillo más claro */
+    background-color: #FFC107;
     transform: scale(1.05);
 }
 
@@ -158,8 +163,10 @@ body {
     color: yellow;
     margin-bottom: 1vw;
     align-self: flex-start;
-    /* Ajustes para pantallas más pequeñas */
-    @media (max-width: 600px) {
+}
+
+@media (max-width: 600px) {
+    .credit-display {
         font-size: 2vw;
         margin-bottom: 0;
     }
@@ -171,8 +178,10 @@ body {
     color: yellow;
     margin-bottom: 1vw;
     align-self: flex-start;
-    /* Ajustes para pantallas más pequeñas */
-    @media (max-width: 600px) {
+}
+
+@media (max-width: 600px) {
+    .mano-display {
         font-size: 2vw;
         margin-bottom: 0;
     }
@@ -184,8 +193,10 @@ body {
     flex-direction: column;
     gap: 1vw;
     align-self: flex-start;
-    /* Ajustes para pantallas más pequeñas */
-    @media (max-width: 600px) {
+}
+
+@media (max-width: 600px) {
+    .game-options {
         flex-direction: row;
         gap: 0.5vw;
     }
@@ -199,8 +210,10 @@ body {
     font-size: 1.5vw;
     cursor: pointer;
     transition: background-color 0.3s, transform 0.3s;
-    /* Ajustes para pantallas más pequeñas */
-    @media (max-width: 600px) {
+}
+
+@media (max-width: 600px) {
+    .option {
         padding: 1vw;
         font-size: 2vw;
     }
@@ -213,5 +226,19 @@ body {
 
 /* Estilos para la carta seleccionada */
 .carta-seleccionada {
-    border-color: yellow !important; /* Asegúrate de que este estilo sobrescriba otros */
+    border-color: yellow !important;
+}
+
+/* Estilos para el área de mensajes */
+.game-messages {
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 14px;
+    font-family: 'Press Start 2P', cursive;
+    border: 1px solid #ccc;
+    border-radius: 5px;
 }
