@@ -1,4 +1,4 @@
-// Versión 3.0
+// Versión 3.1
 
 // Estado inicial del juego
 let credits = 0;
@@ -331,7 +331,7 @@ function procesarCartaJugada(juego, carta, jugador) {
 
     // Determinar el ganador de la ronda
     let ganador = valorJugador === valorOponente
-        ? juego.turno
+        ? juego.mano
         : valorJugador > valorOponente
         ? jugador
         : jugador === 'jugador'
@@ -510,6 +510,7 @@ const juego = {
     cpu: cpu,
     mazo: crearMazo(),
     turno: Math.random() < 0.5 ? 'jugador' : 'cpu',
+    mano: Math.random() < 0.5 ? 'jugador' : 'cpu', // Añadir la propiedad mano para determinar quién es Mano
     trucoApostado: 1,
     florJugador: tieneFlor(jugador),
     florCPU: tieneFlor(cpu),
@@ -527,7 +528,7 @@ const juego = {
         this.actualizarCreditos();
 
         const manoDisplay = document.getElementById('manoDisplay');
-        manoDisplay.textContent = this.turno === 'cpu' ? 'Yo soy mano' : 'Vos sos mano';
+        manoDisplay.textContent = this.mano === 'cpu' ? 'Yo soy mano' : 'Vos sos mano';
         manoDisplay.style.display = 'block';
 
         this.mostrarMensaje('¡Comienza el juego!');
