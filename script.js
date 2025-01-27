@@ -237,7 +237,16 @@ class ClaseJuegoTruco {
         this.mostrarMensaje('¡Comienza el juego!');
         this.mostrarMensaje(`Turno inicial: ${this.turno === 'jugador' ? 'Jugador' : 'CPU'}`);
 
-        this.manejarFlor();
+        if (this.turno === 'cpu') {
+            this.jugarTurnoCPU();
+        } else {
+            this.mostrarOpciones();
+        }
+    }
+ jugarTurnoCPU() {
+        this.cpu.jugarTurno(this); // La CPU juega su turno
+        this.cambiarTurno(); // Cambiar turno al jugador
+        this.mostrarOpciones(); // Mostrar opciones al jugador
     }
 
     manejarFlor() {
