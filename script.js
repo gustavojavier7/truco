@@ -59,7 +59,6 @@ class ClaseMazo {
     }
 }
 
-// Clase para representar un jugador
 class ClaseJugador {
     constructor(nombre) {
         this.nombre = nombre;
@@ -83,28 +82,53 @@ class ClaseJugador {
         this.puntos += puntos;
     }
 
-   elegirCarta() {
-    return new Promise((resolve) => {
-        const playerContainer = document.querySelector('.player-cards');
-        const cartasJugador = playerContainer.querySelectorAll('.carta');
+    elegirCarta() {
+        return new Promise((resolve) => {
+            const playerContainer = document.querySelector('.player-cards');
+            const cartasJugador = playerContainer.querySelectorAll('.carta');
 
-        // Añadir un evento de clic a cada carta para seleccionarla
-        cartasJugador.forEach((cartaElement, index) => {
-            cartaElement.addEventListener('click', () => {
-                // Eliminar eventos de las demás cartas para evitar selecciones múltiples
-                cartasJugador.forEach(c => c.replaceWith(c.cloneNode(true)));
-                
+            // Función para desactivar todas las cartas
+            const desactivarCartas = () => {
+                cartasJugador.forEach(cartaElement => {
+                    cartaElement.removeEventListener('click', handleClick);
+                    cartaElement.style.pointerEvents = 'none'; // Desactivar eventos de clic
+                });
+            };
+
+            // Función para manejar el clic en una carta
+            const handleClick = (event) => {
+                const cartaElement = event.currentTarget;
+                const index = cartaElement.dataset.index;
+
                 // Obtener la carta seleccionada
                 const cartaSeleccionada = this.mano[index];
 
                 // Remover la carta seleccionada de la mano
                 this.mano.splice(index, 1);
 
+                // Desactivar todas las cartas
+                desactivarCartas();
+
                 // Resolver la promesa con la carta seleccionada
                 resolve(cartaSeleccionada);
+            };
+
+            // Añadir event listeners a todas las cartas
+            cartasJugador.forEach(cartaElement => {
+                cartaElement.addEventListener('click', handleClick);
             });
         });
-    });
+    }
+
+    decidirAnunciarFlor(valorFlor) {
+        // Implementación básica: siempre quiere anunciar la Flor
+        return true;
+    }
+
+    decidirApostarFlor(valorFlor) {
+        // Implementación básica: siempre quiere
+        return 'Quiero';
+    }
 }
 
 
