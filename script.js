@@ -1,4 +1,4 @@
-// Versión 3.4
+// Versión 3.5
 
 // Estado inicial del juego
 let credits = 0;
@@ -124,12 +124,18 @@ function mostrarOpciones(juego) {
     opciones.innerHTML = '';
 
     if (juego.turno === 'jugador') {
-        opciones.innerHTML = `
-            <div class="option" id="trucoBtn">TRUCO</div>
-            <div class="option" id="envidoBtn">ENVIDO</div>
-            <div class="option" id="florBtn">FLOR</div>
-            <div class="option" id="retirarseBtn">RETIRARSE</div>
-        `;
+        if (juego.estadoDelJuego.trucoActivo) {
+            opciones.innerHTML = `
+                <div class="option" id="retirarseBtn">RETIRARSE</div>
+            `;
+        } else {
+            opciones.innerHTML = `
+                <div class="option" id="trucoBtn">TRUCO</div>
+                <div class="option" id="envidoBtn">ENVIDO</div>
+                <div class="option" id="florBtn">FLOR</div>
+                <div class="option" id="retirarseBtn">RETIRARSE</div>
+            `;
+        }
     } else {
         manejarJuegoCPU(juego);
         return;
@@ -143,12 +149,54 @@ function mostrarOpciones(juego) {
 
 // Funciones para manejar las diferentes acciones del juego
 function jugarTruco(juego, jugador) {
+    // Verificar si ya se ha resuelto un Truco previo
+    if (juego.estadoDelJuego.trucoResuelto) {
+        mostrarMensaje('El Truco ya ha sido resuelto. No puedes apostar Truco nuevamente hasta que se inicie un nuevo turno.');
+        return;
+    }
+
+    // Verificar si ya se ha apostado Truco
+    if (juego.estadoDelJuego.trucoActivo) {
+        mostrarMensaje('Ya se ha apostado Truco. Espera a que se resuelva.');
+        return;
+    }
+
+    // Verificar si hay apuestas de Flor o Envido pendientes
+    if (juego.estadoDelJuego.florActivo || juego.estadoDelJuego.envidoActivo) {
+        mostrarMensaje('No puedes apostar Truco mientras haya apuestas de Flor o Envido pendientes.');
+        return;
+    }
+
     mostrarMensaje(`${jugador} juega TRUCO`);
     juego.estadoDelJuego.trucoActivo = true;
     juego.cambiarTurno();
 }
 
 function jugarEnvido(juego, jugador) {
+    // Verificar si ya se ha apostado Truco
+    if (juego.estadoDelJuego.trucoActivo) {
+        mostrarMensaje('No puedes apostar Envido después de que se haya apostado Truco. Debes esperar a que se resuelva el Truco.');
+        return;
+    }
+
+    // Verificar si ya se ha resuelto un Envido previo
+    if (juego.estadoDelJuego.envidoResuelto) {
+        mostrarMensaje('El Envido ya ha sido resuelto. No puedes apostar Envido nuevamente hasta que se inicie un nuevo turno.');
+        return;
+    }
+
+    // Verificar si ya se ha apostado Envido
+    if (juego.estadoDelJuego.envidoActivo) {
+        mostrarMensaje('Ya se ha apostado Envido. Espera a que se resuelva.');
+        return;
+    }
+
+    // Verificar si hay apuestas de Flor pendientes
+    if (juego.estadoDelJuego.florActivo) {
+        mostrarMensaje('No puedes apostar Envido mientras haya apuestas de Flor pendientes.');
+        return;
+    }
+
     mostrarMensaje(`${jugador} juega ENVIDO`);
     juego.estadoDelJuego.envidoActivo = true;
 
@@ -201,6 +249,30 @@ function jugarEnvido(juego, jugador) {
 }
 
 function jugarFlor(juego, jugador) {
+    // Verificar si ya se ha apostado Truco
+    if (juego.estadoDelJuego.trucoActivo) {
+        mostrarMensaje('No puedes apostar Flor después de que se haya apostado Truco. Debes esperar a que se resuelva el Truco.');
+        return;
+    }
+
+    // Verificar si ya se ha resuelto una Flor previa
+    if (juego.estadoDelJuego.florResuelto) {
+        mostrarMensaje('La Flor ya ha sido resuelta. No puedes apostar Flor nuevamente hasta que se inicie un nuevo turno.');
+        return;
+    }
+
+    // Verificar si ya se ha apostado Flor
+    if (juego.estadoDelJuego.florActivo) {
+        mostrarMensaje('Ya se ha apostado Flor. Espera a que se resuelva.');
+        return;
+    }
+
+    // Verificar si hay apuestas de Envido pendientes
+    if (juego.estadoDelJuego.envidoActivo) {
+        mostrarMensaje('No puedes apostar Flor mientras haya apuestas de Envido pendientes.');
+        return;
+    }
+
     if (juego.florJugador) {
         mostrarMensaje('El jugador tiene Flor');
         document.getElementById('florAnnouncement').style.display = 'block';
@@ -502,6 +574,9 @@ const juego = {
         florActivo: false,
         envidoActivo: false,
         trucoActivo: false,
+        florResuelto: false,
+        envidoResuelto: false,
+        trucoResuelto: false,
     },
     florJugador: tieneFlor(jugador),
     florCPU: tieneFlor(cpu),
@@ -645,12 +720,18 @@ const juego = {
         opciones.innerHTML = '';
 
         if (this.turno === 'jugador') {
-            opciones.innerHTML = `
-                <div class="option" id="trucoBtn">TRUCO</div>
-                <div class="option" id="envidoBtn">ENVIDO</div>
-                <div class="option" id="florBtn">FLOR</div>
-                <div class="option" id="retirarseBtn">RETIRARSE</div>
-            `;
+            if (this.estadoDelJuego.trucoActivo) {
+                opciones.innerHTML = `
+                    <div class="option" id="retirarseBtn">RETIRARSE</div>
+                `;
+            } else {
+                opciones.innerHTML = `
+                    <div class="option" id="trucoBtn">TRUCO</div>
+                    <div class="option" id="envidoBtn">ENVIDO</div>
+                    <div class="option" id="florBtn">FLOR</div>
+                    <div class="option" id="retirarseBtn">RETIRARSE</div>
+                `;
+            }
         } else {
             this.jugarCPU();
             return;
@@ -662,12 +743,54 @@ const juego = {
         document.getElementById('retirarseBtn')?.addEventListener('click', () => this.retirarse('jugador'));
     },
     jugarTruco: function(jugador) {
-        this.mostrarMensaje(`${jugador} juega TRUCO`);
+        // Verificar si ya se ha resuelto un Truco previo
+        if (this.estadoDelJuego.trucoResuelto) {
+            mostrarMensaje('El Truco ya ha sido resuelto. No puedes apostar Truco nuevamente hasta que se inicie un nuevo turno.');
+            return;
+        }
+
+        // Verificar si ya se ha apostado Truco
+        if (this.estadoDelJuego.trucoActivo) {
+            mostrarMensaje('Ya se ha apostado Truco. Espera a que se resuelva.');
+            return;
+        }
+
+        // Verificar si hay apuestas de Flor o Envido pendientes
+        if (this.estadoDelJuego.florActivo || this.estadoDelJuego.envidoActivo) {
+            mostrarMensaje('No puedes apostar Truco mientras haya apuestas de Flor o Envido pendientes.');
+            return;
+        }
+
+        mostrarMensaje(`${jugador} juega TRUCO`);
         this.estadoDelJuego.trucoActivo = true;
         this.cambiarTurno();
     },
     jugarEnvido: function(jugador) {
-        this.mostrarMensaje(`${jugador} juega ENVIDO`);
+        // Verificar si ya se ha apostado Truco
+        if (this.estadoDelJuego.trucoActivo) {
+            mostrarMensaje('No puedes apostar Envido después de que se haya apostado Truco. Debes esperar a que se resuelva el Truco.');
+            return;
+        }
+
+        // Verificar si ya se ha resuelto un Envido previo
+        if (this.estadoDelJuego.envidoResuelto) {
+            mostrarMensaje('El Envido ya ha sido resuelto. No puedes apostar Envido nuevamente hasta que se inicie un nuevo turno.');
+            return;
+        }
+
+        // Verificar si ya se ha apostado Envido
+        if (this.estadoDelJuego.envidoActivo) {
+            mostrarMensaje('Ya se ha apostado Envido. Espera a que se resuelva.');
+            return;
+        }
+
+        // Verificar si hay apuestas de Flor pendientes
+        if (this.estadoDelJuego.florActivo) {
+            mostrarMensaje('No puedes apostar Envido mientras haya apuestas de Flor pendientes.');
+            return;
+        }
+
+        mostrarMensaje(`${jugador} juega ENVIDO`);
         this.estadoDelJuego.envidoActivo = true;
 
         let valorEnvidoJugador = calcularEnvido(this.jugador.mano);
@@ -676,30 +799,30 @@ const juego = {
         let apuestaActual = 2;
         let envidoActivo = true;
 
-        this.mostrarMensaje(`Envido iniciado. Jugador: ${valorEnvidoJugador}, CPU: ${valorEnvidoCPU}`);
+        mostrarMensaje(`Envido iniciado. Jugador: ${valorEnvidoJugador}, CPU: ${valorEnvidoCPU}`);
 
         while (envidoActivo) {
             if (jugador === 'jugador') {
                 let deseaAumentar = confirm('¿Deseas aumentar la apuesta (Real Envido o Falta Envido)?');
                 if (deseaAumentar) {
                     apuestaActual += 2;
-                    this.mostrarMensaje(`Jugador aumenta la apuesta a ${apuestaActual}`);
+                    mostrarMensaje(`Jugador aumenta la apuesta a ${apuestaActual}`);
                 } else {
                     envidoActivo = false;
-                    this.mostrarMensaje('Jugador no aumenta la apuesta');
+                    mostrarMensaje('Jugador no aumenta la apuesta');
                 }
             }
 
             let respuestaCPU = this.cpu.decidirApostarEnvido();
             if (respuestaCPU === 'Quiero') {
-                this.mostrarMensaje(`CPU acepta la apuesta de ${apuestaActual}`);
+                mostrarMensaje(`CPU acepta la apuesta de ${apuestaActual}`);
                 if (jugador === 'jugador') {
                     jugador = 'cpu';
                 } else {
                     envidoActivo = false;
                 }
             } else {
-                this.mostrarMensaje('CPU no quiere la apuesta');
+                mostrarMensaje('CPU no quiere la apuesta');
                 this.jugador.sumarPuntos(1);
                 this.actualizarCreditos();
                 return this.cambiarTurno();
@@ -708,10 +831,10 @@ const juego = {
 
         if (valorEnvidoJugador > valorEnvidoCPU) {
             this.jugador.sumarPuntos(apuestaActual);
-            this.mostrarMensaje(`Jugador gana el Envido y suma ${apuestaActual} puntos`);
+            mostrarMensaje(`Jugador gana el Envido y suma ${apuestaActual} puntos`);
         } else {
             this.cpu.sumarPuntos(apuestaActual);
-            this.mostrarMensaje(`CPU gana el Envido y suma ${apuestaActual} puntos`);
+            mostrarMensaje(`CPU gana el Envido y suma ${apuestaActual} puntos`);
         }
 
         this.actualizarCreditos();
