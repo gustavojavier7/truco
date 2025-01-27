@@ -1,4 +1,4 @@
-// script.js v1.06
+// Ver 1.08
 
 let credits = 0;
 let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
@@ -14,7 +14,7 @@ class ClaseCarta {
         const nombres = {
             1: 'As',
             10: 'Sota',
-            11: 'Caballo', // Corregido de "Caballo" a "Caballo"
+            11: 'Caballo',
             12: 'Rey'
         };
         return nombres[this.valor] || this.valor.toString();
@@ -36,7 +36,6 @@ class ClaseMazo {
         this.cartas = [];
         const palos = ['Espadas', 'Bastos', 'Copas', 'Oros'];
         for (let palo of palos) {
-            // Ajuste para 40 cartas: valores del 1 al 7 y del 10 al 12
             for (let valor = 1; valor <= 7; valor++) {
                 this.cartas.push(new ClaseCarta(palo, valor));
             }
@@ -59,6 +58,7 @@ class ClaseMazo {
     }
 }
 
+// Clase para representar un jugador
 class ClaseJugador {
     constructor(nombre) {
         this.nombre = nombre;
@@ -87,101 +87,70 @@ class ClaseJugador {
             const playerContainer = document.querySelector('.player-cards');
             const cartasJugador = playerContainer.querySelectorAll('.carta');
 
-            // Función para desactivar todas las cartas
             const desactivarCartas = () => {
                 cartasJugador.forEach(cartaElement => {
                     cartaElement.removeEventListener('click', handleClick);
-                    cartaElement.style.pointerEvents = 'none'; // Desactivar eventos de clic
+                    cartaElement.style.pointerEvents = 'none';
                 });
             };
 
-            // Función para manejar el clic en una carta
             const handleClick = (event) => {
                 const cartaElement = event.currentTarget;
                 const index = cartaElement.dataset.index;
-
-                // Obtener la carta seleccionada
                 const cartaSeleccionada = this.mano[index];
-
-                // Remover la carta seleccionada de la mano
                 this.mano.splice(index, 1);
-
-                // Desactivar todas las cartas
                 desactivarCartas();
-
-                // Resolver la promesa con la carta seleccionada
                 resolve(cartaSeleccionada);
             };
 
-            // Añadir event listeners a todas las cartas
             cartasJugador.forEach(cartaElement => {
                 cartaElement.addEventListener('click', handleClick);
             });
         });
     }
 
-    decidirAnunciarFlor(valorFlor) {
-        // Implementación básica: siempre quiere anunciar la Flor
+    decidirAnunciarFlor() {
         return true;
     }
 
-    decidirApostarFlor(valorFlor) {
-        // Implementación básica: siempre quiere
-        return 'Quiero';
-    }
-}
-
-
-    decidirAnunciarFlor(valorFlor) {
-        // Implementación básica: siempre quiere anunciar la Flor
-        return true;
-    }
-
-    decidirApostarFlor(valorFlor) {
-        // Implementación básica: siempre quiere
+    decidirApostarFlor() {
         return 'Quiero';
     }
 }
 
 class ClaseCPU extends ClaseJugador {
-    // Decide si la CPU debe anunciar Flor
     decidirAnunciarFlor() {
         if (this.mano.length === 3) {
             const paloFlor = this.mano.reduce((mapa, carta) => {
                 mapa[carta.palo] = (mapa[carta.palo] || 0) + 1;
                 return mapa;
             }, {});
-
-            const hayFlor = Object.values(paloFlor).some(count => count === 3); // Verificar si hay tres cartas del mismo palo
-            return hayFlor;
+            return Object.values(paloFlor).some(count => count === 3);
         }
         return false;
     }
 
-    // Decide si la CPU debe apostar al Envido
     decidirApostarEnvido() {
         const valoresEnvido = this.calcularEnvido();
         if (valoresEnvido >= 25) {
-            return 'Envido'; // Apuesta Envido si tiene un puntaje alto
+            return 'Envido';
         } else if (valoresEnvido >= 20) {
-            return Math.random() < 0.5 ? 'Envido' : 'Real Envido'; // Apuesta más agresiva ocasionalmente
+            return Math.random() < 0.5 ? 'Envido' : 'Real Envido';
         }
-        return null; // No apuesta si su Envido es bajo
+        return null;
     }
 
-    // Decide si la CPU debe iniciar Truco
     decidirApostarTruco() {
-        const valoresAltos = [14, 13, 12]; // As, 7 de espadas/oros, 3
+        const valoresAltos = [14, 13, 12];
         const cartasFuertes = this.mano.filter(carta => valoresAltos.includes(carta.obtenerValorTruco()));
         if (cartasFuertes.length >= 2) {
-            return 'Truco'; // Apuesta Truco si tiene al menos 2 cartas fuertes
+            return 'Truco';
         } else if (cartasFuertes.length === 1) {
-            return Math.random() < 0.5 ? 'Truco' : null; // Apuesta ocasionalmente con 1 carta fuerte
+            return Math.random() < 0.5 ? 'Truco' : null;
         }
-        return null; // No apuesta si no tiene cartas fuertes
+        return null;
     }
 
-    // Calcular el valor del Envido
     calcularEnvido() {
         const palos = this.mano.reduce((acum, carta) => {
             acum[carta.palo] = acum[carta.palo] || [];
@@ -190,7 +159,6 @@ class ClaseCPU extends ClaseJugador {
         }, {});
 
         let mejorEnvido = 0;
-
         for (let palo in palos) {
             const cartasDelPalo = palos[palo].sort((a, b) => b.valor - a.valor);
             if (cartasDelPalo.length >= 2) {
@@ -199,7 +167,6 @@ class ClaseCPU extends ClaseJugador {
             }
         }
 
-        // Si no tiene pares, usar la carta más alta
         if (mejorEnvido === 0) {
             mejorEnvido = Math.max(...this.mano.map(carta => carta.valor));
         }
@@ -207,20 +174,18 @@ class ClaseCPU extends ClaseJugador {
         return mejorEnvido;
     }
 
-    // Juega su turno automáticamente
     jugarTurno(juego) {
         if (this.decidirAnunciarFlor()) {
-            juego.anunciarFlor('cpu'); // La CPU anuncia Flor
+            juego.anunciarFlor('cpu');
         } else {
             const apuestaEnvido = this.decidirApostarEnvido();
             if (apuestaEnvido) {
-                juego.jugarEnvido('cpu'); // La CPU apuesta Envido
+                juego.jugarEnvido('cpu');
             } else {
                 const apuestaTruco = this.decidirApostarTruco();
                 if (apuestaTruco) {
-                    juego.jugarTruco('cpu'); // La CPU apuesta Truco
+                    juego.jugarTruco('cpu');
                 } else {
-                    // Si no apuesta, simplemente juega su carta más baja
                     const carta = this.elegirCarta();
                     juego.mostrarMensaje(`CPU juega ${carta.obtenerNombre()} de ${carta.palo}`);
                 }
@@ -228,24 +193,6 @@ class ClaseCPU extends ClaseJugador {
         }
     }
 
-    async jugarTurnoJugador() {
-    this.mostrarMensaje('Es tu turno. Elige una carta para jugar.');
-
-    // Esperar a que el jugador elija una carta
-    const cartaSeleccionada = await this.jugador.elegirCarta();
-
-    // Mostrar la carta seleccionada en los mensajes
-    this.mostrarMensaje(`Has jugado: ${cartaSeleccionada.obtenerNombre()} de ${cartaSeleccionada.palo}`);
-
-    // Procesar la carta jugada (puedes añadir aquí la lógica para resolver el truco)
-    this.procesarCartaJugada(cartaSeleccionada, 'jugador');
-
-    // Cambiar turno
-    this.cambiarTurno();
-    this.jugarTurnoCPU(); // Turno de la CPU
-}
-
-    // Elegir la carta más baja como fallback
     elegirCarta() {
         return this.mano.sort((a, b) => a.obtenerValorTruco() - b.obtenerValorTruco()).shift();
     }
