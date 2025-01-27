@@ -1,4 +1,4 @@
-// Versión 3.2
+// Versión 3.3
 
 // Estado inicial del juego
 let credits = 0;
@@ -78,37 +78,27 @@ function tieneFlor(jugador) {
 
 // Función para calcular el valor de la flor
 function calcularValorFlor(jugador) {
-    const mano = jugador.mano;
-    const valores = mano.map(carta => carta.valor);
-    const palos = mano.map(carta => carta.palo);
-    const frecuencia = {};
-    palos.forEach(palo => {
-        frecuencia[palo] = (frecuencia[palo] || 0) + 1;
-    });
-    for (let palo in frecuencia) {
-        if (frecuencia[palo] === 3) {
-            const cartasDelMismoPalo = mano.filter(carta => carta.palo === palo);
-            return cartasDelMismoPalo.reduce((sum, carta) => sum + carta.valor, 0) + 20;
-        }
-    }
-    return 0;
+    return calcularPuntosPorPalo(jugador.mano, 3);
 }
 
 // Función para calcular el valor de envido
 function calcularEnvido(mano) {
-    const valores = mano.map(carta => carta.valor);
-    const palos = mano.map(carta => carta.palo);
-    const frecuencia = {};
-    palos.forEach(palo => {
-        frecuencia[palo] = (frecuencia[palo] || 0) + 1;
-    });
+    return calcularPuntosPorPalo(mano);
+}
+
+// Función auxiliar para calcular puntos por palo
+function calcularPuntosPorPalo(mano, minCartas = 2) {
+    const frecuencia = mano.reduce((acc, carta) => {
+        acc[carta.palo] = (acc[carta.palo] || 0) + 1;
+        return acc;
+    }, {});
     for (let palo in frecuencia) {
-        if (frecuencia[palo] >= 2) {
-            const cartasDelMismoPalo = mano.filter(carta => carta.palo === palo);
-            return cartasDelMismoPalo.reduce((sum, carta) => sum + carta.valor, 0) + 20;
+        if (frecuencia[palo] >= minCartas) {
+            const cartasDelPalo = mano.filter(carta => carta.palo === palo);
+            return cartasDelPalo.reduce((sum, carta) => sum + carta.valor, 0) + 20;
         }
     }
-    return Math.max(...valores);
+    return Math.max(...mano.map(carta => carta.valor));
 }
 
 // Función para manejar el juego del jugador
@@ -154,11 +144,13 @@ function mostrarOpciones(juego) {
 // Funciones para manejar las diferentes acciones del juego
 function jugarTruco(juego, jugador) {
     mostrarMensaje(`${jugador} juega TRUCO`);
+    juego.estadoDelJuego.trucoActivo = true;
     juego.cambiarTurno();
 }
 
 function jugarEnvido(juego, jugador) {
     mostrarMensaje(`${jugador} juega ENVIDO`);
+    juego.estadoDelJuego.envidoActivo = true;
 
     let valorEnvidoJugador = calcularEnvido(juego.jugador.mano);
     let valorEnvidoCPU = calcularEnvido(juego.cpu.mano);
@@ -464,19 +456,7 @@ const cpu = {
         return null;
     },
     calcularEnvido: function() {
-        const valores = this.mano.map(carta => carta.valor);
-        const palos = this.mano.map(carta => carta.palo);
-        const frecuencia = {};
-        palos.forEach(palo => {
-            frecuencia[palo] = (frecuencia[palo] || 0) + 1;
-        });
-        for (let palo in frecuencia) {
-            if (frecuencia[palo] >= 2) {
-                const cartasDelMismoPalo = this.mano.filter(carta => carta.palo === palo);
-                return cartasDelMismoPalo.reduce((sum, carta) => sum + carta.valor, 0) + 20;
-            }
-        }
-        return Math.max(...valores);
+        return calcularPuntosPorPalo(this.mano);
     },
     decidirApostarFlor: function(valorFlor) {
         return 'Quiero';
@@ -517,6 +497,11 @@ const juego = {
     turno: Math.random() < 0.5 ? 'jugador' : 'cpu',
     mano: Math.random() < 0.5 ? 'jugador' : 'cpu', // Añadir la propiedad mano para determinar quién es Mano
     trucoApostado: 1,
+    estadoDelJuego: {
+        florActivo: false,
+        envidoActivo: false,
+        trucoActivo: false,
+    },
     florJugador: tieneFlor(jugador),
     florCPU: tieneFlor(cpu),
     repartirCartas: function() {
@@ -622,20 +607,7 @@ const juego = {
         }
     },
     calcularValorFlor: function(jugador) {
-        const mano = jugador.mostrarMano();
-        const valores = mano.map(carta => carta.valor);
-        const palos = mano.map(carta => carta.palo);
-        const frecuencia = {};
-        palos.forEach(palo => {
-            frecuencia[palo] = (frecuencia[palo] || 0) + 1;
-        });
-        for (let palo in frecuencia) {
-            if (frecuencia[palo] === 3) {
-                const cartasDelMismoPalo = mano.filter(carta => carta.palo === palo);
-                return cartasDelMismoPalo.reduce((sum, carta) => sum + carta.valor, 0) + 20;
-            }
-        }
-        return 0;
+        return calcularPuntosPorPalo(jugador.mostrarMano(), 3);
     },
     mostrarCartas: function() {
         const cpuContainer = document.querySelector('.cpu-cards');
@@ -690,13 +662,15 @@ const juego = {
     },
     jugarTruco: function(jugador) {
         this.mostrarMensaje(`${jugador} juega TRUCO`);
+        this.estadoDelJuego.trucoActivo = true;
         this.cambiarTurno();
     },
     jugarEnvido: function(jugador) {
         this.mostrarMensaje(`${jugador} juega ENVIDO`);
+        this.estadoDelJuego.envidoActivo = true;
 
-        let valorEnvidoJugador = this.calcularEnvido(this.jugador.mostrarMano());
-        let valorEnvidoCPU = this.calcularEnvido(this.cpu.mostrarMano());
+        let valorEnvidoJugador = calcularEnvido(this.jugador.mano);
+        let valorEnvidoCPU = calcularEnvido(this.cpu.mano);
 
         let apuestaActual = 2;
         let envidoActivo = true;
@@ -743,19 +717,7 @@ const juego = {
         this.cambiarTurno();
     },
     calcularEnvido: function(mano) {
-        const valores = mano.map(carta => carta.valor);
-        const palos = mano.map(carta => carta.palo);
-        const frecuencia = {};
-        palos.forEach(palo => {
-            frecuencia[palo] = (frecuencia[palo] || 0) + 1;
-        });
-        for (let palo in frecuencia) {
-            if (frecuencia[palo] >= 2) {
-                const cartasDelMismoPalo = mano.filter(carta => carta.palo === palo);
-                return cartasDelMismoPalo.reduce((sum, carta) => sum + carta.valor, 0) + 20;
-            }
-        }
-        return Math.max(...valores);
+        return calcularPuntosPorPalo(mano);
     },
     mostrarMensaje: function(mensaje) {
         const gameMessages = document.getElementById('gameMessages');
