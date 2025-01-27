@@ -1,3 +1,5 @@
+// Versión 2.0
+
 // Estado inicial del juego
 let credits = 0;
 let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
@@ -118,9 +120,12 @@ function manejarJuegoJugador(juego) {
 
 // Función para manejar el juego de la CPU
 function manejarJuegoCPU(juego) {
-    juego.cpu.jugarTurno(juego);
-    juego.cambiarTurno();
-    mostrarOpciones(juego);
+    juego.cpu.jugarTurno(juego).then(cartaSeleccionada => {
+        mostrarMensaje(`CPU juega ${cartaSeleccionada.obtenerNombre()} de ${cartaSeleccionada.palo}`);
+        procesarCartaJugada(juego, cartaSeleccionada, 'cpu');
+        juego.cambiarTurno();
+        mostrarOpciones(juego);
+    });
 }
 
 // Función para mostrar las opciones de juego
@@ -299,6 +304,53 @@ function mostrarMensaje(mensaje) {
 // Función para actualizar los créditos del jugador
 function actualizarCreditos(jugador, cpu) {
     document.getElementById('creditDisplay').textContent = `CRÉDITOS: ${jugador.obtenerPuntos()}`;
+}
+
+// Función para procesar la carta jugada
+function procesarCartaJugada(juego, carta, jugador) {
+    // Determinar la carta jugada por el oponente
+    let cartaOponente;
+    if (jugador === 'jugador') {
+        cartaOponente = juego.cpu.mostrarMano().find(c => c);
+        // Aquí asumimos que la CPU ya ha jugado su carta
+        // En un escenario real, deberías manejar la lógica de la CPU jugando su carta
+    } else if (jugador === 'cpu') {
+        cartaOponente = juego.jugador.mostrarMano().find(c => c);
+        // Similarmente, aquí deberías manejar la lógica del jugador jugando su carta
+    }
+
+    // Calcular los valores de truco de las cartas
+    const valorJugador = carta.obtenerValorTruco();
+    const valorOponente = cartaOponente.obtenerValorTruco();
+
+    // Determinar el ganador de la ronda
+    let ganador;
+    if (valorJugador > valorOponente) {
+        ganador = 'jugador';
+    } else if (valorOponente > valorJugador) {
+        ganador = 'cpu';
+    } else {
+        // En caso de empate, podrías implementar una lógica adicional
+        // Por ahora, asumimos que el jugador que juega primero gana en caso de empate
+        ganador = juego.turno;
+    }
+
+    // Mostrar el resultado de la ronda
+    mostrarMensaje(`${jugador === 'jugador' ? 'Jugador' : 'CPU'} juega ${carta.obtenerNombre()} de ${carta.palo}`);
+    mostrarMensaje(`${ganador === 'jugador' ? 'Jugador' : 'CPU'} gana la ronda`);
+
+    // Actualizar los puntos del ganador
+    if (ganador === 'jugador') {
+        juego.jugador.sumarPuntos(juego.trucoApostado);
+    } else {
+        juego.cpu.sumarPuntos(juego.trucoApostado);
+    }
+
+    // Actualizar los créditos en el DOM
+    juego.actualizarCreditos();
+
+    // Cambiar el turno al oponente
+    juego.cambiarTurno();
 }
 
 // Inicialización del juego
@@ -484,29 +536,32 @@ const juego = {
         }
     },
     jugarTurnoCPU: function() {
-        this.cpu.jugarTurno(this);
-        this.cambiarTurno();
-        this.mostrarOpciones();
+        this.cpu.jugarTurno(this).then(cartaSeleccionada => {
+            mostrarMensaje(`CPU juega ${cartaSeleccionada.obtenerNombre()} de ${cartaSeleccionada.palo}`);
+            procesarCartaJugada(this, cartaSeleccionada, 'cpu');
+            this.cambiarTurno();
+            mostrarOpciones(this);
+        });
     },
     jugarTurnoJugador: function() {
-        this.mostrarMensaje('Es tu turno. Elige una carta para jugar.');
+        mostrarMensaje('Es tu turno. Elige una carta para jugar.');
         this.jugador.elegirCarta().then(cartaSeleccionada => {
-            this.mostrarMensaje(`Has jugado: ${cartaSeleccionada.obtenerNombre()} de ${cartaSeleccionada.palo}`);
-            this.procesarCartaJugada(cartaSeleccionada, 'jugador');
+            mostrarMensaje(`Has jugado: ${cartaSeleccionada.obtenerNombre()} de ${cartaSeleccionada.palo}`);
+            procesarCartaJugada(this, cartaSeleccionada, 'jugador');
             this.cambiarTurno();
             this.jugarTurnoCPU();
         });
     },
     manejarFlor: function() {
         if (this.florJugador) {
-            this.mostrarMensaje('El jugador tiene Flor');
+            mostrarMensaje('El jugador tiene Flor');
             document.getElementById('florAnnouncement').style.display = 'block';
             document.getElementById('anunciarFlorBtn').addEventListener('click', () => {
                 this.anunciarFlor('jugador');
                 document.getElementById('florAnnouncement').style.display = 'none';
             });
         } else if (this.florCPU) {
-            this.mostrarMensaje('La CPU tiene Flor');
+            mostrarMensaje('La CPU tiene Flor');
             const anunciarCPU = this.cpu.decidirAnunciarFlor();
             if (anunciarCPU) {
                 this.anunciarFlor('cpu');
@@ -519,39 +574,39 @@ const juego = {
     },
     anunciarFlor: function(jugador) {
         if (jugador === 'jugador') {
-            this.mostrarMensaje('El jugador anuncia Flor');
+            mostrarMensaje('El jugador anuncia Flor');
             const valorFlor = calcularValorFlor(this.jugador);
-            this.mostrarMensaje(`Valor de la Flor del jugador: ${valorFlor}`);
+            mostrarMensaje(`Valor de la Flor del jugador: ${valorFlor}`);
             const respuestaCPU = this.cpu.decidirApostarFlor(valorFlor);
             if (respuestaCPU === 'Quiero') {
-                this.mostrarMensaje('CPU quiere la Flor');
+                mostrarMensaje('CPU quiere la Flor');
                 if (valorFlor > calcularValorFlor(this.cpu)) {
                     this.jugador.sumarPuntos(3);
-                    this.mostrarMensaje('Jugador gana la Flor');
+                    mostrarMensaje('Jugador gana la Flor');
                 } else {
                     this.cpu.sumarPuntos(3);
-                    this.mostrarMensaje('CPU gana la Flor');
+                    mostrarMensaje('CPU gana la Flor');
                 }
             } else {
-                this.mostrarMensaje('CPU no quiere la Flor');
+                mostrarMensaje('CPU no quiere la Flor');
                 this.jugador.sumarPuntos(3);
             }
         } else if (jugador === 'cpu') {
-            this.mostrarMensaje('La CPU anuncia Flor');
+            mostrarMensaje('La CPU anuncia Flor');
             const valorFlorCPU = calcularValorFlor(this.cpu);
-            this.mostrarMensaje(`Valor de la Flor de la CPU: ${valorFlorCPU}`);
+            mostrarMensaje(`Valor de la Flor de la CPU: ${valorFlorCPU}`);
             const respuestaJugador = this.jugador.decidirApostarFlor(valorFlorCPU);
             if (respuestaJugador === 'Quiero') {
-                this.mostrarMensaje('Jugador quiere la Flor');
+                mostrarMensaje('Jugador quiere la Flor');
                 if (calcularValorFlor(this.jugador) > valorFlorCPU) {
                     this.jugador.sumarPuntos(3);
-                    this.mostrarMensaje('Jugador gana la Flor');
+                    mostrarMensaje('Jugador gana la Flor');
                 } else {
                     this.cpu.sumarPuntos(3);
-                    this.mostrarMensaje('CPU gana la Flor');
+                    mostrarMensaje('CPU gana la Flor');
                 }
             } else {
-                this.mostrarMensaje('Jugador no quiere la Flor');
+                mostrarMensaje('Jugador no quiere la Flor');
                 this.cpu.sumarPuntos(3);
             }
         }
