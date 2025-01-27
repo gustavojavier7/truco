@@ -1,4 +1,4 @@
-// Versión 3.1
+// Versión 3.2
 
 // Estado inicial del juego
 let credits = 0;
@@ -482,22 +482,27 @@ const cpu = {
         return 'Quiero';
     },
     jugarTurno: function(juego) {
-        if (this.decidirAnunciarFlor()) {
-            juego.anunciarFlor('cpu');
-        } else {
-            const apuestaEnvido = this.decidirApostarEnvido();
-            if (apuestaEnvido) {
-                juego.jugarEnvido('cpu');
-            } else {
-                const apuestaTruco = this.decidirApostarTruco();
-                if (apuestaTruco) {
-                    juego.jugarTruco('cpu');
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                if (this.decidirAnunciarFlor()) {
+                    juego.anunciarFlor('cpu');
                 } else {
-                    const carta = this.elegirCartaImperativa();
-                    juego.mostrarMensaje(`CPU juega ${carta.obtenerNombre()} de ${carta.palo}`);
+                    const apuestaEnvido = this.decidirApostarEnvido();
+                    if (apuestaEnvido) {
+                        juego.jugarEnvido('cpu');
+                    } else {
+                        const apuestaTruco = this.decidirApostarTruco();
+                        if (apuestaTruco) {
+                            juego.jugarTruco('cpu');
+                        } else {
+                            const carta = this.elegirCartaImperativa();
+                            mostrarMensaje(`CPU juega ${carta.obtenerNombre()} de ${carta.palo}`);
+                            resolve(carta);
+                        }
+                    }
                 }
-            }
-        }
+            }, 1000); // Simula un retraso para la decisión de la CPU
+        });
     },
     elegirCartaImperativa: function() {
         return this.mano.sort((a, b) => a.obtenerValorTruco() - b.obtenerValorTruco()).shift();
