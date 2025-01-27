@@ -1,4 +1,4 @@
-// Versión 3.3
+// Versión 3.4
 
 // Estado inicial del juego
 let credits = 0;
@@ -309,12 +309,9 @@ function procesarCartaJugada(juego, carta, jugador) {
     // Determinar la carta jugada por el oponente
     let cartaOponente;
     if (jugador === 'jugador') {
-        cartaOponente = juego.cpu.mostrarMano().find(c => c);
-        // Aquí asumimos que la CPU ya ha jugado su carta
-        // En un escenario real, deberías manejar la lógica de la CPU jugando su carta
+        cartaOponente = juego.cpu.ultimaCartaJugada;
     } else if (jugador === 'cpu') {
-        cartaOponente = juego.jugador.mostrarMano().find(c => c);
-        // Similarmente, aquí deberías manejar la lógica del jugador jugando su carta
+        cartaOponente = juego.jugador.ultimaCartaJugada;
     }
 
     // Calcular los valores de truco de las cartas
@@ -354,6 +351,7 @@ const jugador = {
     nombre: 'Humano',
     mano: [],
     puntos: 0,
+    ultimaCartaJugada: null,
     recibirCarta: function(carta) {
         this.mano.push(carta);
     },
@@ -390,6 +388,7 @@ const jugador = {
                 const cartaSeleccionada = this.mano[index];
                 if (esCartaValida(cartaSeleccionada, juego)) {
                     this.mano.splice(index, 1);
+                    this.ultimaCartaJugada = cartaSeleccionada;
                     desactivarCartas();
                     resolve(cartaSeleccionada);
                 } else {
@@ -414,6 +413,7 @@ const cpu = {
     nombre: 'CPU',
     mano: [],
     puntos: 0,
+    ultimaCartaJugada: null,
     recibirCarta: function(carta) {
         this.mano.push(carta);
     },
@@ -476,6 +476,7 @@ const cpu = {
                             juego.jugarTruco('cpu');
                         } else {
                             const carta = this.elegirCartaImperativa();
+                            this.ultimaCartaJugada = carta;
                             mostrarMensaje(`CPU juega ${carta.obtenerNombre()} de ${carta.palo}`);
                             resolve(carta);
                         }
