@@ -99,26 +99,94 @@ class ClaseJugador {
     }
 }
 
-// Clase para representar la CPU
 class ClaseCPU extends ClaseJugador {
+    // Decide si la CPU debe anunciar Flor
+    decidirAnunciarFlor() {
+        if (this.mano.length === 3) {
+            const paloFlor = this.mano.reduce((mapa, carta) => {
+                mapa[carta.palo] = (mapa[carta.palo] || 0) + 1;
+                return mapa;
+            }, {});
+
+            const hayFlor = Object.values(paloFlor).some(count => count === 3); // Verificar si hay tres cartas del mismo palo
+            return hayFlor;
+        }
+        return false;
+    }
+
+    // Decide si la CPU debe apostar al Envido
+    decidirApostarEnvido() {
+        const valoresEnvido = this.calcularEnvido();
+        if (valoresEnvido >= 25) {
+            return 'Envido'; // Apuesta Envido si tiene un puntaje alto
+        } else if (valoresEnvido >= 20) {
+            return Math.random() < 0.5 ? 'Envido' : 'Real Envido'; // Apuesta más agresiva ocasionalmente
+        }
+        return null; // No apuesta si su Envido es bajo
+    }
+
+    // Decide si la CPU debe iniciar Truco
+    decidirApostarTruco() {
+        const valoresAltos = [14, 13, 12]; // As, 7 de espadas/oros, 3
+        const cartasFuertes = this.mano.filter(carta => valoresAltos.includes(carta.obtenerValorTruco()));
+        if (cartasFuertes.length >= 2) {
+            return 'Truco'; // Apuesta Truco si tiene al menos 2 cartas fuertes
+        } else if (cartasFuertes.length === 1) {
+            return Math.random() < 0.5 ? 'Truco' : null; // Apuesta ocasionalmente con 1 carta fuerte
+        }
+        return null; // No apuesta si no tiene cartas fuertes
+    }
+
+    // Calcular el valor del Envido
+    calcularEnvido() {
+        const palos = this.mano.reduce((acum, carta) => {
+            acum[carta.palo] = acum[carta.palo] || [];
+            acum[carta.palo].push(carta);
+            return acum;
+        }, {});
+
+        let mejorEnvido = 0;
+
+        for (let palo in palos) {
+            const cartasDelPalo = palos[palo].sort((a, b) => b.valor - a.valor);
+            if (cartasDelPalo.length >= 2) {
+                const valor = cartasDelPalo[0].valor + cartasDelPalo[1].valor + 20;
+                mejorEnvido = Math.max(mejorEnvido, valor);
+            }
+        }
+
+        // Si no tiene pares, usar la carta más alta
+        if (mejorEnvido === 0) {
+            mejorEnvido = Math.max(...this.mano.map(carta => carta.valor));
+        }
+
+        return mejorEnvido;
+    }
+
+    // Juega su turno automáticamente
+    jugarTurno(juego) {
+        if (this.decidirAnunciarFlor()) {
+            juego.anunciarFlor('cpu'); // La CPU anuncia Flor
+        } else {
+            const apuestaEnvido = this.decidirApostarEnvido();
+            if (apuestaEnvido) {
+                juego.jugarEnvido('cpu'); // La CPU apuesta Envido
+            } else {
+                const apuestaTruco = this.decidirApostarTruco();
+                if (apuestaTruco) {
+                    juego.jugarTruco('cpu'); // La CPU apuesta Truco
+                } else {
+                    // Si no apuesta, simplemente juega su carta más baja
+                    const carta = this.elegirCarta();
+                    juego.mostrarMensaje(`CPU juega ${carta.obtenerNombre()} de ${carta.palo}`);
+                }
+            }
+        }
+    }
+
+    // Elegir la carta más baja como fallback
     elegirCarta() {
-        // Implementación básica: elegir la primera carta
-        return this.mano.shift();
-    }
-
-    decidirAnunciarFlor(valorFlor) {
-        // Implementación básica: decide aleatoriamente si anuncia la Flor
-        return Math.random() < 0.5;
-    }
-
-    decidirApostarFlor(valorFlor) {
-        // Implementación básica: decide aleatoriamente si quiere la Flor
-        return Math.random() < 0.5 ? 'Quiero' : 'No quiero';
-    }
-
-    decidirApostar(envido) {
-        // Lógica básica: apostar si el envido es alto
-        return envido >= 25 ? 'Quiero' : 'No quiero';
+        return this.mano.sort((a, b) => a.obtenerValorTruco() - b.obtenerValorTruco()).shift();
     }
 }
 
