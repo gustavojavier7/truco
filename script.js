@@ -1,4 +1,4 @@
-// Versión 2.0
+// Versión 3.0
 
 // Estado inicial del juego
 let credits = 0;
@@ -306,6 +306,12 @@ function actualizarCreditos(jugador, cpu) {
     document.getElementById('creditDisplay').textContent = `CRÉDITOS: ${jugador.obtenerPuntos()}`;
 }
 
+// Función para validar si una carta es válida según el estado del juego
+function esCartaValida(carta, estadoDelJuego) {
+    // Implementa lógica personalizada
+    return true; // Placeholder
+}
+
 // Función para procesar la carta jugada
 function procesarCartaJugada(juego, carta, jugador) {
     // Determinar la carta jugada por el oponente
@@ -324,16 +330,13 @@ function procesarCartaJugada(juego, carta, jugador) {
     const valorOponente = cartaOponente.obtenerValorTruco();
 
     // Determinar el ganador de la ronda
-    let ganador;
-    if (valorJugador > valorOponente) {
-        ganador = 'jugador';
-    } else if (valorOponente > valorJugador) {
-        ganador = 'cpu';
-    } else {
-        // En caso de empate, podrías implementar una lógica adicional
-        // Por ahora, asumimos que el jugador que juega primero gana en caso de empate
-        ganador = juego.turno;
-    }
+    let ganador = valorJugador === valorOponente
+        ? juego.turno
+        : valorJugador > valorOponente
+        ? jugador
+        : jugador === 'jugador'
+        ? 'cpu'
+        : 'jugador';
 
     // Mostrar el resultado de la ronda
     mostrarMensaje(`${jugador === 'jugador' ? 'Jugador' : 'CPU'} juega ${carta.obtenerNombre()} de ${carta.palo}`);
@@ -393,9 +396,13 @@ const jugador = {
                 const cartaElement = event.currentTarget;
                 const index = cartaElement.dataset.index;
                 const cartaSeleccionada = this.mano[index];
-                this.mano.splice(index, 1);
-                desactivarCartas();
-                resolve(cartaSeleccionada);
+                if (esCartaValida(cartaSeleccionada, juego)) {
+                    this.mano.splice(index, 1);
+                    desactivarCartas();
+                    resolve(cartaSeleccionada);
+                } else {
+                    mostrarMensaje('Carta no válida. Elige otra carta.');
+                }
             };
 
             cartasJugador.forEach(cartaElement => {
@@ -470,9 +477,6 @@ const cpu = {
             }
         }
         return Math.max(...valores);
-    },
-    decidirAnunciarFlor: function() {
-        return this.decidirAnunciarFlor();
     },
     decidirApostarFlor: function(valorFlor) {
         return 'Quiero';
