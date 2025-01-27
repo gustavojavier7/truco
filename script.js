@@ -1,88 +1,331 @@
-// Ver 1.08
-
+// Estado inicial del juego
 let credits = 0;
 let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
 
-// Clase para representar una carta
-class ClaseCarta {
-    constructor(palo, valor) {
-        this.palo = palo; // Espadas, Bastos, Copas, Oros
-        this.valor = valor; // 1-12 (1: As, 10: Sota, 11: Caballo, 12: Rey)
-    }
+// Función para crear una carta
+function crearCarta(palo, valor) {
+    return {
+        palo: palo, // Espadas, Bastos, Copas, Oros
+        valor: valor, // 1-12 (1: As, 10: Sota, 11: Caballo, 12: Rey)
+        obtenerNombre: function() {
+            const nombres = {
+                1: 'As',
+                10: 'Sota',
+                11: 'Caballo',
+                12: 'Rey'
+            };
+            return nombres[this.valor] || this.valor.toString();
+        },
+        obtenerValorTruco: function() {
+            const valoresTruco = {
+                1: 14, 7: 13, 3: 12, 2: 11,
+                12: 10, 11: 9, 10: 8, 6: 7,
+                5: 6, 4: 5
+            };
+            return valoresTruco[this.valor] || 0;
+        }
+    };
+}
 
-    obtenerNombre() {
-        const nombres = {
-            1: 'As',
-            10: 'Sota',
-            11: 'Caballo',
-            12: 'Rey'
-        };
-        return nombres[this.valor] || this.valor.toString();
-    }
+// Función para crear un mazo
+function crearMazo() {
+    const cartas = [];
+    const palos = ['Espadas', 'Bastos', 'Copas', 'Oros'];
+    palos.forEach(palo => {
+        for (let valor = 1; valor <= 7; valor++) {
+            cartas.push(crearCarta(palo, valor));
+        }
+        for (let valor = 10; valor <= 12; valor++) {
+            cartas.push(crearCarta(palo, valor));
+        }
+    });
+    barajar(cartas);
+    return cartas;
+}
 
-    obtenerValorTruco() {
-        const valoresTruco = {
-            1: 14, 7: 13, 3: 12, 2: 11,
-            12: 10, 11: 9, 10: 8, 6: 7,
-            5: 6, 4: 5
-        };
-        return valoresTruco[this.valor] || 0;
+// Función para barajar el mazo
+function barajar(cartas) {
+    for (let i = cartas.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cartas[i], cartas[j]] = [cartas[j], cartas[i]];
     }
 }
 
-// Clase para representar un mazo
-class ClaseMazo {
-    constructor() {
-        this.cartas = [];
-        const palos = ['Espadas', 'Bastos', 'Copas', 'Oros'];
-        for (let palo of palos) {
-            for (let valor = 1; valor <= 7; valor++) {
-                this.cartas.push(new ClaseCarta(palo, valor));
-            }
-            for (let valor = 10; valor <= 12; valor++) {
-                this.cartas.push(new ClaseCarta(palo, valor));
-            }
-        }
-        this.barajar();
-    }
-
-    barajar() {
-        for (let i = this.cartas.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [this.cartas[i], this.cartas[j]] = [this.cartas[j], this.cartas[i]];
-        }
-    }
-
-    sacarCarta() {
-        return this.cartas.pop();
+// Función para repartir cartas
+function repartirCartas(jugador, cpu, mazo) {
+    for (let i = 0; i < 3; i++) {
+        jugador.mano.push(mazo.pop());
+        cpu.mano.push(mazo.pop());
     }
 }
 
-// Clase para representar un jugador
-class ClaseJugador {
-    constructor(nombre) {
-        this.nombre = nombre;
-        this.mano = [];
-        this.puntos = 0;
+// Función para determinar si un jugador tiene flor
+function tieneFlor(jugador) {
+    const palos = jugador.mano.map(carta => carta.palo);
+    const frecuencia = {};
+    palos.forEach(palo => {
+        frecuencia[palo] = (frecuencia[palo] || 0) + 1;
+    });
+    for (let palo in frecuencia) {
+        if (frecuencia[palo] === 3) {
+            return palo;
+        }
+    }
+    return false;
+}
+
+// Función para calcular el valor de la flor
+function calcularValorFlor(jugador) {
+    const mano = jugador.mano;
+    const valores = mano.map(carta => carta.valor);
+    const palos = mano.map(carta => carta.palo);
+    const frecuencia = {};
+    palos.forEach(palo => {
+        frecuencia[palo] = (frecuencia[palo] || 0) + 1;
+    });
+    for (let palo in frecuencia) {
+        if (frecuencia[palo] === 3) {
+            const cartasDelMismoPalo = mano.filter(carta => carta.palo === palo);
+            return cartasDelMismoPalo.reduce((sum, carta) => sum + carta.valor, 0) + 20;
+        }
+    }
+    return 0;
+}
+
+// Función para calcular el valor de envido
+function calcularEnvido(mano) {
+    const valores = mano.map(carta => carta.valor);
+    const palos = mano.map(carta => carta.palo);
+    const frecuencia = {};
+    palos.forEach(palo => {
+        frecuencia[palo] = (frecuencia[palo] || 0) + 1;
+    });
+    for (let palo in frecuencia) {
+        if (frecuencia[palo] >= 2) {
+            const cartasDelMismoPalo = mano.filter(carta => carta.palo === palo);
+            return cartasDelMismoPalo.reduce((sum, carta) => sum + carta.valor, 0) + 20;
+        }
+    }
+    return Math.max(...valores);
+}
+
+// Función para manejar el juego del jugador
+function manejarJuegoJugador(juego) {
+    mostrarMensaje('Es tu turno. Elige una carta para jugar.');
+    // Lógica para manejar la selección de la carta del jugador (similar al código original)
+    // ...
+}
+
+// Función para manejar el juego de la CPU
+function manejarJuegoCPU(juego) {
+    juego.cpu.jugarTurno(juego);
+    juego.cambiarTurno();
+    mostrarOpciones(juego);
+}
+
+// Función para mostrar las opciones de juego
+function mostrarOpciones(juego) {
+    const opciones = document.querySelector('.game-options');
+    opciones.innerHTML = '';
+
+    if (juego.turno === 'jugador') {
+        opciones.innerHTML = `
+            <div class="option" id="trucoBtn">TRUCO</div>
+            <div class="option" id="envidoBtn">ENVIDO</div>
+            <div class="option" id="florBtn">FLOR</div>
+            <div class="option" id="retirarseBtn">RETIRARSE</div>
+        `;
+    } else {
+        manejarJuegoCPU(juego);
+        return;
     }
 
-    recibirCarta(carta) {
+    document.getElementById('trucoBtn')?.addEventListener('click', () => jugarTruco(juego, 'jugador'));
+    document.getElementById('envidoBtn')?.addEventListener('click', () => jugarEnvido(juego, 'jugador'));
+    document.getElementById('florBtn')?.addEventListener('click', () => jugarFlor(juego, 'jugador'));
+    document.getElementById('retirarseBtn')?.addEventListener('click', () => retirarse(juego, 'jugador'));
+}
+
+// Funciones para manejar las diferentes acciones del juego
+function jugarTruco(juego, jugador) {
+    mostrarMensaje(`${jugador} juega TRUCO`);
+    juego.cambiarTurno();
+}
+
+function jugarEnvido(juego, jugador) {
+    mostrarMensaje(`${jugador} juega ENVIDO`);
+
+    let valorEnvidoJugador = calcularEnvido(juego.jugador.mano);
+    let valorEnvidoCPU = calcularEnvido(juego.cpu.mano);
+
+    let apuestaActual = 2;
+    let envidoActivo = true;
+
+    mostrarMensaje(`Envido iniciado. Jugador: ${valorEnvidoJugador}, CPU: ${valorEnvidoCPU}`);
+
+    while (envidoActivo) {
+        if (jugador === 'jugador') {
+            let deseaAumentar = confirm('¿Deseas aumentar la apuesta (Real Envido o Falta Envido)?');
+            if (deseaAumentar) {
+                apuestaActual += 2;
+                mostrarMensaje(`Jugador aumenta la apuesta a ${apuestaActual}`);
+            } else {
+                envidoActivo = false;
+                mostrarMensaje('Jugador no aumenta la apuesta');
+            }
+        }
+
+        let respuestaCPU = juego.cpu.decidirApostarEnvido();
+        if (respuestaCPU === 'Quiero') {
+            mostrarMensaje(`CPU acepta la apuesta de ${apuestaActual}`);
+            if (jugador === 'jugador') {
+                jugador = 'cpu';
+            } else {
+                envidoActivo = false;
+            }
+        } else {
+            mostrarMensaje('CPU no quiere la apuesta');
+            juego.jugador.sumarPuntos(1);
+            juego.actualizarCreditos();
+            return juego.cambiarTurno();
+        }
+    }
+
+    if (valorEnvidoJugador > valorEnvidoCPU) {
+        juego.jugador.sumarPuntos(apuestaActual);
+        mostrarMensaje(`Jugador gana el Envido y suma ${apuestaActual} puntos`);
+    } else {
+        juego.cpu.sumarPuntos(apuestaActual);
+        mostrarMensaje(`CPU gana el Envido y suma ${apuestaActual} puntos`);
+    }
+
+    juego.actualizarCreditos();
+    juego.cambiarTurno();
+}
+
+function jugarFlor(juego, jugador) {
+    if (juego.florJugador) {
+        mostrarMensaje('El jugador tiene Flor');
+        document.getElementById('florAnnouncement').style.display = 'block';
+        document.getElementById('anunciarFlorBtn').addEventListener('click', () => {
+            anunciarFlor(juego, 'jugador');
+            document.getElementById('florAnnouncement').style.display = 'none';
+        });
+    } else if (juego.florCPU) {
+        mostrarMensaje('La CPU tiene Flor');
+        const anunciarCPU = juego.cpu.decidirAnunciarFlor();
+        if (anunciarCPU) {
+            anunciarFlor(juego, 'cpu');
+        } else {
+            mostrarOpciones(juego);
+        }
+    } else {
+        mostrarOpciones(juego);
+    }
+}
+
+function anunciarFlor(juego, jugador) {
+    if (jugador === 'jugador') {
+        mostrarMensaje('El jugador anuncia Flor');
+        const valorFlor = calcularValorFlor(juego.jugador);
+        mostrarMensaje(`Valor de la Flor del jugador: ${valorFlor}`);
+        const respuestaCPU = juego.cpu.decidirApostarFlor(valorFlor);
+        if (respuestaCPU === 'Quiero') {
+            mostrarMensaje('CPU quiere la Flor');
+            if (valorFlor > calcularValorFlor(juego.cpu)) {
+                juego.jugador.sumarPuntos(3);
+                mostrarMensaje('Jugador gana la Flor');
+            } else {
+                juego.cpu.sumarPuntos(3);
+                mostrarMensaje('CPU gana la Flor');
+            }
+        } else {
+            mostrarMensaje('CPU no quiere la Flor');
+            juego.jugador.sumarPuntos(3);
+        }
+    } else if (jugador === 'cpu') {
+        mostrarMensaje('La CPU anuncia Flor');
+        const valorFlorCPU = calcularValorFlor(juego.cpu);
+        mostrarMensaje(`Valor de la Flor de la CPU: ${valorFlorCPU}`);
+        const respuestaJugador = juego.jugador.decidirApostarFlor(valorFlorCPU);
+        if (respuestaJugador === 'Quiero') {
+            mostrarMensaje('Jugador quiere la Flor');
+            if (calcularValorFlor(juego.jugador) > valorFlorCPU) {
+                juego.jugador.sumarPuntos(3);
+                mostrarMensaje('Jugador gana la Flor');
+            } else {
+                juego.cpu.sumarPuntos(3);
+                mostrarMensaje('CPU gana la Flor');
+            }
+        } else {
+            mostrarMensaje('Jugador no quiere la Flor');
+            juego.cpu.sumarPuntos(3);
+        }
+    }
+}
+
+// Función para manejar la retirada de un jugador
+function retirarse(juego, jugador) {
+    mostrarMensaje(`${jugador} se retira del juego`);
+    if (jugador === 'jugador') {
+        juego.cpu.sumarPuntos(juego.jugador.obtenerPuntos());
+        mostrarMensaje('CPU gana el juego');
+    } else {
+        juego.jugador.sumarPuntos(juego.cpu.obtenerPuntos());
+        mostrarMensaje('Jugador gana el juego');
+    }
+    juego.actualizarCreditos();
+}
+
+// Función para mostrar mensajes en el juego
+function mostrarMensaje(mensaje) {
+    const gameMessages = document.getElementById('gameMessages');
+    if (!gameMessages) {
+        console.warn('El contenedor de mensajes no existe en el DOM.');
+        return;
+    }
+
+    const mensajeElement = document.createElement('div');
+    mensajeElement.textContent = mensaje;
+    gameMessages.appendChild(mensajeElement);
+    gameMessages.scrollTop = gameMessages.scrollHeight;
+
+    const mensajes = gameMessages.getElementsByTagName('div');
+    if (mensajes.length > 5) {
+        gameMessages.removeChild(mensajes[0]);
+    }
+}
+
+// Función para actualizar los créditos del jugador
+function actualizarCreditos(jugador, cpu) {
+    document.getElementById('creditDisplay').textContent = `CRÉDITOS: ${jugador.obtenerPuntos()}`;
+}
+
+// Inicialización del juego
+const mazo = crearMazo();
+const jugador = {
+    nombre: 'Humano',
+    mano: [],
+    puntos: 0,
+    recibirCarta: function(carta) {
         this.mano.push(carta);
-    }
-
-    mostrarMano() {
+    },
+    mostrarMano: function() {
         return this.mano;
-    }
-
-    obtenerPuntos() {
+    },
+    obtenerPuntos: function() {
         return this.puntos;
-    }
-
-    sumarPuntos(puntos) {
+    },
+    sumarPuntos: function(puntos) {
         this.puntos += puntos;
-    }
-
-    elegirCarta() {
+    },
+    decidirAnunciarFlor: function() {
+        return true;
+    },
+    decidirApostarFlor: function(valorFlor) {
+        return 'Quiero';
+    },
+    elegirCarta: function() {
         return new Promise((resolve) => {
             const playerContainer = document.querySelector('.player-cards');
             const cartasJugador = playerContainer.querySelectorAll('.carta');
@@ -107,19 +350,32 @@ class ClaseJugador {
                 cartaElement.addEventListener('click', handleClick);
             });
         });
+    },
+    jugarTurno: function(juego) {
+        manejarJuegoJugador(juego);
+    },
+    elegirCartaImperativa: function() {
+        return this.mano.sort((a, b) => a.obtenerValorTruco() - b.obtenerValorTruco()).shift();
     }
+};
 
-    decidirAnunciarFlor() {
-        return true;
-    }
-
-    decidirApostarFlor() {
-        return 'Quiero';
-    }
-}
-
-class ClaseCPU extends ClaseJugador {
-    decidirAnunciarFlor() {
+const cpu = {
+    nombre: 'CPU',
+    mano: [],
+    puntos: 0,
+    recibirCarta: function(carta) {
+        this.mano.push(carta);
+    },
+    mostrarMano: function() {
+        return this.mano;
+    },
+    obtenerPuntos: function() {
+        return this.puntos;
+    },
+    sumarPuntos: function(puntos) {
+        this.puntos += puntos;
+    },
+    decidirAnunciarFlor: function() {
         if (this.mano.length === 3) {
             const paloFlor = this.mano.reduce((mapa, carta) => {
                 mapa[carta.palo] = (mapa[carta.palo] || 0) + 1;
@@ -128,9 +384,8 @@ class ClaseCPU extends ClaseJugador {
             return Object.values(paloFlor).some(count => count === 3);
         }
         return false;
-    }
-
-    decidirApostarEnvido() {
+    },
+    decidirApostarEnvido: function() {
         const valoresEnvido = this.calcularEnvido();
         if (valoresEnvido >= 25) {
             return 'Envido';
@@ -138,9 +393,8 @@ class ClaseCPU extends ClaseJugador {
             return Math.random() < 0.5 ? 'Envido' : 'Real Envido';
         }
         return null;
-    }
-
-    decidirApostarTruco() {
+    },
+    decidirApostarTruco: function() {
         const valoresAltos = [14, 13, 12];
         const cartasFuertes = this.mano.filter(carta => valoresAltos.includes(carta.obtenerValorTruco()));
         if (cartasFuertes.length >= 2) {
@@ -149,32 +403,29 @@ class ClaseCPU extends ClaseJugador {
             return Math.random() < 0.5 ? 'Truco' : null;
         }
         return null;
-    }
-
-    calcularEnvido() {
-        const palos = this.mano.reduce((acum, carta) => {
-            acum[carta.palo] = acum[carta.palo] || [];
-            acum[carta.palo].push(carta);
-            return acum;
-        }, {});
-
-        let mejorEnvido = 0;
-        for (let palo in palos) {
-            const cartasDelPalo = palos[palo].sort((a, b) => b.valor - a.valor);
-            if (cartasDelPalo.length >= 2) {
-                const valor = cartasDelPalo[0].valor + cartasDelPalo[1].valor + 20;
-                mejorEnvido = Math.max(mejorEnvido, valor);
+    },
+    calcularEnvido: function() {
+        const valores = this.mano.map(carta => carta.valor);
+        const palos = this.mano.map(carta => carta.palo);
+        const frecuencia = {};
+        palos.forEach(palo => {
+            frecuencia[palo] = (frecuencia[palo] || 0) + 1;
+        });
+        for (let palo in frecuencia) {
+            if (frecuencia[palo] >= 2) {
+                const cartasDelMismoPalo = this.mano.filter(carta => carta.palo === palo);
+                return cartasDelMismoPalo.reduce((sum, carta) => sum + carta.valor, 0) + 20;
             }
         }
-
-        if (mejorEnvido === 0) {
-            mejorEnvido = Math.max(...this.mano.map(carta => carta.valor));
-        }
-
-        return mejorEnvido;
-    }
-
-    jugarTurno(juego) {
+        return Math.max(...valores);
+    },
+    decidirAnunciarFlor: function() {
+        return this.decidirAnunciarFlor();
+    },
+    decidirApostarFlor: function(valorFlor) {
+        return 'Quiero';
+    },
+    jugarTurno: function(juego) {
         if (this.decidirAnunciarFlor()) {
             juego.anunciarFlor('cpu');
         } else {
@@ -186,59 +437,41 @@ class ClaseCPU extends ClaseJugador {
                 if (apuestaTruco) {
                     juego.jugarTruco('cpu');
                 } else {
-                    const carta = this.elegirCarta();
+                    const carta = this.elegirCartaImperativa();
                     juego.mostrarMensaje(`CPU juega ${carta.obtenerNombre()} de ${carta.palo}`);
                 }
             }
         }
-    }
-
-    elegirCarta() {
+    },
+    elegirCartaImperativa: function() {
         return this.mano.sort((a, b) => a.obtenerValorTruco() - b.obtenerValorTruco()).shift();
     }
-}
+};
 
-// Clase para representar el juego
-class ClaseJuegoTruco {
-    constructor(jugador, cpu) {
-        this.jugador = jugador;
-        this.cpu = cpu;
-        this.mazo = new ClaseMazo();
-        this.turno = Math.random() < 0.5 ? 'jugador' : 'cpu';
-        this.mano = this.turno === 'jugador' ? 'jugador' : 'cpu';
-        this.trucoApostado = 1;
+// Inicialización del juego
+const juego = {
+    jugador: jugador,
+    cpu: cpu,
+    mazo: crearMazo(),
+    turno: Math.random() < 0.5 ? 'jugador' : 'cpu',
+    trucoApostado: 1,
+    florJugador: tieneFlor(jugador),
+    florCPU: tieneFlor(cpu),
+    repartirCartas: function() {
+        repartirCartas(this.jugador, this.cpu, this.mazo);
+    },
+    tieneFlor: function(jugador) {
+        return tieneFlor(jugador);
+    },
+    iniciarJuego: function() {
         this.repartirCartas();
         this.florJugador = this.tieneFlor(this.jugador);
         this.florCPU = this.tieneFlor(this.cpu);
-    }
-
-    repartirCartas() {
-        for (let i = 0; i < 3; i++) {
-            this.jugador.recibirCarta(this.mazo.sacarCarta());
-            this.cpu.recibirCarta(this.mazo.sacarCarta());
-        }
-    }
-
-    tieneFlor(jugador) {
-        const palos = jugador.mostrarMano().map(carta => carta.palo);
-        const frecuencia = {};
-        palos.forEach(palo => {
-            frecuencia[palo] = (frecuencia[palo] || 0) + 1;
-        });
-        for (let palo in frecuencia) {
-            if (frecuencia[palo] === 3) {
-                return palo;
-            }
-        }
-        return false;
-    }
-
-    iniciarJuego() {
         this.mostrarCartas();
         this.actualizarCreditos();
 
         const manoDisplay = document.getElementById('manoDisplay');
-        manoDisplay.textContent = this.mano === 'cpu' ? 'Yo soy mano' : 'Vos sos mano';
+        manoDisplay.textContent = this.turno === 'cpu' ? 'Yo soy mano' : 'Vos sos mano';
         manoDisplay.style.display = 'block';
 
         this.mostrarMensaje('¡Comienza el juego!');
@@ -249,28 +482,22 @@ class ClaseJuegoTruco {
         } else {
             this.jugarTurnoJugador();
         }
-    }
-
-    jugarTurnoCPU() {
+    },
+    jugarTurnoCPU: function() {
         this.cpu.jugarTurno(this);
         this.cambiarTurno();
         this.mostrarOpciones();
-    }
-
-    async jugarTurnoJugador() {
+    },
+    jugarTurnoJugador: function() {
         this.mostrarMensaje('Es tu turno. Elige una carta para jugar.');
-
-        const cartaSeleccionada = await this.jugador.elegirCarta();
-
-        this.mostrarMensaje(`Has jugado: ${cartaSeleccionada.obtenerNombre()} de ${cartaSeleccionada.palo}`);
-
-        this.procesarCartaJugada(cartaSeleccionada, 'jugador');
-
-        this.cambiarTurno();
-        this.jugarTurnoCPU();
-    }
-
-    manejarFlor() {
+        this.jugador.elegirCarta().then(cartaSeleccionada => {
+            this.mostrarMensaje(`Has jugado: ${cartaSeleccionada.obtenerNombre()} de ${cartaSeleccionada.palo}`);
+            this.procesarCartaJugada(cartaSeleccionada, 'jugador');
+            this.cambiarTurno();
+            this.jugarTurnoCPU();
+        });
+    },
+    manejarFlor: function() {
         if (this.florJugador) {
             this.mostrarMensaje('El jugador tiene Flor');
             document.getElementById('florAnnouncement').style.display = 'block';
@@ -280,7 +507,7 @@ class ClaseJuegoTruco {
             });
         } else if (this.florCPU) {
             this.mostrarMensaje('La CPU tiene Flor');
-            const anunciarCPU = this.cpu.decidirAnunciarFlor(this.florCPU);
+            const anunciarCPU = this.cpu.decidirAnunciarFlor();
             if (anunciarCPU) {
                 this.anunciarFlor('cpu');
             } else {
@@ -289,17 +516,16 @@ class ClaseJuegoTruco {
         } else {
             this.mostrarOpciones();
         }
-    }
-
-    anunciarFlor(jugador) {
+    },
+    anunciarFlor: function(jugador) {
         if (jugador === 'jugador') {
             this.mostrarMensaje('El jugador anuncia Flor');
-            const valorFlor = this.calcularValorFlor(this.jugador);
+            const valorFlor = calcularValorFlor(this.jugador);
             this.mostrarMensaje(`Valor de la Flor del jugador: ${valorFlor}`);
             const respuestaCPU = this.cpu.decidirApostarFlor(valorFlor);
             if (respuestaCPU === 'Quiero') {
                 this.mostrarMensaje('CPU quiere la Flor');
-                if (valorFlor > this.calcularValorFlor(this.cpu)) {
+                if (valorFlor > calcularValorFlor(this.cpu)) {
                     this.jugador.sumarPuntos(3);
                     this.mostrarMensaje('Jugador gana la Flor');
                 } else {
@@ -312,12 +538,12 @@ class ClaseJuegoTruco {
             }
         } else if (jugador === 'cpu') {
             this.mostrarMensaje('La CPU anuncia Flor');
-            const valorFlorCPU = this.calcularValorFlor(this.cpu);
+            const valorFlorCPU = calcularValorFlor(this.cpu);
             this.mostrarMensaje(`Valor de la Flor de la CPU: ${valorFlorCPU}`);
             const respuestaJugador = this.jugador.decidirApostarFlor(valorFlorCPU);
             if (respuestaJugador === 'Quiero') {
                 this.mostrarMensaje('Jugador quiere la Flor');
-                if (this.calcularValorFlor(this.jugador) > valorFlorCPU) {
+                if (calcularValorFlor(this.jugador) > valorFlorCPU) {
                     this.jugador.sumarPuntos(3);
                     this.mostrarMensaje('Jugador gana la Flor');
                 } else {
@@ -329,9 +555,8 @@ class ClaseJuegoTruco {
                 this.cpu.sumarPuntos(3);
             }
         }
-    }
-
-    calcularValorFlor(jugador) {
+    },
+    calcularValorFlor: function(jugador) {
         const mano = jugador.mostrarMano();
         const valores = mano.map(carta => carta.valor);
         const palos = mano.map(carta => carta.palo);
@@ -346,9 +571,8 @@ class ClaseJuegoTruco {
             }
         }
         return 0;
-    }
-
-    mostrarCartas() {
+    },
+    mostrarCartas: function() {
         const cpuContainer = document.querySelector('.cpu-cards');
         const playerContainer = document.querySelector('.player-cards');
 
@@ -374,13 +598,11 @@ class ClaseJuegoTruco {
         });
 
         this.actualizarCreditos();
-    }
-
-    actualizarCreditos() {
+    },
+    actualizarCreditos: function() {
         document.getElementById('creditDisplay').textContent = `CRÉDITOS: ${this.jugador.obtenerPuntos()}`;
-    }
-
-    mostrarOpciones() {
+    },
+    mostrarOpciones: function() {
         const opciones = document.querySelector('.game-options');
         opciones.innerHTML = '';
 
@@ -400,14 +622,12 @@ class ClaseJuegoTruco {
         document.getElementById('envidoBtn')?.addEventListener('click', () => this.jugarEnvido('jugador'));
         document.getElementById('florBtn')?.addEventListener('click', () => this.jugarFlor('jugador'));
         document.getElementById('retirarseBtn')?.addEventListener('click', () => this.retirarse('jugador'));
-    }
-
-    jugarTruco(jugador) {
+    },
+    jugarTruco: function(jugador) {
         this.mostrarMensaje(`${jugador} juega TRUCO`);
         this.cambiarTurno();
-    }
-
-    jugarEnvido(jugador) {
+    },
+    jugarEnvido: function(jugador) {
         this.mostrarMensaje(`${jugador} juega ENVIDO`);
 
         let valorEnvidoJugador = this.calcularEnvido(this.jugador.mostrarMano());
@@ -456,9 +676,8 @@ class ClaseJuegoTruco {
 
         this.actualizarCreditos();
         this.cambiarTurno();
-    }
-
-    calcularEnvido(mano) {
+    },
+    calcularEnvido: function(mano) {
         const valores = mano.map(carta => carta.valor);
         const palos = mano.map(carta => carta.palo);
         const frecuencia = {};
@@ -472,9 +691,8 @@ class ClaseJuegoTruco {
             }
         }
         return Math.max(...valores);
-    }
-
-    mostrarMensaje(mensaje) {
+    },
+    mostrarMensaje: function(mensaje) {
         const gameMessages = document.getElementById('gameMessages');
         if (!gameMessages) {
             console.warn('El contenedor de mensajes no existe en el DOM.');
@@ -490,17 +708,14 @@ class ClaseJuegoTruco {
         if (mensajes.length > 5) {
             gameMessages.removeChild(mensajes[0]);
         }
-    }
-
-    cambiarTurno() {
+    },
+    cambiarTurno: function() {
         this.turno = this.turno === 'jugador' ? 'cpu' : 'jugador';
-    }
-
-    jugarCPU() {
+    },
+    jugarCPU: function() {
         this.cpu.jugarTurno(this);
-    }
-
-    retirarse(jugador) {
+    },
+    retirarse: function(jugador) {
         this.mostrarMensaje(`${jugador} se retira del juego`);
         if (jugador === 'jugador') {
             this.cpu.sumarPuntos(this.jugador.obtenerPuntos());
@@ -511,11 +726,7 @@ class ClaseJuegoTruco {
         }
         this.actualizarCreditos();
     }
-}
+};
 
-const jugador = new ClaseJugador('Humano');
-const cpu = new ClaseCPU('CPU');
-
-const juego = new ClaseJuegoTruco(jugador, cpu);
-
+// Inicialización del juego
 juego.iniciarJuego();
