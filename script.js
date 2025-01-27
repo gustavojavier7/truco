@@ -83,10 +83,30 @@ class ClaseJugador {
         this.puntos += puntos;
     }
 
-    elegirCarta() {
-        // Implementación para jugador humano
-        return null;
-    }
+   elegirCarta() {
+    return new Promise((resolve) => {
+        const playerContainer = document.querySelector('.player-cards');
+        const cartasJugador = playerContainer.querySelectorAll('.carta');
+
+        // Añadir un evento de clic a cada carta para seleccionarla
+        cartasJugador.forEach((cartaElement, index) => {
+            cartaElement.addEventListener('click', () => {
+                // Eliminar eventos de las demás cartas para evitar selecciones múltiples
+                cartasJugador.forEach(c => c.replaceWith(c.cloneNode(true)));
+                
+                // Obtener la carta seleccionada
+                const cartaSeleccionada = this.mano[index];
+
+                // Remover la carta seleccionada de la mano
+                this.mano.splice(index, 1);
+
+                // Resolver la promesa con la carta seleccionada
+                resolve(cartaSeleccionada);
+            });
+        });
+    });
+}
+
 
     decidirAnunciarFlor(valorFlor) {
         // Implementación básica: siempre quiere anunciar la Flor
