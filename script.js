@@ -204,6 +204,23 @@ class ClaseCPU extends ClaseJugador {
         }
     }
 
+    async jugarTurnoJugador() {
+    this.mostrarMensaje('Es tu turno. Elige una carta para jugar.');
+
+    // Esperar a que el jugador elija una carta
+    const cartaSeleccionada = await this.jugador.elegirCarta();
+
+    // Mostrar la carta seleccionada en los mensajes
+    this.mostrarMensaje(`Has jugado: ${cartaSeleccionada.obtenerNombre()} de ${cartaSeleccionada.palo}`);
+
+    // Procesar la carta jugada (puedes añadir aquí la lógica para resolver el truco)
+    this.procesarCartaJugada(cartaSeleccionada, 'jugador');
+
+    // Cambiar turno
+    this.cambiarTurno();
+    this.jugarTurnoCPU(); // Turno de la CPU
+}
+
     // Elegir la carta más baja como fallback
     elegirCarta() {
         return this.mano.sort((a, b) => a.obtenerValorTruco() - b.obtenerValorTruco()).shift();
