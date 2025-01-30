@@ -1,4 +1,4 @@
-// Versión 3.5
+// Versión 3.7
 
 // Estado inicial del juego
 let credits = 0;
@@ -319,12 +319,12 @@ function anunciarFlor(juego, jugador) {
         const respuestaJugador = juego.jugador.decidirApostarFlor(valorFlorCPU);
         if (respuestaJugador === 'Quiero') {
             mostrarMensaje('Jugador quiere la Flor');
-            if (calcularValorFlor(juego.jugador) > valorFlorCPU) {
-                juego.jugador.sumarPuntos(3);
-                mostrarMensaje('Jugador gana la Flor');
-            } else {
+            if (valorFlorCPU > calcularValorFlor(juego.jugador)) {
                 juego.cpu.sumarPuntos(3);
                 mostrarMensaje('CPU gana la Flor');
+            } else {
+                juego.jugador.sumarPuntos(3);
+                mostrarMensaje('Jugador gana la Flor');
             }
         } else {
             mostrarMensaje('Jugador no quiere la Flor');
@@ -669,12 +669,12 @@ const juego = {
             const respuestaJugador = this.jugador.decidirApostarFlor(valorFlorCPU);
             if (respuestaJugador === 'Quiero') {
                 mostrarMensaje('Jugador quiere la Flor');
-                if (calcularValorFlor(this.jugador) > valorFlorCPU) {
-                    this.jugador.sumarPuntos(3);
-                    mostrarMensaje('Jugador gana la Flor');
-                } else {
+                if (valorFlorCPU > calcularValorFlor(this.jugador)) {
                     this.cpu.sumarPuntos(3);
                     mostrarMensaje('CPU gana la Flor');
+                } else {
+                    this.jugador.sumarPuntos(3);
+                    mostrarMensaje('Jugador gana la Flor');
                 }
             } else {
                 mostrarMensaje('Jugador no quiere la Flor');
