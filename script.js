@@ -1,4 +1,4 @@
-// Versión 3.7.1
+// Versión 3.7
 
 // Estado inicial del juego
 let credits = 0;
@@ -370,12 +370,6 @@ function actualizarCreditos(jugador, cpu) {
     document.getElementById('creditDisplay').textContent = `CRÉDITOS: ${jugador.obtenerPuntos()}`;
 }
 
-function esCartaValida(carta, estadoDelJuego) {
-    // Verificar si la carta es de un valor permitido
-    const valoresPermitidos = [1, 2, 3, 4, 5, 6, 7, 10, 11, 12];
-    return valoresPermitidos.includes(carta.valor);
-}
-
 // Función para procesar la carta jugada
 function procesarCartaJugada(juego, carta, jugador) {
     // Determinar la carta jugada por el oponente
@@ -458,14 +452,10 @@ const jugador = {
                 const cartaElement = event.currentTarget;
                 const index = cartaElement.dataset.index;
                 const cartaSeleccionada = this.mano[index];
-                if (esCartaValida(cartaSeleccionada, juego)) {
-                    this.mano.splice(index, 1);
-                    this.ultimaCartaJugada = cartaSeleccionada;
-                    desactivarCartas();
-                    resolve(cartaSeleccionada);
-                } else {
-                    mostrarMensaje('Carta no válida. Elige otra carta.');
-                }
+                this.mano.splice(index, 1);
+                this.ultimaCartaJugada = cartaSeleccionada;
+                desactivarCartas();
+                resolve(cartaSeleccionada);
             };
 
             cartasJugador.forEach(cartaElement => {
