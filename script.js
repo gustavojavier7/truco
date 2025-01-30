@@ -1,4 +1,4 @@
-// Versión 3.7
+// Versión 3.7.1
 
 // Estado inicial del juego
 let credits = 0;
@@ -371,17 +371,10 @@ function actualizarCreditos(jugador, cpu) {
 }
 
 function esCartaValida(carta, estadoDelJuego) {
-    // Implementa lógica personalizada
-    // Ejemplo: Verificar si la carta es del palo correcto
-    if (estadoDelJuego.florActivo || estadoDelJuego.envidoActivo || estadoDelJuego.trucoActivo) {
-        return carta.palo === estadoDelJuego.paloMano;
-    }
-
     // Verificar si la carta es de un valor permitido
     const valoresPermitidos = [1, 2, 3, 4, 5, 6, 7, 10, 11, 12];
     return valoresPermitidos.includes(carta.valor);
 }
-
 
 // Función para procesar la carta jugada
 function procesarCartaJugada(juego, carta, jugador) {
