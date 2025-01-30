@@ -370,11 +370,18 @@ function actualizarCreditos(jugador, cpu) {
     document.getElementById('creditDisplay').textContent = `CRÉDITOS: ${jugador.obtenerPuntos()}`;
 }
 
-// Función para validar si una carta es válida según el estado del juego
 function esCartaValida(carta, estadoDelJuego) {
     // Implementa lógica personalizada
-    return true; // Placeholder
+    // Ejemplo: Verificar si la carta es del palo correcto
+    if (estadoDelJuego.florActivo || estadoDelJuego.envidoActivo || estadoDelJuego.trucoActivo) {
+        return carta.palo === estadoDelJuego.paloMano;
+    }
+
+    // Verificar si la carta es de un valor permitido
+    const valoresPermitidos = [1, 2, 3, 4, 5, 6, 7, 10, 11, 12];
+    return valoresPermitidos.includes(carta.valor);
 }
+
 
 // Función para procesar la carta jugada
 function procesarCartaJugada(juego, carta, jugador) {
