@@ -1,4 +1,4 @@
-// Versión 3.7
+// Versión 3.7.2
 
 // Estado inicial del juego
 let credits = 0;
