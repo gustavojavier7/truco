@@ -147,6 +147,41 @@ function mostrarOpciones(juego) {
     document.getElementById('retirarseBtn')?.addEventListener('click', () => retirarse(juego, 'jugador'));
 }
 
+function resolverApuesta(juego, tipo, aceptada) {
+    if (!aceptada) {
+        mostrarMensaje(`${juego.turno} no quiso ${tipo}.`);
+        
+        let puntos = 1; // Si es Truco rechazado, da 1 punto.
+        if (tipo === "Retruco") puntos = 2;
+        if (tipo === "Vale Cuatro") puntos = 3;
+        if (tipo.includes("Envido")) puntos = juego.ultimaApuestaEnvido; 
+
+        if (juego.turno === "jugador") {
+            juego.cpu.sumarPuntos(puntos);
+        } else {
+            juego.jugador.sumarPuntos(puntos);
+        }
+
+        marcarApuestaResuelta(juego, tipo);
+        juego.cambiarTurno();
+        return;
+    }
+
+    mostrarMensaje(`${juego.turno} quiso ${tipo}.`);
+    
+    if (tipo === "Truco") juego.estadoDelJuego.trucoResuelto = false;
+    if (tipo === "Retruco") juego.estadoDelJuego.retrucoResuelto = false;
+    if (tipo === "Vale Cuatro") juego.estadoDelJuego.valeCuatroResuelto = false;
+    if (tipo.includes("Envido")) juego.estadoDelJuego.envidoResuelto = false;
+}
+
+function marcarApuestaResuelta(juego, tipo) {
+    if (tipo === "Truco") juego.estadoDelJuego.trucoResuelto = true;
+    if (tipo === "Retruco") juego.estadoDelJuego.retrucoResuelto = true;
+    if (tipo === "Vale Cuatro") juego.estadoDelJuego.valeCuatroResuelto = true;
+    if (tipo.includes("Envido")) juego.estadoDelJuego.envidoResuelto = true;
+}
+
 // Funciones para manejar las diferentes acciones del juego
 function jugarTruco(juego, jugador) {
     // Verificar si ya se ha resuelto un Truco previo
