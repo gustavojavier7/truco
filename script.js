@@ -1,4 +1,4 @@
-// Versión 3.8.5
+// Versión 3.8.7
 
 // Estado inicial del juego
 let credits = 0;
@@ -101,33 +101,14 @@ function calcularPuntosPorPalo(mano, minCartas = 2) {
     return Math.max(...mano.map(carta => carta.valor));
 }
 
-// Función para manejar el juego del jugador
-function manejarJuegoJugador(juego) {
-    mostrarMensaje('Es tu turno. Elige una carta para jugar.');
-    // Lógica para manejar la selección de la carta del jugador (similar al código original)
-    // ...
-}
-
-// Función para manejar el juego de la CPU
-function manejarJuegoCPU(juego) {
-    juego.cpu.jugarTurno(juego).then(cartaSeleccionada => {
-        mostrarMensaje(`CPU juega ${cartaSeleccionada.obtenerNombre()} de ${cartaSeleccionada.palo}`);
-        procesarCartaJugada(juego, cartaSeleccionada, 'cpu');
-        juego.cambiarTurno();
-        mostrarOpciones(juego);
-    });
-}
-
+// Función para resolver Envido
 function resolverEnvido(juego) {
-    // Calcular el valor del Envido para cada jugador
     const valorEnvidoJugador = calcularEnvido(juego.jugador.mano);
     const valorEnvidoCPU = calcularEnvido(juego.cpu.mano);
 
-    // Mostrar los valores de Envido
     mostrarMensaje(`Envido Jugador: ${valorEnvidoJugador}`);
     mostrarMensaje(`Envido CPU: ${valorEnvidoCPU}`);
 
-    // Determinar el ganador del Envido
     if (valorEnvidoJugador > valorEnvidoCPU) {
         mostrarMensaje('El jugador gana el Envido.');
         juego.jugador.sumarPuntos(juego.ultimaApuestaEnvido);
@@ -135,30 +116,20 @@ function resolverEnvido(juego) {
         mostrarMensaje('La CPU gana el Envido.');
         juego.cpu.sumarPuntos(juego.ultimaApuestaEnvido);
     } else {
-        // En caso de empate, gana el jugador más cercano al mano (anticlockwise)
-        if (juego.mano === 'jugador') {
-            mostrarMensaje('Empate en el Envido. Gana el jugador.');
-            juego.jugador.sumarPuntos(juego.ultimaApuestaEnvido);
-        } else {
-            mostrarMensaje('Empate en el Envido. Gana la CPU.');
-            juego.cpu.sumarPuntos(juego.ultimaApuestaEnvido);
-        }
+        mostrarMensaje('Empate en el Envido. Gana el jugador más cercano al mano.');
+        juego.mano === 'jugador' ? juego.jugador.sumarPuntos(juego.ultimaApuestaEnvido) : juego.cpu.sumarPuntos(juego.ultimaApuestaEnvido);
     }
 
-    // Actualizar los créditos en la interfaz
     juego.actualizarCreditos();
-
-    // Marcar la apuesta de Envido como resuelta
     juego.estadoDelJuego.envidoActivo = false;
     juego.estadoDelJuego.envidoResuelto = true;
 }
 
+// Función para resolver Truco
 function resolverTruco(juego) {
-    // Contar los tricks ganados por cada jugador
     const tricksJugador = juego.jugador.tricksGanados;
     const tricksCPU = juego.cpu.tricksGanados;
 
-    // Determinar el ganador del Truco
     if (tricksJugador > tricksCPU) {
         mostrarMensaje('El jugador gana el Truco.');
         juego.jugador.sumarPuntos(juego.trucoApostado);
@@ -166,118 +137,49 @@ function resolverTruco(juego) {
         mostrarMensaje('La CPU gana el Truco.');
         juego.cpu.sumarPuntos(juego.trucoApostado);
     } else {
-        // En caso de empate, gana el jugador que tiene el "liderRonda"
-        if (juego.liderRonda === 'jugador') {
-            mostrarMensaje('Empate en el Truco. Gana el jugador.');
-            juego.jugador.sumarPuntos(juego.trucoApostado);
-        } else {
-            mostrarMensaje('Empate en el Truco. Gana la CPU.');
-            juego.cpu.sumarPuntos(juego.trucoApostado);
-        }
+        mostrarMensaje('Empate en el Truco. Gana el jugador que tiene el "liderRonda".');
+        juego.liderRonda === 'jugador' ? juego.jugador.sumarPuntos(juego.trucoApostado) : juego.cpu.sumarPuntos(juego.trucoApostado);
     }
 
-    // Actualizar los créditos en la interfaz
     juego.actualizarCreditos();
-
-    // Marcar la apuesta de Truco como resuelta
     juego.estadoDelJuego.trucoActivo = false;
     juego.estadoDelJuego.trucoResuelto = true;
 }
 
-// Función para mostrar las opciones de juego
-function mostrarOpciones(juego) {
-    const opciones = document.querySelector('.game-options');
-    opciones.innerHTML = '';
+// Función para resolver Flor
+function resolverFlor(juego) {
+    const valorFlorJugador = calcularValorFlor(juego.jugador);
+    const valorFlorCPU = calcularValorFlor(juego.cpu);
 
-    if (juego.turno === 'jugador') {
-        if (juego.estadoDelJuego.trucoActivo) {
-            opciones.innerHTML = `
-                <div class="option" id="retirarseBtn">RETIRARSE</div>
-            `;
-        } else {
-            opciones.innerHTML = `
-                <div class="option" id="trucoBtn">TRUCO</div>
-                <div class="option" id="envidoBtn">ENVIDO</div>
-                <div class="option" id="florBtn">FLOR</div>
-                <div class="option" id="retirarseBtn">RETIRARSE</div>
-            `;
-        }
+    if (valorFlorJugador > valorFlorCPU) {
+        juego.jugador.sumarPuntos(3);
+        mostrarMensaje('Jugador gana la Flor.');
     } else {
-        manejarJuegoCPU(juego);
-        return;
+        juego.cpu.sumarPuntos(3);
+        mostrarMensaje('CPU gana la Flor.');
     }
 
-    document.getElementById('trucoBtn')?.addEventListener('click', () => jugarTruco(juego, 'jugador'));
-    document.getElementById('envidoBtn')?.addEventListener('click', () => jugarEnvido(juego, 'jugador'));
-    document.getElementById('florBtn')?.addEventListener('click', () => jugarFlor(juego, 'jugador'));
-    document.getElementById('retirarseBtn')?.addEventListener('click', () => retirarse(juego, 'jugador'));
+    juego.estadoDelJuego.florActivo = false;
+    juego.estadoDelJuego.florResuelto = true;
 }
 
-function resolverApuesta(juego, tipo, aceptada) {
-    if (!aceptada) {
-        mostrarMensaje(`${juego.turno} no quiso ${tipo}.`);
-
-        let puntos = 1; // Si es Truco rechazado, da 1 punto.
-        if (tipo === "Retruco") puntos = 2;
-        if (tipo === "Vale Cuatro") puntos = 3;
-        if (tipo.includes("Envido")) puntos = juego.ultimaApuestaEnvido;
-
-        if (juego.turno === "jugador") {
-            juego.cpu.sumarPuntos(puntos);
-        } else {
-            juego.jugador.sumarPuntos(puntos);
-        }
-
-        marcarApuestaResuelta(juego, tipo);
-        juego.cambiarTurno();
-        return;
+// Función para manejar apuestas simultáneas
+function manejarApuestas(juego) {
+    if (juego.estadoDelJuego.envidoActivo) {
+        resolverEnvido(juego);
     }
-
-    mostrarMensaje(`${juego.turno} quiso ${tipo}.`);
-
-    if (tipo === "Truco") juego.estadoDelJuego.trucoResuelto = false;
-    if (tipo === "Retruco") juego.estadoDelJuego.retrucoResuelto = false;
-    if (tipo === "Vale Cuatro") juego.estadoDelJuego.valeCuatroResuelto = false;
-    if (tipo.includes("Envido")) juego.estadoDelJuego.envidoResuelto = false;
-}
-
-function manejarApuestasSimultaneas(juego, jugador) {
-    if (juego.estadoDelJuego.envidoActivo && juego.estadoDelJuego.trucoActivo) {
-        // Resolver Envido primero
-        resolverEnvido(juego, jugador);
-        // Luego resolver Truco
-        resolverTruco(juego, jugador);
-    } else if (juego.estadoDelJuego.envidoActivo) {
-        resolverEnvido(juego, jugador);
-    } else if (juego.estadoDelJuego.trucoActivo) {
-        resolverTruco(juego, jugador);
-    }
-}
-
-function marcarApuestaResuelta(juego, tipo) {
-    if (tipo === "Truco") juego.estadoDelJuego.trucoResuelto = true;
-    if (tipo === "Retruco") juego.estadoDelJuego.retrucoResuelto = true;
-    if (tipo === "Vale Cuatro") juego.estadoDelJuego.valeCuatroResuelto = true;
-    if (tipo.includes("Envido")) juego.estadoDelJuego.envidoResuelto = true;
-}
-
-// Funciones para manejar las diferentes acciones del juego
-function jugarTruco(juego, jugador) {
-    // Verificar si ya se ha resuelto un Truco previo
-    if (juego.estadoDelJuego.trucoResuelto) {
-        mostrarMensaje('El Truco ya ha sido resuelto. No puedes apostar Truco nuevamente hasta que se inicie un nuevo turno.');
-        return;
-    }
-
-    // Verificar si ya se ha apostado Truco
     if (juego.estadoDelJuego.trucoActivo) {
-        mostrarMensaje('Ya se ha apostado Truco. Espera a que se resuelva.');
-        return;
+        resolverTruco(juego);
     }
+    if (juego.estadoDelJuego.florActivo) {
+        resolverFlor(juego);
+    }
+}
 
-    // Verificar si hay apuestas de Flor o Envido pendientes
-    if (juego.estadoDelJuego.florActivo || juego.estadoDelJuego.envidoActivo) {
-        mostrarMensaje('No puedes apostar Truco mientras haya apuestas de Flor o Envido pendientes.');
+// Función para jugar Truco
+function jugarTruco(juego, jugador) {
+    if (juego.estadoDelJuego.trucoResuelto || juego.estadoDelJuego.trucoActivo || juego.estadoDelJuego.florActivo || juego.estadoDelJuego.envidoActivo) {
+        mostrarMensaje('No puedes apostar Truco en este momento.');
         return;
     }
 
@@ -286,212 +188,47 @@ function jugarTruco(juego, jugador) {
     juego.cambiarTurno();
 }
 
-function jugarRetruco(juego, jugador) {
-    if (juego.estadoDelJuego.trucoActivo && !juego.estadoDelJuego.retrucoActivo) {
-        mostrarMensaje(`${jugador} juega RETRUCO`);
-        juego.estadoDelJuego.retrucoActivo = true;
-        juego.cambiarTurno();
-    } else {
-        mostrarMensaje('No puedes jugar Retruco en este momento.');
-    }
-}
-
-function jugarValeCuatro(juego, jugador) {
-    if (juego.estadoDelJuego.retrucoActivo && !juego.estadoDelJuego.valeCuatroActivo) {
-        mostrarMensaje(`${jugador} juega VALE CUATRO`);
-        juego.estadoDelJuego.valeCuatroActivo = true;
-        juego.cambiarTurno();
-    } else {
-        mostrarMensaje('No puedes jugar Vale Cuatro en este momento.');
-    }
-}
-
+// Función para jugar Envido
 function jugarEnvido(juego, jugador) {
-    // Verificar si ya se ha apostado Truco
-    if (juego.estadoDelJuego.trucoActivo) {
-        mostrarMensaje('No puedes apostar Envido después de que se haya apostado Truco. Debes esperar a que se resuelva el Truco.');
-        return;
-    }
-
-    // Verificar si ya se ha resuelto un Envido previo
-    if (juego.estadoDelJuego.envidoResuelto) {
-        mostrarMensaje('El Envido ya ha sido resuelto. No puedes apostar Envido nuevamente hasta que se inicie un nuevo turno.');
-        return;
-    }
-
-    // Verificar si ya se ha apostado Envido
-    if (juego.estadoDelJuego.envidoActivo) {
-        mostrarMensaje('Ya se ha apostado Envido. Espera a que se resuelva.');
-        return;
-    }
-
-    // Verificar si hay apuestas de Flor pendientes
-    if (juego.estadoDelJuego.florActivo) {
-        mostrarMensaje('No puedes apostar Envido mientras haya apuestas de Flor pendientes.');
+    if (juego.estadoDelJuego.trucoActivo || juego.estadoDelJuego.florActivo || juego.estadoDelJuego.envidoResuelto) {
+        mostrarMensaje('No puedes apostar Envido en este momento.');
         return;
     }
 
     mostrarMensaje(`${jugador} juega ENVIDO`);
     juego.estadoDelJuego.envidoActivo = true;
+    juego.ultimaApuestaEnvido = 2;
 
-    let valorEnvidoJugador = calcularEnvido(juego.jugador.mano);
-    let valorEnvidoCPU = calcularEnvido(juego.cpu.mano);
-
-    let apuestaActual = 2;
-    let envidoActivo = true;
-
-    mostrarMensaje(`Envido iniciado. Jugador: ${valorEnvidoJugador}, CPU: ${valorEnvidoCPU}`);
-
-    while (envidoActivo) {
-        if (jugador === 'jugador') {
-            let deseaAumentar = confirm('¿Deseas aumentar la apuesta (Real Envido o Falta Envido)?');
-            if (deseaAumentar) {
-                apuestaActual += 2;
-                mostrarMensaje(`Jugador aumenta la apuesta a ${apuestaActual}`);
-            } else {
-                envidoActivo = false;
-                mostrarMensaje('Jugador no aumenta la apuesta');
-            }
-        }
-
-        let respuestaCPU = juego.cpu.decidirApostarEnvido();
-        if (respuestaCPU === 'Quiero') {
-            mostrarMensaje(`CPU acepta la apuesta de ${apuestaActual}`);
-            if (jugador === 'jugador') {
-                jugador = 'cpu';
-            } else {
-                envidoActivo = false;
-            }
-        } else {
-            mostrarMensaje('CPU no quiere la apuesta');
-            juego.jugador.sumarPuntos(1);
-            juego.actualizarCreditos();
-            return juego.cambiarTurno();
-        }
-    }
-
-    if (valorEnvidoJugador > valorEnvidoCPU) {
-        juego.jugador.sumarPuntos(apuestaActual);
-        mostrarMensaje(`Jugador gana el Envido y suma ${apuestaActual} puntos`);
-    } else {
-        juego.cpu.sumarPuntos(apuestaActual);
-        mostrarMensaje(`CPU gana el Envido y suma ${apuestaActual} puntos`);
-    }
-
-    juego.actualizarCreditos();
-    juego.cambiarTurno();
-}
-
-function jugarRealEnvido(juego, jugador) {
-    mostrarMensaje(`${jugador} juega REAL ENVIDO`);
-    juego.estadoDelJuego.realEnvidoActivo = true;
-    juego.cambiarTurno();
-}
-
-function jugarFaltaEnvido(juego, jugador) {
-    mostrarMensaje(`${jugador} juega FALTA ENVIDO`);
-    juego.estadoDelJuego.faltaEnvidoActivo = true;
-    juego.cambiarTurno();
-}
-
-function jugarFlor(juego, jugador) {
-    // Verificar si ya se ha apostado Truco
-    if (juego.estadoDelJuego.trucoActivo) {
-        mostrarMensaje('No puedes apostar Flor después de que se haya apostado Truco. Debes esperar a que se resuelva el Truco.');
-        return;
-    }
-
-    // Verificar si ya se ha resuelto una Flor previa
-    if (juego.estadoDelJuego.florResuelto) {
-        mostrarMensaje('La Flor ya ha sido resuelta. No puedes apostar Flor nuevamente hasta que se inicie un nuevo turno.');
-        return;
-    }
-
-    // Verificar si ya se ha apostado Flor
-    if (juego.estadoDelJuego.florActivo) {
-        mostrarMensaje('Ya se ha apostado Flor. Espera a que se resuelva.');
-        return;
-    }
-
-    // Verificar si hay apuestas de Envido pendientes
-    if (juego.estadoDelJuego.envidoActivo) {
-        mostrarMensaje('No puedes apostar Flor mientras haya apuestas de Envido pendientes.');
-        return;
-    }
-
-    if (juego.florJugador) {
-        mostrarMensaje('El jugador tiene Flor');
-        document.getElementById('florAnnouncement').style.display = 'block';
-        document.getElementById('anunciarFlorBtn').addEventListener('click', () => {
-            anunciarFlor(juego, 'jugador');
-            document.getElementById('florAnnouncement').style.display = 'none';
-        });
-    } else if (juego.florCPU) {
-        mostrarMensaje('La CPU tiene Flor');
-        const anunciarCPU = juego.cpu.decidirAnunciarFlor();
-        if (anunciarCPU) {
-            anunciarFlor(juego, 'cpu');
-        } else {
-            mostrarOpciones(juego);
-        }
-    } else {
-        mostrarOpciones(juego);
-    }
-}
-
-function anunciarFlor(juego, jugador) {
     if (jugador === 'jugador') {
-        mostrarMensaje('El jugador anuncia Flor');
-        const valorFlor = calcularValorFlor(juego.jugador);
-        mostrarMensaje(`Valor de la Flor del jugador: ${valorFlor}`);
-        const respuestaCPU = juego.cpu.decidirApostarFlor(valorFlor);
-        if (respuestaCPU === 'Quiero') {
-            mostrarMensaje('CPU quiere la Flor');
-            if (valorFlor > calcularValorFlor(juego.cpu)) {
-                juego.jugador.sumarPuntos(3);
-                mostrarMensaje('Jugador gana la Flor');
-            } else {
-                juego.cpu.sumarPuntos(3);
-                mostrarMensaje('CPU gana la Flor');
-            }
-        } else {
-            mostrarMensaje('CPU no quiere la Flor');
-            juego.jugador.sumarPuntos(3);
+        const deseaAumentar = confirm('¿Deseas aumentar la apuesta?');
+        if (deseaAumentar) {
+            juego.ultimaApuestaEnvido += 2;
+            mostrarMensaje(`Jugador aumenta la apuesta a ${juego.ultimaApuestaEnvido}`);
         }
-    } else if (jugador === 'cpu') {
-        mostrarMensaje('La CPU anuncia Flor');
-        const valorFlorCPU = calcularValorFlor(juego.cpu);
-        mostrarMensaje(`Valor de la Flor de la CPU: ${valorFlorCPU}`);
-        const respuestaJugador = juego.jugador.decidirApostarFlor(valorFlorCPU);
-        if (respuestaJugador === 'Quiero') {
-            mostrarMensaje('Jugador quiere la Flor');
-            if (valorFlorCPU > calcularValorFlor(juego.jugador)) {
-                juego.cpu.sumarPuntos(3);
-                mostrarMensaje('CPU gana la Flor');
-            } else {
-                juego.jugador.sumarPuntos(3);
-                mostrarMensaje('Jugador gana la Flor');
-            }
-        } else {
-            mostrarMensaje('Jugador no quiere la Flor');
-            juego.cpu.sumarPuntos(3);
+    } else {
+        const respuestaCPU = juego.cpu.decidirApostarEnvido();
+        if (respuestaCPU === 'Quiero') {
+            juego.ultimaApuestaEnvido += 2;
+            mostrarMensaje(`CPU aumenta la apuesta a ${juego.ultimaApuestaEnvido}`);
         }
     }
+
+    resolverEnvido(juego);
 }
 
-function anunciarContraflor(juego, jugador) {
-    mostrarMensaje(`${jugador} anuncia CONTRAFLOR`);
-    juego.estadoDelJuego.contraflorActivo = true;
-    juego.cambiarTurno();
+// Función para jugar Flor
+function jugarFlor(juego, jugador) {
+    if (juego.estadoDelJuego.trucoActivo || juego.estadoDelJuego.envidoActivo || juego.estadoDelJuego.florResuelto) {
+        mostrarMensaje('No puedes apostar Flor en este momento.');
+        return;
+    }
+
+    mostrarMensaje(`${jugador} juega FLOR`);
+    juego.estadoDelJuego.florActivo = true;
+    resolverFlor(juego);
 }
 
-function anunciarContraflorAlResto(juego, jugador) {
-    mostrarMensaje(`${jugador} anuncia CONTRAFLOR AL RESTO`);
-    juego.estadoDelJuego.contraflorAlRestoActivo = true;
-    juego.cambiarTurno();
-}
-
-// Función para manejar la retirada de un jugador
+// Función para retirarse
 function retirarse(juego, jugador) {
     mostrarMensaje(`${jugador} se retira del juego`);
     if (jugador === 'jugador') {
@@ -507,19 +244,15 @@ function retirarse(juego, jugador) {
 // Función para mostrar mensajes en el juego
 function mostrarMensaje(mensaje) {
     const gameMessages = document.getElementById('gameMessages');
-    if (!gameMessages) {
-        console.warn('El contenedor de mensajes no existe en el DOM.');
-        return;
-    }
+    if (!gameMessages) return;
 
     const mensajeElement = document.createElement('div');
     mensajeElement.textContent = mensaje;
     gameMessages.appendChild(mensajeElement);
     gameMessages.scrollTop = gameMessages.scrollHeight;
 
-    const mensajes = gameMessages.getElementsByTagName('div');
-    if (mensajes.length > 5) {
-        gameMessages.removeChild(mensajes[0]);
+    if (gameMessages.children.length > 5) {
+        gameMessages.removeChild(gameMessages.firstChild);
     }
 }
 
@@ -528,21 +261,15 @@ function actualizarCreditos(jugador) {
     document.getElementById('creditDisplay').textContent = `CRÉDITOS: ${jugador.obtenerPuntos()}`;
 }
 
+// Función para procesar una carta jugada
 function procesarCartaJugada(juego, carta, jugador) {
-    let cartaOponente;
-    if (jugador === 'jugador') {
-        cartaOponente = juego.cpu.ultimaCartaJugada;
-    } else if (jugador === 'cpu') {
-        cartaOponente = juego.jugador.ultimaCartaJugada;
-    }
-
+    const cartaOponente = jugador === 'jugador' ? juego.cpu.ultimaCartaJugada : juego.jugador.ultimaCartaJugada;
     const valorJugador = carta.obtenerValorTruco();
     const valorOponente = cartaOponente.obtenerValorTruco();
 
     if (valorJugador === valorOponente) {
         mostrarMensaje('¡Parda! Empate en esta ronda.');
-        // El ganador de la ronda anterior lidera la siguiente
-        juego.liderRonda = juego.liderRonda || juego.mano; // Si no hay líder previo, el Mano lidera
+        juego.liderRonda = juego.liderRonda || juego.mano;
     } else if (valorJugador > valorOponente) {
         mostrarMensaje(`${jugador === 'jugador' ? 'Jugador' : 'CPU'} gana la ronda`);
         juego.liderRonda = jugador;
@@ -551,13 +278,7 @@ function procesarCartaJugada(juego, carta, jugador) {
         juego.liderRonda = jugador === 'jugador' ? 'cpu' : 'jugador';
     }
 
-    // Actualizar puntos y créditos
-    if (juego.liderRonda === 'jugador') {
-        juego.jugador.sumarPuntos(juego.trucoApostado);
-    } else {
-        juego.cpu.sumarPuntos(juego.trucoApostado);
-    }
-
+    juego.liderRonda === 'jugador' ? juego.jugador.sumarPuntos(juego.trucoApostado) : juego.cpu.sumarPuntos(juego.trucoApostado);
     juego.actualizarCreditos();
     juego.cambiarTurno();
 }
@@ -650,13 +371,13 @@ const cpu = {
         return false;
     },
     decidirApostarEnvido: function() {
-        const valoresEnvido = this.calcularEnvido();
-        if (valoresEnvido >= 25) {
-            return 'Envido';
-        } else if (valoresEnvido >= 20) {
-            return Math.random() < 0.5 ? 'Envido' : 'Real Envido';
+        const valorEnvido = calcularEnvido(this.mano);
+        if (valorEnvido >= 25) {
+            return 'Quiero';
+        } else if (valorEnvido >= 20 && Math.random() < 0.5) {
+            return 'Quiero';
         }
-        return null;
+        return 'No Quiero';
     },
     decidirApostarTruco: function() {
         const valoresAltos = [14, 13, 12];
@@ -667,9 +388,6 @@ const cpu = {
             return Math.random() < 0.5 ? 'Truco' : null;
         }
         return null;
-    },
-    calcularEnvido: function() {
-        return calcularPuntosPorPalo(this.mano);
     },
     decidirApostarFlor: function(valorFlor) {
         return 'Quiero';
@@ -709,9 +427,9 @@ const juego = {
     cpu: cpu,
     mazo: crearMazo(),
     turno: Math.random() < 0.5 ? 'jugador' : 'cpu',
-    mano: Math.random() < 0.5 ? 'jugador' : 'cpu', // Añadir la propiedad mano para determinar quién es Mano
+    mano: Math.random() < 0.5 ? 'jugador' : 'cpu',
     trucoApostado: 1,
-    ultimaApuestaEnvido: 0, // Nueva propiedad para almacenar la última apuesta de Envido
+    ultimaApuestaEnvido: 0,
     estadoDelJuego: {
         florActivo: false,
         envidoActivo: false,
@@ -894,140 +612,16 @@ const juego = {
         document.getElementById('florBtn')?.addEventListener('click', () => this.jugarFlor('jugador'));
         document.getElementById('retirarseBtn')?.addEventListener('click', () => this.retirarse('jugador'));
     },
-    jugarTruco: function(jugador) {
-        // Verificar si ya se ha resuelto un Truco previo
-        if (this.estadoDelJuego.trucoResuelto) {
-            mostrarMensaje('El Truco ya ha sido resuelto. No puedes apostar Truco nuevamente hasta que se inicie un nuevo turno.');
-            return;
-        }
-
-        // Verificar si ya se ha apostado Truco
-        if (this.estadoDelJuego.trucoActivo) {
-            mostrarMensaje('Ya se ha apostado Truco. Espera a que se resuelva.');
-            return;
-        }
-
-        // Verificar si hay apuestas de Flor o Envido pendientes
-        if (this.estadoDelJuego.florActivo || this.estadoDelJuego.envidoActivo) {
-            mostrarMensaje('No puedes apostar Truco mientras haya apuestas de Flor o Envido pendientes.');
-            return;
-        }
-
-        mostrarMensaje(`${jugador} juega TRUCO`);
-        this.estadoDelJuego.trucoActivo = true;
-        this.cambiarTurno();
-    },
-    jugarEnvido: function(juego, jugador) {
-        // Verificar si ya se ha apostado Truco
-        if (juego.estadoDelJuego.trucoActivo) {
-            mostrarMensaje('No puedes apostar Envido después de que se haya apostado Truco. Debes esperar a que se resuelva el Truco.');
-            return;
-        }
-
-        // Verificar si ya se ha resuelto un Envido previo
-        if (juego.estadoDelJuego.envidoResuelto) {
-            mostrarMensaje('El Envido ya ha sido resuelto. No puedes apostar Envido nuevamente hasta que se inicie un nuevo turno.');
-            return;
-        }
-
-        // Verificar si ya se ha apostado Envido
-        if (juego.estadoDelJuego.envidoActivo) {
-            mostrarMensaje('Ya se ha apostado Envido. Espera a que se resuelva.');
-            return;
-        }
-
-        // Verificar si hay apuestas de Flor pendientes
-        if (juego.estadoDelJuego.florActivo) {
-            mostrarMensaje('No puedes apostar Envido mientras haya apuestas de Flor pendientes.');
-            return;
-        }
-
-        mostrarMensaje(`${jugador} juega ENVIDO`);
-        juego.estadoDelJuego.envidoActivo = true;
-
-        let valorEnvidoJugador = calcularEnvido(juego.jugador.mano);
-        let valorEnvidoCPU = calcularEnvido(juego.cpu.mano);
-
-        let apuestaActual = 2;
-        let envidoActivo = true;
-
-        mostrarMensaje(`Envido iniciado. Jugador: ${valorEnvidoJugador}, CPU: ${valorEnvidoCPU}`);
-
-        while (envidoActivo) {
-            if (jugador === 'jugador') {
-                let deseaAumentar = confirm('¿Deseas aumentar la apuesta (Real Envido o Falta Envido)?');
-                if (deseaAumentar) {
-                    apuestaActual += 2;
-                    mostrarMensaje(`Jugador aumenta la apuesta a ${apuestaActual}`);
-                } else {
-                    envidoActivo = false;
-                    mostrarMensaje('Jugador no aumenta la apuesta');
-                }
-            }
-
-            let respuestaCPU = juego.cpu.decidirApostarEnvido();
-            if (respuestaCPU === 'Quiero') {
-                mostrarMensaje(`CPU acepta la apuesta de ${apuestaActual}`);
-                if (jugador === 'jugador') {
-                    jugador = 'cpu';
-                } else {
-                    envidoActivo = false;
-                }
-            } else {
-                mostrarMensaje('CPU no quiere la apuesta');
-                juego.jugador.sumarPuntos(1);
-                juego.actualizarCreditos();
-                return juego.cambiarTurno();
-            }
-        }
-
-        if (valorEnvidoJugador > valorEnvidoCPU) {
-            juego.jugador.sumarPuntos(apuestaActual);
-            mostrarMensaje(`Jugador gana el Envido y suma ${apuestaActual} puntos`);
-        } else {
-            juego.cpu.sumarPuntos(apuestaActual);
-            mostrarMensaje(`CPU gana el Envido y suma ${apuestaActual} puntos`);
-        }
-
-        juego.actualizarCreditos();
-        juego.cambiarTurno();
-    },
-    calcularEnvido: function(mano) {
-        return calcularPuntosPorPalo(mano);
-    },
-    mostrarMensaje: function(mensaje) {
-        const gameMessages = document.getElementById('gameMessages');
-        if (!gameMessages) {
-            console.warn('El contenedor de mensajes no existe en el DOM.');
-            return;
-        }
-
-        const mensajeElement = document.createElement('div');
-        mensajeElement.textContent = mensaje;
-        gameMessages.appendChild(mensajeElement);
-        gameMessages.scrollTop = gameMessages.scrollHeight;
-
-        const mensajes = gameMessages.getElementsByTagName('div');
-        if (mensajes.length > 5) {
-            gameMessages.removeChild(mensajes[0]);
-        }
-    },
+    jugarTruco: jugarTruco,
+    jugarEnvido: jugarEnvido,
+    jugarFlor: jugarFlor,
+    retirarse: retirarse,
+    mostrarMensaje: mostrarMensaje,
     cambiarTurno: function() {
         this.turno = this.turno === 'jugador' ? 'cpu' : 'jugador';
     },
     jugarCPU: function() {
         this.cpu.jugarTurno(this);
-    },
-    retirarse: function(jugador) {
-        this.mostrarMensaje(`${jugador} se retira del juego`);
-        if (jugador === 'jugador') {
-            this.cpu.sumarPuntos(this.jugador.obtenerPuntos());
-            this.mostrarMensaje('CPU gana el juego');
-        } else {
-            this.jugador.sumarPuntos(this.cpu.obtenerPuntos());
-            this.mostrarMensaje('Jugador gana el juego');
-        }
-        this.actualizarCreditos();
     }
 };
 
