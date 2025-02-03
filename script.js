@@ -389,9 +389,7 @@ function actualizarCreditos(jugador, cpu) {
     document.getElementById('creditDisplay').textContent = `CRÉDITOS: ${jugador.obtenerPuntos()}`;
 }
 
-// Función para procesar la carta jugada
 function procesarCartaJugada(juego, carta, jugador) {
-    // Determinar la carta jugada por el oponente
     let cartaOponente;
     if (jugador === 'jugador') {
         cartaOponente = juego.cpu.ultimaCartaJugada;
@@ -399,37 +397,31 @@ function procesarCartaJugada(juego, carta, jugador) {
         cartaOponente = juego.jugador.ultimaCartaJugada;
     }
 
-    // Calcular los valores de truco de las cartas
     const valorJugador = carta.obtenerValorTruco();
     const valorOponente = cartaOponente.obtenerValorTruco();
 
-    // Determinar el ganador de la ronda
-    let ganador = valorJugador === valorOponente
-        ? juego.mano
-        : valorJugador > valorOponente
-        ? jugador
-        : jugador === 'jugador'
-        ? 'cpu'
-        : 'jugador';
+    if (valorJugador === valorOponente) {
+        mostrarMensaje('¡Parda! Empate en esta ronda.');
+        // El ganador de la ronda anterior lidera la siguiente
+        juego.liderRonda = juego.liderRonda || juego.mano; // Si no hay líder previo, el Mano lidera
+    } else if (valorJugador > valorOponente) {
+        mostrarMensaje(`${jugador === 'jugador' ? 'Jugador' : 'CPU'} gana la ronda`);
+        juego.liderRonda = jugador;
+    } else {
+        mostrarMensaje(`${jugador === 'jugador' ? 'CPU' : 'Jugador'} gana la ronda`);
+        juego.liderRonda = jugador === 'jugador' ? 'cpu' : 'jugador';
+    }
 
-    // Mostrar el resultado de la ronda
-    mostrarMensaje(`${jugador === 'jugador' ? 'Jugador' : 'CPU'} juega ${carta.obtenerNombre()} de ${carta.palo}`);
-    mostrarMensaje(`${ganador === 'jugador' ? 'Jugador' : 'CPU'} gana la ronda`);
-
-    // Actualizar los puntos del ganador
-    if (ganador === 'jugador') {
+    // Actualizar puntos y créditos
+    if (juego.liderRonda === 'jugador') {
         juego.jugador.sumarPuntos(juego.trucoApostado);
     } else {
         juego.cpu.sumarPuntos(juego.trucoApostado);
     }
 
-    // Actualizar los créditos en el DOM
     juego.actualizarCreditos();
-
-    // Cambiar el turno al oponente
     juego.cambiarTurno();
 }
-
 // Inicialización del juego
 const mazo = crearMazo();
 const jugador = {
