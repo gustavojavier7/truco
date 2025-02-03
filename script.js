@@ -118,6 +118,72 @@ function manejarJuegoCPU(juego) {
     });
 }
 
+function resolverEnvido(juego) {
+    // Calcular el valor del Envido para cada jugador
+    const valorEnvidoJugador = calcularEnvido(juego.jugador.mano);
+    const valorEnvidoCPU = calcularEnvido(juego.cpu.mano);
+
+    // Mostrar los valores de Envido
+    mostrarMensaje(`Envido Jugador: ${valorEnvidoJugador}`);
+    mostrarMensaje(`Envido CPU: ${valorEnvidoCPU}`);
+
+    // Determinar el ganador del Envido
+    if (valorEnvidoJugador > valorEnvidoCPU) {
+        mostrarMensaje('El jugador gana el Envido.');
+        juego.jugador.sumarPuntos(juego.ultimaApuestaEnvido);
+    } else if (valorEnvidoJugador < valorEnvidoCPU) {
+        mostrarMensaje('La CPU gana el Envido.');
+        juego.cpu.sumarPuntos(juego.ultimaApuestaEnvido);
+    } else {
+        // En caso de empate, gana el jugador más cercano al mano (anticlockwise)
+        if (juego.mano === 'jugador') {
+            mostrarMensaje('Empate en el Envido. Gana el jugador.');
+            juego.jugador.sumarPuntos(juego.ultimaApuestaEnvido);
+        } else {
+            mostrarMensaje('Empate en el Envido. Gana la CPU.');
+            juego.cpu.sumarPuntos(juego.ultimaApuestaEnvido);
+        }
+    }
+
+    // Actualizar los créditos en la interfaz
+    juego.actualizarCreditos();
+
+    // Marcar la apuesta de Envido como resuelta
+    juego.estadoDelJuego.envidoActivo = false;
+    juego.estadoDelJuego.envidoResuelto = true;
+}
+
+function resolverTruco(juego) {
+    // Contar los tricks ganados por cada jugador
+    const tricksJugador = juego.jugador.tricksGanados;
+    const tricksCPU = juego.cpu.tricksGanados;
+
+    // Determinar el ganador del Truco
+    if (tricksJugador > tricksCPU) {
+        mostrarMensaje('El jugador gana el Truco.');
+        juego.jugador.sumarPuntos(juego.trucoApostado);
+    } else if (tricksJugador < tricksCPU) {
+        mostrarMensaje('La CPU gana el Truco.');
+        juego.cpu.sumarPuntos(juego.trucoApostado);
+    } else {
+        // En caso de empate, gana el jugador que tiene el "liderRonda"
+        if (juego.liderRonda === 'jugador') {
+            mostrarMensaje('Empate en el Truco. Gana el jugador.');
+            juego.jugador.sumarPuntos(juego.trucoApostado);
+        } else {
+            mostrarMensaje('Empate en el Truco. Gana la CPU.');
+            juego.cpu.sumarPuntos(juego.trucoApostado);
+        }
+    }
+
+    // Actualizar los créditos en la interfaz
+    juego.actualizarCreditos();
+
+    // Marcar la apuesta de Truco como resuelta
+    juego.estadoDelJuego.trucoActivo = false;
+    juego.estadoDelJuego.trucoResuelto = true;
+}
+
 // Función para mostrar las opciones de juego
 function mostrarOpciones(juego) {
     const opciones = document.querySelector('.game-options');
