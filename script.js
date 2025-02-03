@@ -1,4 +1,4 @@
-// Versión 3.7.2
+// Versión 3.8.0
 
 // Estado inicial del juego
 let credits = 0;
@@ -267,6 +267,18 @@ function jugarEnvido(juego, jugador) {
     juego.cambiarTurno();
 }
 
+function jugarRealEnvido(juego, jugador) {
+    mostrarMensaje(`${jugador} juega REAL ENVIDO`);
+    juego.estadoDelJuego.realEnvidoActivo = true;
+    juego.cambiarTurno();
+}
+
+function jugarFaltaEnvido(juego, jugador) {
+    mostrarMensaje(`${jugador} juega FALTA ENVIDO`);
+    juego.estadoDelJuego.faltaEnvidoActivo = true;
+    juego.cambiarTurno();
+}
+
 function jugarFlor(juego, jugador) {
     // Verificar si ya se ha apostado Truco
     if (juego.estadoDelJuego.trucoActivo) {
@@ -350,6 +362,18 @@ function anunciarFlor(juego, jugador) {
             juego.cpu.sumarPuntos(3);
         }
     }
+}
+
+function anunciarContraflor(juego, jugador) {
+    mostrarMensaje(`${jugador} anuncia CONTRAFLOR`);
+    juego.estadoDelJuego.contraflorActivo = true;
+    juego.cambiarTurno();
+}
+
+function anunciarContraflorAlResto(juego, jugador) {
+    mostrarMensaje(`${jugador} anuncia CONTRAFLOR AL RESTO`);
+    juego.estadoDelJuego.contraflorAlRestoActivo = true;
+    juego.cambiarTurno();
 }
 
 // Función para manejar la retirada de un jugador
