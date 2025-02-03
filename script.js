@@ -1,4 +1,4 @@
-// Versión 3.8.0
+// Versión 3.8.2
 
 // Estado inicial del juego
 let credits = 0;
@@ -445,7 +445,7 @@ function mostrarMensaje(mensaje) {
 }
 
 // Función para actualizar los créditos del jugador
-function actualizarCreditos(jugador, cpu) {
+function actualizarCreditos(jugador) {
     document.getElementById('creditDisplay').textContent = `CRÉDITOS: ${jugador.obtenerPuntos()}`;
 }
 
@@ -632,6 +632,7 @@ const juego = {
     turno: Math.random() < 0.5 ? 'jugador' : 'cpu',
     mano: Math.random() < 0.5 ? 'jugador' : 'cpu', // Añadir la propiedad mano para determinar quién es Mano
     trucoApostado: 1,
+    ultimaApuestaEnvido: 0, // Nueva propiedad para almacenar la última apuesta de Envido
     estadoDelJuego: {
         florActivo: false,
         envidoActivo: false,
@@ -837,36 +838,36 @@ const juego = {
         this.estadoDelJuego.trucoActivo = true;
         this.cambiarTurno();
     },
-    jugarEnvido: function(jugador) {
+    jugarEnvido: function(juego, jugador) {
         // Verificar si ya se ha apostado Truco
-        if (this.estadoDelJuego.trucoActivo) {
+        if (juego.estadoDelJuego.trucoActivo) {
             mostrarMensaje('No puedes apostar Envido después de que se haya apostado Truco. Debes esperar a que se resuelva el Truco.');
             return;
         }
 
         // Verificar si ya se ha resuelto un Envido previo
-        if (this.estadoDelJuego.envidoResuelto) {
+        if (juego.estadoDelJuego.envidoResuelto) {
             mostrarMensaje('El Envido ya ha sido resuelto. No puedes apostar Envido nuevamente hasta que se inicie un nuevo turno.');
             return;
         }
 
         // Verificar si ya se ha apostado Envido
-        if (this.estadoDelJuego.envidoActivo) {
+        if (juego.estadoDelJuego.envidoActivo) {
             mostrarMensaje('Ya se ha apostado Envido. Espera a que se resuelva.');
             return;
         }
 
         // Verificar si hay apuestas de Flor pendientes
-        if (this.estadoDelJuego.florActivo) {
+        if (juego.estadoDelJuego.florActivo) {
             mostrarMensaje('No puedes apostar Envido mientras haya apuestas de Flor pendientes.');
             return;
         }
 
         mostrarMensaje(`${jugador} juega ENVIDO`);
-        this.estadoDelJuego.envidoActivo = true;
+        juego.estadoDelJuego.envidoActivo = true;
 
-        let valorEnvidoJugador = calcularEnvido(this.jugador.mano);
-        let valorEnvidoCPU = calcularEnvido(this.cpu.mano);
+        let valorEnvidoJugador = calcularEnvido(juego.jugador.mano);
+        let valorEnvidoCPU = calcularEnvido(juego.cpu.mano);
 
         let apuestaActual = 2;
         let envidoActivo = true;
@@ -885,7 +886,7 @@ const juego = {
                 }
             }
 
-            let respuestaCPU = this.cpu.decidirApostarEnvido();
+            let respuestaCPU = juego.cpu.decidirApostarEnvido();
             if (respuestaCPU === 'Quiero') {
                 mostrarMensaje(`CPU acepta la apuesta de ${apuestaActual}`);
                 if (jugador === 'jugador') {
@@ -895,22 +896,22 @@ const juego = {
                 }
             } else {
                 mostrarMensaje('CPU no quiere la apuesta');
-                this.jugador.sumarPuntos(1);
-                this.actualizarCreditos();
-                return this.cambiarTurno();
+                juego.jugador.sumarPuntos(1);
+                juego.actualizarCreditos();
+                return juego.cambiarTurno();
             }
         }
 
         if (valorEnvidoJugador > valorEnvidoCPU) {
-            this.jugador.sumarPuntos(apuestaActual);
+            juego.jugador.sumarPuntos(apuestaActual);
             mostrarMensaje(`Jugador gana el Envido y suma ${apuestaActual} puntos`);
         } else {
-            this.cpu.sumarPuntos(apuestaActual);
+            juego.cpu.sumarPuntos(apuestaActual);
             mostrarMensaje(`CPU gana el Envido y suma ${apuestaActual} puntos`);
         }
 
-        this.actualizarCreditos();
-        this.cambiarTurno();
+        juego.actualizarCreditos();
+        juego.cambiarTurno();
     },
     calcularEnvido: function(mano) {
         return calcularPuntosPorPalo(mano);
