@@ -150,11 +150,11 @@ function mostrarOpciones(juego) {
 function resolverApuesta(juego, tipo, aceptada) {
     if (!aceptada) {
         mostrarMensaje(`${juego.turno} no quiso ${tipo}.`);
-        
+
         let puntos = 1; // Si es Truco rechazado, da 1 punto.
         if (tipo === "Retruco") puntos = 2;
         if (tipo === "Vale Cuatro") puntos = 3;
-        if (tipo.includes("Envido")) puntos = juego.ultimaApuestaEnvido; 
+        if (tipo.includes("Envido")) puntos = juego.ultimaApuestaEnvido;
 
         if (juego.turno === "jugador") {
             juego.cpu.sumarPuntos(puntos);
@@ -168,7 +168,7 @@ function resolverApuesta(juego, tipo, aceptada) {
     }
 
     mostrarMensaje(`${juego.turno} quiso ${tipo}.`);
-    
+
     if (tipo === "Truco") juego.estadoDelJuego.trucoResuelto = false;
     if (tipo === "Retruco") juego.estadoDelJuego.retrucoResuelto = false;
     if (tipo === "Vale Cuatro") juego.estadoDelJuego.valeCuatroResuelto = false;
@@ -226,6 +226,7 @@ function jugarValeCuatro(juego, jugador) {
         mostrarMensaje('No puedes jugar Vale Cuatro en este momento.');
     }
 }
+
 function jugarEnvido(juego, jugador) {
     // Verificar si ya se ha apostado Truco
     if (juego.estadoDelJuego.trucoActivo) {
@@ -481,6 +482,7 @@ function procesarCartaJugada(juego, carta, jugador) {
     juego.actualizarCreditos();
     juego.cambiarTurno();
 }
+
 // Inicialización del juego
 const mazo = crearMazo();
 const jugador = {
@@ -637,6 +639,16 @@ const juego = {
         florResuelto: false,
         envidoResuelto: false,
         trucoResuelto: false,
+        retrucoActivo: false,
+        retrucoResuelto: false,
+        valeCuatroActivo: false,
+        valeCuatroResuelto: false,
+        contraflorActivo: false,
+        contraflorResuelto: false,
+        contraflorAlRestoActivo: false,
+        contraflorAlRestoResuelto: false,
+        realEnvidoActivo: false,
+        faltaEnvidoActivo: false,
     },
     florJugador: tieneFlor(jugador),
     florCPU: tieneFlor(cpu),
