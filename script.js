@@ -175,6 +175,19 @@ function resolverApuesta(juego, tipo, aceptada) {
     if (tipo.includes("Envido")) juego.estadoDelJuego.envidoResuelto = false;
 }
 
+function manejarApuestasSimultaneas(juego, jugador) {
+    if (juego.estadoDelJuego.envidoActivo && juego.estadoDelJuego.trucoActivo) {
+        // Resolver Envido primero
+        resolverEnvido(juego, jugador);
+        // Luego resolver Truco
+        resolverTruco(juego, jugador);
+    } else if (juego.estadoDelJuego.envidoActivo) {
+        resolverEnvido(juego, jugador);
+    } else if (juego.estadoDelJuego.trucoActivo) {
+        resolverTruco(juego, jugador);
+    }
+}
+
 function marcarApuestaResuelta(juego, tipo) {
     if (tipo === "Truco") juego.estadoDelJuego.trucoResuelto = true;
     if (tipo === "Retruco") juego.estadoDelJuego.retrucoResuelto = true;
