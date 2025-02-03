@@ -172,6 +172,25 @@ function jugarTruco(juego, jugador) {
     juego.cambiarTurno();
 }
 
+function jugarRetruco(juego, jugador) {
+    if (juego.estadoDelJuego.trucoActivo && !juego.estadoDelJuego.retrucoActivo) {
+        mostrarMensaje(`${jugador} juega RETRUCO`);
+        juego.estadoDelJuego.retrucoActivo = true;
+        juego.cambiarTurno();
+    } else {
+        mostrarMensaje('No puedes jugar Retruco en este momento.');
+    }
+}
+
+function jugarValeCuatro(juego, jugador) {
+    if (juego.estadoDelJuego.retrucoActivo && !juego.estadoDelJuego.valeCuatroActivo) {
+        mostrarMensaje(`${jugador} juega VALE CUATRO`);
+        juego.estadoDelJuego.valeCuatroActivo = true;
+        juego.cambiarTurno();
+    } else {
+        mostrarMensaje('No puedes jugar Vale Cuatro en este momento.');
+    }
+}
 function jugarEnvido(juego, jugador) {
     // Verificar si ya se ha apostado Truco
     if (juego.estadoDelJuego.trucoActivo) {
