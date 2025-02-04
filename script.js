@@ -1,4 +1,4 @@
-// Versión 3.8.7
+// Versión 3.8.9
 
 // Estado inicial del juego
 let credits = 0;
@@ -261,6 +261,7 @@ function actualizarCreditos(jugador) {
     document.getElementById('creditDisplay').textContent = `CRÉDITOS: ${jugador.obtenerPuntos()}`;
 }
 
+// Función para procesar una carta jugada
 function procesarCartaJugada(juego, carta, jugador) {
     const cartaOponente = jugador === 'jugador' ? juego.cpu.ultimaCartaJugada : juego.jugador.ultimaCartaJugada;
     const valorJugador = carta.obtenerValorTruco();
@@ -279,7 +280,7 @@ function procesarCartaJugada(juego, carta, jugador) {
 
     juego.liderRonda === 'jugador' ? juego.jugador.sumarPuntos(juego.trucoApostado) : juego.cpu.sumarPuntos(juego.trucoApostado);
     juego.actualizarCreditos();
-    // Aquí se ha eliminado la llamada a cambiarTurno()
+    juego.cambiarTurno();
 }
 
 // Inicialización del juego
@@ -482,17 +483,16 @@ const juego = {
             this.cambiarTurno();
             mostrarOpciones(this);
         });
-    }
-       jugarTurnoJugador: function(juego) {
+    },
+    jugarTurnoJugador: function() {
         mostrarMensaje('Es tu turno. Elige una carta para jugar.');
-        juego.jugador.elegirCarta().then(cartaSeleccionada => {
+        this.jugador.elegirCarta().then(cartaSeleccionada => {
             mostrarMensaje(`Has jugado: ${cartaSeleccionada.obtenerNombre()} de ${cartaSeleccionada.palo}`);
-            procesarCartaJugada(juego, cartaSeleccionada, 'jugador');
-            // Llama a cambiarTurno() aquí
-            juego.cambiarTurno();
-            juego.jugarTurnoCPU();
+            procesarCartaJugada(this, cartaSeleccionada, 'jugador');
+            this.cambiarTurno();
+            this.jugarTurnoCPU();
         });
-    }
+    },
     manejarFlor: function() {
         if (this.florJugador) {
             mostrarMensaje('El jugador tiene Flor');
