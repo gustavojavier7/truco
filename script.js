@@ -482,7 +482,7 @@ const juego = {
             this.cambiarTurno();
             mostrarOpciones(this);
         });
-    },
+    }
    function jugarTurnoJugador(juego) {
     mostrarMensaje('Es tu turno. Elige una carta para jugar.');
     juego.jugador.elegirCarta().then(cartaSeleccionada => {
