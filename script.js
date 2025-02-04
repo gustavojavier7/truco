@@ -483,15 +483,16 @@ const juego = {
             mostrarOpciones(this);
         });
     },
-    jugarTurnoJugador: function() {
-        mostrarMensaje('Es tu turno. Elige una carta para jugar.');
-        this.jugador.elegirCarta().then(cartaSeleccionada => {
-            mostrarMensaje(`Has jugado: ${cartaSeleccionada.obtenerNombre()} de ${cartaSeleccionada.palo}`);
-            procesarCartaJugada(this, cartaSeleccionada, 'jugador');
-            this.cambiarTurno();
-            this.jugarTurnoCPU();
-        });
-    },
+   function jugarTurnoJugador(juego) {
+    mostrarMensaje('Es tu turno. Elige una carta para jugar.');
+    juego.jugador.elegirCarta().then(cartaSeleccionada => {
+        mostrarMensaje(`Has jugado: ${cartaSeleccionada.obtenerNombre()} de ${cartaSeleccionada.palo}`);
+        procesarCartaJugada(juego, cartaSeleccionada, 'jugador');
+        // Llama a cambiarTurno() aquí
+        juego.cambiarTurno();
+        juego.jugarTurnoCPU();
+    });
+}
     manejarFlor: function() {
         if (this.florJugador) {
             mostrarMensaje('El jugador tiene Flor');
