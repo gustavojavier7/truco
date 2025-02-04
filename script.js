@@ -261,7 +261,6 @@ function actualizarCreditos(jugador) {
     document.getElementById('creditDisplay').textContent = `CRÉDITOS: ${jugador.obtenerPuntos()}`;
 }
 
-// Función para procesar una carta jugada
 function procesarCartaJugada(juego, carta, jugador) {
     const cartaOponente = jugador === 'jugador' ? juego.cpu.ultimaCartaJugada : juego.jugador.ultimaCartaJugada;
     const valorJugador = carta.obtenerValorTruco();
@@ -280,7 +279,7 @@ function procesarCartaJugada(juego, carta, jugador) {
 
     juego.liderRonda === 'jugador' ? juego.jugador.sumarPuntos(juego.trucoApostado) : juego.cpu.sumarPuntos(juego.trucoApostado);
     juego.actualizarCreditos();
-    juego.cambiarTurno();
+    // Aquí se ha eliminado la llamada a cambiarTurno()
 }
 
 // Inicialización del juego
