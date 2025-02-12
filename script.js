@@ -189,6 +189,9 @@ function jugarTruco(juego, jugador) {
 }
 
 // Función para jugar Envido
+// ... (resto del código es igual hasta la función jugarEnvido) ...
+
+// Función para jugar Envido
 function jugarEnvido(juego, jugador) {
     if (juego.estadoDelJuego.trucoActivo || juego.estadoDelJuego.florActivo || juego.estadoDelJuego.envidoResuelto) {
         mostrarMensaje('No puedes apostar Envido en este momento.');
@@ -200,12 +203,27 @@ function jugarEnvido(juego, jugador) {
     juego.ultimaApuestaEnvido = 2;
 
     if (jugador === 'jugador') {
-        const deseaAumentar = confirm('¿Deseas aumentar la apuesta?');
-        if (deseaAumentar) {
-            juego.ultimaApuestaEnvido += 2;
-            mostrarMensaje(`Jugador aumenta la apuesta a ${juego.ultimaApuestaEnvido}`);
+        // Lógica cuando el JUGADOR canta Envido
+        const respuestaCPU = juego.cpu.decidirApostarEnvido(); // <---- CPU decide si quiere o no el envido del jugador
+        if (respuestaCPU === 'Quiero') {
+            mostrarMensaje('CPU QUIERE el Envido.');
+            const deseaAumentarCPU = juego.cpu.decidirAumentarEnvido(); // <---- Nueva función para decidir si la CPU sube el envido
+            if (deseaAumentarCPU === 'Quiero') {
+                juego.ultimaApuestaEnvido += 2;
+                mostrarMensaje(`CPU aumenta el Envido a ${juego.ultimaApuestaEnvido}`);
+            }
+        } else {
+            mostrarMensaje('CPU NO QUIERE el Envido.');
+            mostrarMensaje('Jugador gana el Envido (por rechazo).');
+            juego.jugador.sumarPuntos(juego.ultimaApuestaEnvido); // Jugador gana los puntos iniciales del Envido
+            juego.actualizarCreditos();
+            juego.estadoDelJuego.envidoActivo = false;
+            juego.estadoDelJuego.envidoResuelto = true;
+            return; // Salir de la función jugarEnvido, ya que el Envido se resolvió por rechazo
         }
-    } else {
+
+
+    } else { // jugador === 'cpu' (Lógica cuando la CPU canta Envido - Sin cambios aquí en principio)
         const respuestaCPU = juego.cpu.decidirApostarEnvido();
         if (respuestaCPU === 'Quiero') {
             juego.ultimaApuestaEnvido += 2;
@@ -213,8 +231,107 @@ function jugarEnvido(juego, jugador) {
         }
     }
 
-    resolverEnvido(juego);
+    resolverEnvido(juego); // Resuelve el Envido (si no se rechazó antes)
 }
+
+
+cpu: {
+    nombre: 'CPU',
+    mano: [],
+    puntos: 0,
+    ultimaCartaJugada: null,
+    recibirCarta: function(carta) {
+        this.mano.push(carta);
+    },
+    mostrarMano: function() {
+        return this.mano;
+    },
+    obtenerPuntos: function() {
+        return this.puntos;
+    },
+    sumarPuntos: function(puntos) {
+        this.puntos += puntos;
+    },
+    decidirAnunciarFlor: function() {
+        if (this.mano.length === 3) {
+            const paloFlor = this.mano.reduce((mapa, carta) => {
+                mapa[carta.palo] = (mapa[carta.palo] || 0) + 1;
+                return mapa;
+            }, {});
+            return Object.values(paloFlor).some(count => count === 3);
+        }
+        return false;
+    },
+    decidirApostarEnvido: function() { // <---- MODIFICADA para decidir "Quiero" o "No Quiero" al responder al jugador
+        const valorEnvido = calcularEnvido(this.mano);
+        if (valorEnvido >= 27) { // Umbral más alto para "Querer" con seguridad
+            return 'Quiero';
+        } else if (valorEnvido >= 22 && Math.random() < 0.7) { // Rango moderado con mayor probabilidad de "Querer"
+            return 'Quiero';
+        } else if (valorEnvido >= 18 && Math.random() < 0.3) { // Rango bajo con baja probabilidad de "Querer"
+            return 'Quiero';
+        }
+        return 'No Quiero'; // "No Quiero" si el valor es bajo o la probabilidad no favorece
+    },
+    decidirAumentarEnvido: function() { // <---- NUEVA FUNCION: CPU decide si AUMENTAR el Envido (adicional a "Querer" inicial)
+        const valorEnvido = calcularEnvido(this.mano);
+        if (valorEnvido >= 29) { // Umbral muy alto para AUMENTAR
+            return 'Quiero'; // "Quiero" aquí significa "Quiero Aumentar"
+        } else if (valorEnvido >= 25 && Math.random() < 0.6) { // Rango alto con probabilidad de AUMENTAR
+            return 'Quiero'; // "Quiero" aquí significa "Quiero Aumentar"
+        }
+        return 'No Quiero'; // "No Quiero" aquí significa "No Quiero Aumentar", solo "Quiero" la apuesta base
+    },
+    decidirApostarTruco: function() {
+        const valoresAltos = [14, 13, 12];
+        const cartasFuertes = this.mano.filter(carta => valoresAltos.includes(carta.obtenerValorTruco()));
+        if (cartasFuertes.length >= 2) {
+            return 'Truco';
+        } else if (cartasFuertes.length === 1) {
+            return Math.random() < 0.5 ? 'Truco' : null;
+        }
+        return null;
+    },
+    decidirApostarFlor: function(valorFlor) {
+        return 'Quiero';
+    },
+    jugarTurno: function(juego) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                if (this.decidirAnunciarFlor()) {
+                    juego.anunciarFlor('cpu');
+                } else {
+                    const apuestaEnvido = this.decidirApostarEnvido(); // <---- Ahora 'decidirApostarEnvido' puede retornar 'No Quiero'
+                    if (apuestaEnvido === 'Quiero') {
+                        juego.jugarEnvido('cpu');
+                    } else if (apuestaEnvido === 'No Quiero') {
+                        // En este caso, si la CPU "No Quiere" cantar *ella misma* Envido, simplemente juega una carta.
+                        const carta = this.elegirCartaImperativa();
+                        this.ultimaCartaJugada = carta;
+                        mostrarMensaje(`CPU juega ${carta.obtenerNombre()} de ${carta.palo}`);
+                        resolve(carta);
+                    }
+                     else { // Antes, si no era 'Quiero' se iba directo al truco. Ahora, si no "Quiere" Envido, sigue con Truco o Carta
+                        const apuestaTruco = this.decidirApostarTruco();
+                        if (apuestaTruco) {
+                            juego.jugarTruco('cpu');
+                        } else {
+                            const carta = this.elegirCartaImperativa();
+                            this.ultimaCartaJugada = carta;
+                            mostrarMensaje(`CPU juega ${carta.obtenerNombre()} de ${carta.palo}`);
+                            resolve(carta);
+                        }
+                    }
+                }
+            }, 1000); // Simula un retraso para la decisión de la CPU
+        });
+    },
+    elegirCartaImperativa: function() {
+        return this.mano.sort((a, b) => a.obtenerValorTruco() - b.obtenerValorTruco()).shift();
+    }
+},
+
+// ... (resto del código sin cambios) ...
 
 // Función para jugar Flor
 function jugarFlor(juego, jugador) {
