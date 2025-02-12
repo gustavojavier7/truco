@@ -261,6 +261,7 @@ cpu: {
             return Object.values(paloFlor).some(count => count === 3);
         }
         return false;
+        }
     },
     decidirApostarEnvido: function() { // <---- MODIFICADA para decidir "Quiero" o "No Quiero" al responder al jugador
         const valorEnvido = calcularEnvido(this.mano);
