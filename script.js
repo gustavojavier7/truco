@@ -237,7 +237,7 @@ function jugarEnvido(juego, jugador) {
 
 cpu: {
     nombre: 'CPU',
-    mano} [],
+    mano: [],
     puntos: 0,
     ultimaCartaJugada: null,
     recibirCarta: function(carta) {
