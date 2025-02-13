@@ -534,7 +534,6 @@ const cpu = {
     }
 };
 
-// Inicialización del juego
 const juego = {
     jugador: jugador,
     cpu: cpu,
@@ -575,14 +574,11 @@ const juego = {
         this.florCPU = this.tieneFlor(this.cpu);
         this.mostrarCartas();
         this.actualizarCreditos();
-
         const manoDisplay = document.getElementById('manoDisplay');
         manoDisplay.textContent = this.mano === 'cpu' ? 'Yo soy mano' : 'Vos sos mano';
         manoDisplay.style.display = 'block';
-
         this.mostrarMensaje('¡Comienza el juego!');
         this.mostrarMensaje(`Turno inicial: ${this.turno === 'jugador' ? 'Jugador' : 'CPU'}`);
-
         if (this.turno === 'cpu') {
             this.jugarTurnoCPU();
         } else {
@@ -671,16 +667,13 @@ const juego = {
     mostrarCartas: function() {
         const cpuContainer = document.querySelector('.cpu-cards');
         const playerContainer = document.querySelector('.player-cards');
-
-        cpuContainer.innerHTML = '<div class="area-label">CPU</div>';
-        playerContainer.innerHTML = '<div class="area-label">JUGADOR</div>';
-
+        cpuContainer.innerHTML = 'CPU';
+        playerContainer.innerHTML = 'JUGADOR';
         this.cpu.mostrarMano().forEach(() => {
             const cartaBack = document.createElement('div');
             cartaBack.className = 'carta-back';
             cpuContainer.appendChild(cartaBack);
         });
-
         this.jugador.mostrarMano().forEach((carta, index) => {
             const cartaElement = document.createElement('div');
             cartaElement.className = `carta ${carta.palo.toLowerCase()}`;
@@ -692,7 +685,6 @@ const juego = {
             });
             playerContainer.appendChild(cartaElement);
         });
-
         this.actualizarCreditos();
     },
     actualizarCreditos: function() {
@@ -701,25 +693,23 @@ const juego = {
     mostrarOpciones: function() {
         const opciones = document.querySelector('.game-options');
         opciones.innerHTML = '';
-
         if (this.turno === 'jugador') {
             if (this.estadoDelJuego.trucoActivo) {
                 opciones.innerHTML = `
-                    <div class="option" id="retirarseBtn">RETIRARSE</div>
+                    RETIRARSE
                 `;
             } else {
                 opciones.innerHTML = `
-                    <div class="option" id="trucoBtn">TRUCO</div>
-                    <div class="option" id="envidoBtn">ENVIDO</div>
-                    <div class="option" id="florBtn">FLOR</div>
-                    <div class="option" id="retirarseBtn">RETIRARSE</div>
+                    TRUCO
+                    ENVIDO
+                    FLOR
+                    RETIRARSE
                 `;
             }
         } else {
             this.jugarCPU();
             return;
         }
-
         document.getElementById('trucoBtn')?.addEventListener('click', () => this.jugarTruco('jugador'));
         document.getElementById('envidoBtn')?.addEventListener('click', () => this.jugarEnvido('jugador'));
         document.getElementById('florBtn')?.addEventListener('click', () => this.jugarFlor('jugador'));
