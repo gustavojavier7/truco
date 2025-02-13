@@ -237,7 +237,7 @@ function jugarEnvido(juego, jugador) {
 
 cpu: {
     nombre: 'CPU',
-    mano: [],
+    mano: [], // <-- Corregido
     puntos: 0,
     ultimaCartaJugada: null,
     recibirCarta: function(carta) {
@@ -261,7 +261,6 @@ cpu: {
             return Object.values(paloFlor).some(count => count === 3);
         }
         return false;
-        }
     },
     decidirApostarEnvido: function() { // <---- MODIFICADA para decidir "Quiero" o "No Quiero" al responder al jugador
         const valorEnvido = calcularEnvido(this.mano);
@@ -311,8 +310,7 @@ cpu: {
                         this.ultimaCartaJugada = carta;
                         mostrarMensaje(`CPU juega ${carta.obtenerNombre()} de ${carta.palo}`);
                         resolve(carta);
-                    }
-                     else { // Antes, si no era 'Quiero' se iba directo al truco. Ahora, si no "Quiere" Envido, sigue con Truco o Carta
+                    } else { // Antes, si no era 'Quiero' se iba directo al truco. Ahora, si no "Quiere" Envido, sigue con Truco o Carta
                         const apuestaTruco = this.decidirApostarTruco();
                         if (apuestaTruco) {
                             juego.jugarTruco('cpu');
@@ -331,9 +329,6 @@ cpu: {
         return this.mano.sort((a, b) => a.obtenerValorTruco() - b.obtenerValorTruco()).shift();
     }
 },
-
-// ... (resto del código sin cambios) ...
-
 // Función para jugar Flor
 function jugarFlor(juego, jugador) {
     if (juego.estadoDelJuego.trucoActivo || juego.estadoDelJuego.envidoActivo || juego.estadoDelJuego.florResuelto) {
