@@ -1,7 +1,8 @@
 // Versión 3.8.9
 // Estado inicial del juego
 let credits = 0;
-let currentPlayer: 'jugador' | 'cpu' = 'jugador';
+let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
+
 
 // Tipo para una carta
 interface Carta {
