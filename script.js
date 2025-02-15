@@ -1,5 +1,4 @@
-// Versión 3.9.9
-
+// Versión 4.0.0
 // Estado inicial del juego
 let credits = 0;
 let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
