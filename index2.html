@@ -1,62 +1,30 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Truco Argentino - Juego</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Truco</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="arcade-screen">
-    <!-- Área de cartas -->
-    <div class="cartas-container">
-      <!-- Cartas del CPU -->
-      <div class="cpu-cards">
-        <!-- Las cartas del CPU se generan dinámicamente -->
-        <div class="area-label">CPU</div>
-      </div>
-
-      <!-- Cartas del jugador humano -->
-      <div class="player-cards">
-        <!-- Las cartas del jugador se generan dinámicamente -->
-        <div class="area-label">JUGADOR</div>
-      </div>
+    <div class="arcade-screen">
+        <div class="cartas-container">
+            <div class="cpu-cards">
+                <div class="area-label">CPU</div>
+            </div>
+            <div class="player-cards">
+                <div class="area-label">JUGADOR</div>
+            </div>
+        </div>
+        <div class="game-options"></div>
+        <div class="game-messages" id="gameMessages"></div>
+        <div class="credit-display" id="creditDisplay"></div>
+        <div class="mano-display" id="manoDisplay"></div>
+        <div class="flor-announcement" id="florAnnouncement" style="display: none;">
+            <button id="anunciarFlorBtn">Anunciar Flor</button>
+        </div>
     </div>
-
-    <!-- Área de información y controles -->
-    <div class="info-area">
-      <!-- Display de créditos -->
-      <div class="credit-display" id="creditDisplay">CRÉDITOS: 0</div>
-      
-      <!-- Botón de inserción de moneda -->
-      <div class="coin-slot" style="cursor: pointer; margin-top: 10px;">
-        Inserta moneda
-      </div>
-      
-      <!-- Botón para iniciar el juego -->
-      <button id="comenzarJuego" style="margin-top: 10px;">Iniciar Juego</button>
-
-      <!-- Mensaje de mano -->
-      <div class="mano-display" id="manoDisplay"></div>
-
-      <!-- Botón para anunciar la Flor -->
-      <div class="flor-announcement" id="florAnnouncement" style="display: none;">
-        <button id="anunciarFlorBtn">Anunciar Flor</button>
-      </div>
-
-      <!-- Opciones del juego -->
-      <div class="game-options">
-        <!-- Las opciones del juego se generan dinámicamente -->
-      </div>
-
-      <!-- Área de mensajes del juego -->
-      <div class="game-messages" id="gameMessages">
-        <!-- Los mensajes se agregarán dinámicamente aquí -->
-      </div>
-    </div>
-  </div>
-
-  <!-- Scripts -->
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
