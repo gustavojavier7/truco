@@ -1,4 +1,4 @@
-// Versión 3.8.9
+// Versión 3.9.9
 
 // Estado inicial del juego
 let credits = 0;
