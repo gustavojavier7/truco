@@ -1,9 +1,7 @@
-/* styles.css v100 */
-
-/* Estilos generales */
+/* Estilos generales V 3.9.9 */
 body {
-    background-color: #000000;
-    color: #FFFFFF;
+    background-color: black;
+    color: white;
     font-family: 'Press Start 2P', cursive;
     margin: 0;
     overflow: hidden;
@@ -19,8 +17,8 @@ body {
 /* Área de la pantalla de arcade */
 .arcade-screen {
     display: flex;
-    flex-direction: row;
-    justify-content: space-between;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
     width: 100vw;
     height: 100vh;
@@ -96,16 +94,13 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    border: 0.2vw solid #0000FF;
+    border: 0.2vw solid #000000; /* Cambiar de azul a negro para mejor visibilidad */
     border-radius: 1vw;
     transition: transform 0.3s, border-color 0.3s;
     position: relative;
     z-index: 2;
-    background-color: #F5FFFA;
-    background-size: 20px 20px;
-    background-repeat: repeat;
-    cursor: pointer;
-    font-size: 20px;
+    background-color: #FFFFFF; /* Color de fondo blanco para mejor contraste */
+    font-size: 1.2vw;
     color: #000000;
     padding: 5px;
 }
