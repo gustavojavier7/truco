@@ -1,4 +1,4 @@
-// Versión 4.1.0
+// Versión 4.1.1
 
 // Estado inicial del juego
 let credits = 0;
@@ -90,7 +90,7 @@ interface Jugador {
 }
 
 // Función para determinar si un jugador tiene flor
-function tieneFlor(jugador: Jugador): boolean | string {
+function tieneFlor(jugador: Jugador): string | false {
     const palos = jugador.mano.map(carta => carta.palo);
     const frecuencia: { [key: string]: number } = {};
     palos.forEach(palo => {
@@ -278,6 +278,9 @@ const juego: Juego = {
     mano: Math.random() < 0.5 ? 'jugador' : 'cpu',
     trucoApostado: 1,
     ultimaApuestaEnvido: 0,
+    puntosJugador: 0, // Puntos totales del jugador
+    puntosCPU: 0,     // Puntos totales de la CPU
+    rondaIniciada: false, // Para controlar el primer truco
     estadoDelJuego: {
         florActivo: false,
         envidoActivo: false,
@@ -305,23 +308,28 @@ const juego: Juego = {
         return tieneFlor(jugador);
     },
     iniciarJuego() {
+        this.mazo = crearMazo();
         this.repartirCartas();
         this.florJugador = this.tieneFlor(this.jugador);
         this.florCPU = this.tieneFlor(this.cpu);
         this.mostrarCartas();
         this.actualizarCreditos();
+        this.rondaIniciada = false;
 
         const manoDisplay = document.getElementById('manoDisplay')!;
-        manoDisplay.textContent = this.mano === 'cpu' ? 'Yo soy mano' : 'Vos sos mano';
+        manoDisplay.textContent = this.mano === 'jugador' ? 'Vos sos mano' : 'CPU es mano';
         manoDisplay.style.display = 'block';
 
         this.mostrarMensaje('¡Comienza el juego!');
         this.mostrarMensaje(`Turno inicial: ${this.turno === 'jugador' ? 'Jugador' : 'CPU'}`);
 
-        if (this.turno === 'cpu') {
-            this.jugarTurnoCPU();
+        // Priorizar Flor
+        if (this.florJugador && this.mano === 'jugador') {
+            this.anunciarFlor('jugador');
+        } else if (this.florCPU && this.mano === 'cpu') {
+            this.anunciarFlor('cpu');
         } else {
-            this.jugarTurnoJugador();
+            this.mostrarOpciones();
         }
     },
     jugarTurnoCPU() {
@@ -359,47 +367,153 @@ const juego: Juego = {
             this.mostrarOpciones();
         }
     },
-    anunciarFlor(jugador: string) {
-        if (jugador === 'jugador') {
-            mostrarMensaje('El jugador anuncia Flor');
-            const valorFlor = calcularValorFlor(this.jugador);
-            mostrarMensaje(`Valor de la Flor del jugador: ${valorFlor}`);
-            const respuestaCPU = this.cpu.decidirApostarFlor(valorFlor);
-            if (respuestaCPU === 'Quiero') {
-                mostrarMensaje('CPU quiere la Flor');
-                if (valorFlor > calcularValorFlor(this.cpu)) {
-                    this.jugador.sumarPuntos(3);
-                    mostrarMensaje('Jugador gana la Flor');
-                } else {
-                    this.cpu.sumarPuntos(3);
-                    mostrarMensaje('CPU gana la Flor');
-                }
+    anunciarFlor(iniciador: 'jugador' | 'cpu') {
+        this.estadoDelJuego.florActivo = true;
+        this.rondaIniciada = false; // Resetear para forzar anuncio antes del truco
+        let floresAnunciadas: {jugador: string | false, cpu: string | false} = {
+            jugador: this.florJugador,
+            cpu: this.florCPU
+        };
+
+        if (iniciador === 'jugador') {
+            mostrarMensaje('Jugador anuncia Flor');
+            this.manejarRespuestaFlor('cpu', floresAnunciadas);
+        } else {
+            mostrarMensaje('CPU anuncia Flor');
+            this.manejarRespuestaFlor('jugador', floresAnunciadas);
+        }
+    },
+    manejarRespuestaFlor(respondedor: 'jugador' | 'cpu', flores: {jugador: string | false, cpu: string | false}) {
+        const oponente = respondedor === 'jugador' ? this.jugador : this.cpu;
+        const iniciador = respondedor === 'jugador' ? this.cpu : this.jugador;
+
+        if (flores[respondedor]) {
+            if (respondedor === 'jugador') {
+                // Mostrar opciones al jugador
+                document.getElementById('florAnnouncement')!.innerHTML = `
+                    <button id="florBtn">Flor</button>
+                    <button id="achicoBtn">Con flor me achico</button>
+                    <button id="contraflorBtn">Contraflor</button>
+                    <button id="contraflorRestoBtn">Contraflor al resto</button>
+                `;
+                document.getElementById('florAnnouncement')!.style.display = 'block';
+
+                document.getElementById('florBtn')!.addEventListener('click', () => this.resolverFlorSimple(flores, 'jugador', 'flor'));
+                document.getElementById('achicoBtn')!.addEventListener('click', () => this.resolverFlorAchico(iniciador, oponente));
+                document.getElementById('contraflorBtn')!.addEventListener('click', () => this.manejarContraflor(iniciador, oponente, flores));
+                document.getElementById('contraflorRestoBtn')!.addEventListener('click', () => this.manejarContraflorResto(iniciador, oponente, flores));
             } else {
-                mostrarMensaje('CPU no quiere la Flor');
-                this.jugador.sumarPuntos(3);
+                // Decisión de la CPU
+                const valorFlorCPU = calcularValorFlor(this.cpu);
+                const valorFlorJugador = calcularValorFlor(this.jugador);
+                if (valorFlorCPU < valorFlorJugador - 5) {
+                    this.resolverFlorAchico(this.jugador, this.cpu);
+                } else if (valorFlorCPU > valorFlorJugador + 5) {
+                    this.manejarContraflorResto(this.jugador, this.cpu, flores);
+                } else {
+                    this.resolverFlorSimple(flores, 'cpu', 'flor');
+                }
             }
-        } else if (jugador === 'cpu') {
-            mostrarMensaje('La CPU anuncia Flor');
+        } else {
+            // Sin Flor, el iniciador gana 3 puntos
+            iniciador.sumarPuntos(3);
+            mostrarMensaje(`${iniciador.nombre} gana 3 puntos por Flor`);
+            this.finalizarFlor();
+        }
+    },
+    resolverFlorSimple(flores: {jugador: string | false, cpu: string | false}, ultimo: 'jugador' | 'cpu', apuesta: string) {
+        mostrarMensaje(`${ultimo === 'jugador' ? 'Jugador' : 'CPU'} dice "${apuesta}"`);
+        const valorJugador = flores.jugador ? calcularValorFlor(this.jugador) : 0;
+        const valorCPU = flores.cpu ? calcularValorFlor(this.cpu) : 0;
+        const puntos = (flores.jugador ? 3 : 0) + (flores.cpu ? 3 : 0);
+
+        if (valorJugador > valorCPU || (valorJugador === valorCPU && this.mano === 'jugador')) {
+            this.jugador.sumarPuntos(puntos);
+            mostrarMensaje(`Jugador gana ${puntos} puntos por Flor`);
+        } else {
+            this.cpu.sumarPuntos(puntos);
+            mostrarMensaje(`CPU gana ${puntos} puntos por Flor`);
+        }
+        this.finalizarFlor();
+    },
+    resolverFlorAchico(ganador: Jugador, perdedor: Jugador) {
+        mostrarMensaje(`${perdedor.nombre} dice "Con flor me achico"`);
+        ganador.sumarPuntos(4); // 3 por su Flor + 1 por el achico
+        mostrarMensaje(`${ganador.nombre} gana 4 puntos`);
+        this.finalizarFlor();
+    },
+    manejarContraflor(iniciador: Jugador, respondedor: Jugador, flores: {jugador: string | false, cpu: string | false}) {
+        mostrarMensaje(`${respondedor.nombre} dice "Contraflor"`);
+        if (respondedor === this.jugador) {
+            document.getElementById('florAnnouncement')!.innerHTML = `
+                <button id="quieroBtn">Con flor quiero</button>
+                <button id="achicoBtn">Con flor me achico</button>
+                <button id="contraflorRestoBtn">Contraflor al resto</button>
+            `;
+            document.getElementById('florAnnouncement')!.style.display = 'block';
+
+            document.getElementById('quieroBtn')!.addEventListener('click', () => this.resolverFlorSimple(flores, 'jugador', 'Con flor quiero'));
+            document.getElementById('achicoBtn')!.addEventListener('click', () => this.resolverFlorAchico(iniciador, respondedor));
+            document.getElementById('contraflorRestoBtn')!.addEventListener('click', () => this.manejarContraflorResto(iniciador, respondedor, flores));
+        } else {
             const valorFlorCPU = calcularValorFlor(this.cpu);
-            mostrarMensaje(`Valor de la Flor de la CPU: ${valorFlorCPU}`);
-            const respuestaJugador = this.jugador.decidirApostarFlor(valorFlorCPU);
-            if (respuestaJugador === 'Quiero') {
-                mostrarMensaje('Jugador quiere la Flor');
-                if (valorFlorCPU > calcularValorFlor(this.jugador)) {
-                    this.cpu.sumarPuntos(3);
-                    mostrarMensaje('CPU gana la Flor');
-                } else {
-                    this.jugador.sumarPuntos(3);
-                    mostrarMensaje('Jugador gana la Flor');
-                }
+            const valorFlorJugador = calcularValorFlor(this.jugador);
+            if (valorFlorCPU < valorFlorJugador - 5) {
+                this.resolverFlorAchico(this.jugador, this.cpu);
             } else {
-                mostrarMensaje('Jugador no quiere la Flor');
-                this.cpu.sumarPuntos(3);
+                this.manejarContraflorResto(this.jugador, this.cpu, flores);
             }
         }
     },
-    calcularValorFlor(jugador: Jugador) {
-        return calcularPuntosPorPalo(jugador.mostrarMano(), 3);
+    manejarContraflorResto(iniciador: Jugador, respondedor: Jugador, flores: {jugador: string | false, cpu: string | false}) {
+        mostrarMensaje(`${respondedor.nombre} dice "Contraflor al resto"`);
+        const puntosParaGanar = 30 - Math.max(this.puntosJugador, this.puntosCPU);
+        const puntosFlores = (flores.jugador ? 3 : 0) + (flores.cpu ? 3 : 0);
+        const apuestaTotal = puntosParaGanar + puntosFlores;
+
+        if (respondedor === this.jugador) {
+            document.getElementById('florAnnouncement')!.innerHTML = `
+                <button id="quieroBtn">Con flor quiero</button>
+                <button id="achicoBtn">Con flor me achico</button>
+            `;
+            document.getElementById('florAnnouncement')!.style.display = 'block';
+
+            document.getElementById('quieroBtn')!.addEventListener('click', () => this.resolverContraflorResto(iniciador, respondedor, apuestaTotal));
+            document.getElementById('achicoBtn')!.addEventListener('click', () => this.resolverFlorAchico(iniciador, respondedor));
+        } else {
+            const valorFlorCPU = calcularValorFlor(this.cpu);
+            const valorFlorJugador = calcularValorFlor(this.jugador);
+            if (valorFlorCPU < valorFlorJugador - 5) {
+                this.resolverFlorAchico(this.jugador, this.cpu);
+            } else {
+                this.resolverContraflorResto(this.jugador, this.cpu, apuestaTotal);
+            }
+        }
+    },
+    resolverContraflorResto(iniciador: Jugador, respondedor: Jugador, apuestaTotal: number) {
+        mostrarMensaje(`${iniciador.nombre} dice "Con flor quiero"`);
+        const valorIniciador = calcularValorFlor(iniciador);
+        const valorRespondedor = calcularValorFlor(respondedor);
+        if (valorIniciador > valorRespondedor || (valorIniciador === valorRespondedor && this.mano === iniciador.nombre.toLowerCase())) {
+            iniciador.sumarPuntos(apuestaTotal);
+            mostrarMensaje(`${iniciador.nombre} gana ${apuestaTotal} puntos y el juego termina`);
+            this.puntosJugador = iniciador === this.jugador ? this.puntosJugador + apuestaTotal : this.puntosJugador;
+            this.puntosCPU = iniciador === this.cpu ? this.puntosCPU + apuestaTotal : this.puntosCPU;
+            if (this.puntosJugador >= 30 || this.puntosCPU >= 30) this.finalizarJuego();
+        } else {
+            respondedor.sumarPuntos(apuestaTotal);
+            mostrarMensaje(`${respondedor.nombre} gana ${apuestaTotal} puntos y el juego termina`);
+            this.puntosJugador = respondedor === this.jugador ? this.puntosJugador + apuestaTotal : this.puntosJugador;
+            this.puntosCPU = respondedor === this.cpu ? this.puntosCPU + apuestaTotal : this.puntosCPU;
+            if (this.puntosJugador >= 30 || this.puntosCPU >= 30) this.finalizarJuego();
+        }
+        this.finalizarFlor();
+    },
+    finalizarFlor() {
+        this.estadoDelJuego.florActivo = false;
+        this.estadoDelJuego.florResuelto = true;
+        document.getElementById('florAnnouncement')!.style.display = 'none';
+        this.mostrarOpciones();
     },
     mostrarCartas() {
         const cpuContainer = document.querySelector('.cpu-cards')!;
@@ -431,35 +545,31 @@ const juego: Juego = {
     actualizarCreditos() {
         const creditDisplay = document.getElementById('creditDisplay');
         if (creditDisplay) {
-            creditDisplay.textContent = `CRÉDITOS: ${this.jugador.obtenerPuntos()}`;
+            creditDisplay.textContent = `CRÉDITOS: ${this.puntosJugador}`;
         }
     },
     mostrarOpciones() {
         const opciones = document.querySelector('.game-options')!;
         opciones.innerHTML = '';
 
-        if (this.turno === 'jugador') {
-            if (this.estadoDelJuego.trucoActivo) {
-                opciones.innerHTML = `
-                    <div class="option" id="retirarseBtn">RETIRARSE</div>
-                `;
-            } else {
-                opciones.innerHTML = `
-                    <div class="option" id="trucoBtn">TRUCO</div>
-                    <div class="option" id="envidoBtn">ENVIDO</div>
-                    <div class="option" id="florBtn">FLOR</div>
-                    <div class="option" id="retirarseBtn">RETIRARSE</div>
-                `;
-            }
-        } else {
-            this.jugarCPU();
-            return;
+        if (!this.estadoDelJuego.florResuelto && (this.florJugador || this.florCPU)) {
+            return; // Flor debe resolverse primero
         }
 
-        document.getElementById('trucoBtn')?.addEventListener('click', () => this.jugarTruco('jugador'));
-        document.getElementById('envidoBtn')?.addEventListener('click', () => this.jugarEnvido('jugador'));
-        document.getElementById('florBtn')?.addEventListener('click', () => this.jugarFlor('jugador'));
-        document.getElementById('retirarseBtn')?.addEventListener('click', () => this.retirarse('jugador'));
+        if (this.turno === 'jugador' && !this.rondaIniciada) {
+            opciones.innerHTML = `
+                ${this.florJugador && !this.estadoDelJuego.florActivo ? '<div class="option" id="florBtn">FLOR</div>' : ''}
+                ${!this.estadoDelJuego.envidoActivo ? '<div class="option" id="envidoBtn">ENVIDO</div>' : ''}
+                ${!this.estadoDelJuego.trucoActivo ? '<div class="option" id="trucoBtn">TRUCO</div>' : ''}
+                <div class="option" id="retirarseBtn">RETIRARSE</div>
+            `;
+            if (this.florJugador && !this.estadoDelJuego.florActivo) document.getElementById('florBtn')!.addEventListener('click', () => this.anunciarFlor('jugador'));
+            if (!this.estadoDelJuego.envidoActivo) document.getElementById('envidoBtn')!.addEventListener('click', () => this.jugarEnvido('jugador'));
+            if (!this.estadoDelJuego.trucoActivo) document.getElementById('trucoBtn')!.addEventListener('click', () => this.jugarTruco('jugador'));
+            document.getElementById('retirarseBtn')!.addEventListener('click', () => this.retirarse('jugador'));
+        } else if (this.turno === 'cpu') {
+            this.jugarCPU();
+        }
     },
     jugarTruco(jugador: string) {
         if (this.estadoDelJuego.trucoResuelto || this.estadoDelJuego.trucoActivo) {
@@ -560,6 +670,11 @@ const juego: Juego = {
     },
     jugarCPU() {
         this.cpu.jugarTurno(this);
+    },
+    finalizarJuego() {
+        const ganador = this.puntosJugador >= 30 ? 'Jugador' : 'CPU';
+        mostrarMensaje(`${ganador} gana el juego con ${this.puntosJugador >= 30 ? this.puntosJugador : this.puntosCPU} puntos!`);
+        // Aquí podrías agregar un botón para reiniciar
     }
 };
 
