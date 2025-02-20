@@ -1,4 +1,4 @@
-// Versión 4.1.7 (JavaScript puro)
+// Versión 4.1.8 (JavaScript puro)
 
 // Estado inicial del juego
 let credits = 0;
@@ -676,8 +676,12 @@ const juego = {
     finalizarJuego() {
         const ganador = this.puntosJugador >= 30 ? 'Jugador' : 'CPU';
         mostrarMensaje(`${ganador} gana el juego con ${this.puntosJugador >= 30 ? this.puntosJugador : this.puntosCPU} puntos!`);
-        // Aquí podrías agregar un botón para reiniciar
-        document.getElementById('gameOptions').innerHTML = `<button id="reiniciarBtn">Reiniciar Juego</button>`;
+        // Reiniciar puntos
+        this.puntosJugador = 0;
+        this.puntosCPU = 0;
+        // Mostrar botón de reinicio
+        const opciones = document.querySelector('.game-options');
+        opciones.innerHTML = `<button id="reiniciarBtn">Reiniciar Juego</button>`;
         document.getElementById('reiniciarBtn').addEventListener('click', () => this.iniciarJuego());
     }
 };
