@@ -2,7 +2,7 @@
 
 // Estado inicial del juego
 let credits = 0;
-let currentPlayer: 'jugador' | 'cpu' = 'jugador'; // Puede ser 'jugador' o 'cpu'
+let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
 
 // Función para crear una carta
 function crearCarta(palo: string, valor: number): Carta {
