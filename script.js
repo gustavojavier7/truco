@@ -1,4 +1,4 @@
-// Versión 4.1.6
+// Versión 4.1.7
 
 // Estado inicial del juego
 let credits = 0;
@@ -454,17 +454,29 @@ const juego: Juego = {
     },
     manejarContraflor(iniciador: Jugador, respondedor: Jugador, flores: {jugador: string | false, cpu: string | false}) {
         mostrarMensaje(`${respondedor.nombre} dice "Contraflor"`);
-        const florAnnouncement = document.getElementById('florAnnouncement')!;
-        florAnnouncement.innerHTML = `
-            <button id="quieroBtn">Con flor quiero</button>
-            <button id="achicoBtn">Con flor me achico</button>
-            <button id="contraflorRestoBtn">Contraflor al resto</button>
-        `;
-        florAnnouncement.style.display = 'block';
+        if (respondedor === this.jugador) {
+            const florAnnouncement = document.getElementById('florAnnouncement')!;
+            florAnnouncement.innerHTML = `
+                <button id="quieroBtn">Con flor quiero</button>
+                <button id="achicoBtn">Con flor me achico</button>
+                <button id="contraflorRestoBtn">Contraflor al resto</button>
+            `;
+            florAnnouncement.style.display = 'block';
 
-        florAnnouncement.querySelector('#quieroBtn')!.addEventListener('click', () => this.resolverFlorSimple(flores, 'jugador', 'Con flor quiero'));
-        florAnnouncement.querySelector('#achicoBtn')!.addEventListener('click', () => this.resolverFlorAchico(iniciador, respondedor));
-        florAnnouncement.querySelector('#contraflorRestoBtn')!.addEventListener('click', () => this.manejarContraflorResto(iniciador, respondedor, flores));
+            florAnnouncement.querySelector('#quieroBtn')!.addEventListener('click', () => this.resolverFlorSimple(flores, 'jugador', 'Con flor quiero'));
+            florAnnouncement.querySelector('#achicoBtn')!.addEventListener('click', () => this.resolverFlorAchico(iniciador, respondedor));
+            florAnnouncement.querySelector('#contraflorRestoBtn')!.addEventListener('click', () => this.manejarContraflorResto(iniciador, respondedor, flores));
+        } else {
+            const valorFlorCPU = calcularValorFlor(this.cpu);
+            const valorFlorJugador = calcularValorFlor(this.jugador);
+            if (valorFlorCPU < valorFlorJugador - 5) {
+                this.resolverFlorAchico(this.jugador, this.cpu);
+            } else if (valorFlorCPU > valorFlorJugador + 5) {
+                this.manejarContraflorResto(this.jugador, this.cpu, flores);
+            } else {
+                this.resolverFlorSimple(flores, 'cpu', 'Con flor quiero');
+            }
+        }
     },
     manejarContraflorResto(iniciador: Jugador, respondedor: Jugador, flores: {jugador: string | false, cpu: string | false}) {
         mostrarMensaje(`${respondedor.nombre} dice "Contraflor al resto"`);
@@ -472,15 +484,25 @@ const juego: Juego = {
         const puntosFlores = (flores.jugador ? 3 : 0) + (flores.cpu ? 3 : 0);
         const apuestaTotal = puntosParaGanar + puntosFlores;
 
-        const florAnnouncement = document.getElementById('florAnnouncement')!;
-        florAnnouncement.innerHTML = `
-            <button id="quieroBtn">Con flor quiero</button>
-            <button id="achicoBtn">Con flor me achico</button>
-        `;
-        florAnnouncement.style.display = 'block';
+        if (respondedor === this.jugador) {
+            const florAnnouncement = document.getElementById('florAnnouncement')!;
+            florAnnouncement.innerHTML = `
+                <button id="quieroBtn">Con flor quiero</button>
+                <button id="achicoBtn">Con flor me achico</button>
+            `;
+            florAnnouncement.style.display = 'block';
 
-        florAnnouncement.querySelector('#quieroBtn')!.addEventListener('click', () => this.resolverContraflorResto(iniciador, respondedor, apuestaTotal));
-        florAnnouncement.querySelector('#achicoBtn')!.addEventListener('click', () => this.resolverFlorAchico(iniciador, respondedor));
+            florAnnouncement.querySelector('#quieroBtn')!.addEventListener('click', () => this.resolverContraflorResto(iniciador, respondedor, apuestaTotal));
+            florAnnouncement.querySelector('#achicoBtn')!.addEventListener('click', () => this.resolverFlorAchico(iniciador, respondedor));
+        } else {
+            const valorFlorCPU = calcularValorFlor(this.cpu);
+            const valorFlorJugador = calcularValorFlor(this.jugador);
+            if (valorFlorCPU < valorFlorJugador - 5) {
+                this.resolverFlorAchico(this.jugador, this.cpu);
+            } else {
+                this.resolverContraflorResto(this.jugador, this.cpu, apuestaTotal);
+            }
+        }
     },
     resolverContraflorResto(iniciador: Jugador, respondedor: Jugador, apuestaTotal: number) {
         mostrarMensaje(`${iniciador.nombre} dice "Con flor quiero"`);
