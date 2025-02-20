@@ -1,4 +1,4 @@
-// Versión 4.1.4
+// Versión 4.1.6
 
 // Estado inicial del juego
 let credits = 0;
@@ -554,12 +554,15 @@ const juego: Juego = {
                 ${!this.estadoDelJuego.envidoActivo ? '<div class="option" id="envidoBtn">ENVIDO</div>' : ''}
                 ${!this.estadoDelJuego.trucoActivo ? '<div class="option" id="trucoBtn">TRUCO</div>' : ''}
                 <div class="option" id="retirarseBtn">RETIRARSE</div>
-                <div class="option" id="pedirFlorBtn">PEDIR FLOR</div>
             `;
             if (this.florJugador && !this.estadoDelJuego.florActivo) document.getElementById('florBtn')!.addEventListener('click', () => this.anunciarFlor('jugador'));
             if (!this.estadoDelJuego.envidoActivo) document.getElementById('envidoBtn')!.addEventListener('click', () => this.jugarEnvido('jugador'));
             if (!this.estadoDelJuego.trucoActivo) document.getElementById('trucoBtn')!.addEventListener('click', () => this.jugarTruco('jugador'));
             document.getElementById('retirarseBtn')!.addEventListener('click', () => this.retirarse('jugador'));
+        } else if (this.turno === 'jugador' && this.rondaIniciada) {
+            opciones.innerHTML = `
+                <div class="option" id="pedirFlorBtn">PEDIR FLOR</div>
+            `;
             document.getElementById('pedirFlorBtn')!.addEventListener('click', () => this.pedirFlor('jugador'));
         } else if (this.turno === 'cpu') {
             this.jugarCPU();
