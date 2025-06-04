@@ -3,19 +3,193 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Menú Arcade - TRUCO Argentino v2.0.0</title>
-  <link rel="stylesheet" href="inicio.css">
+  <title>📹 Visor de Cámaras - Zoom Centrado en Panel</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="arcade-screen">
-    <div class="truco-text" id="trucoText">TRUCO</div>
-    <div class="version-display" id="versionDisplay">v2.0.0</div>
-    <!-- Se elimina el atributo onclick para evitar ejecución duplicada -->
-    <div class="coin-slot">Insertar Moneda</div>
-    <div class="credit-display" id="creditDisplay">Créditos: 0</div>
-    <button id="comenzarJuego" class="btn-action" aria-label="Comenzar Juego">Iniciar Juego</button>
-    <button id="iniciarBtn" class="btn-action" aria-label="Ir a Index2">Iniciar</button>
+  <div class="window">
+    <div class="title-bar">
+      <div class="title-text">
+        <span>📹</span>
+        <span>Visor de Cámaras - Zoom Centrado en Panel</span>
+      </div>
+      <div class="window-controls">
+        <div class="window-control">_</div>
+        <div class="window-control">?</div>
+        <div class="window-control">×</div>
+      </div>
+    </div>
+    
+    <div class="menu-bar">
+      <div class="menu-item" data-menu="archivo">
+        Archivo
+        <div class="dropdown-menu" id="menu-archivo">
+          <div class="dropdown-item" data-action="abrir-imagen">
+            <span>📁</span>
+            <span>Abrir Imagen...</span>
+          </div>
+          <div class="dropdown-item" data-action="abrir-csv">
+            <span>📊</span>
+            <span>Abrir archivo CSV...</span>
+          </div>
+          <div class="dropdown-separator"></div>
+          <div class="dropdown-item disabled" data-action="guardar-imagen">
+            <span>💾</span>
+            <span>Guardar como Imagen final...</span>
+          </div>
+          <div class="dropdown-item disabled" data-action="guardar-csv">
+            <span>📄</span>
+            <span>Guardar CSV...</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="menu-item" data-menu="edicion">
+        Edición
+        <div class="dropdown-menu" id="menu-edicion">
+          <div class="dropdown-item disabled" data-action="modo-camara">
+            <span>📹</span>
+            <span>Modo Cámara</span>
+          </div>
+          <div class="dropdown-item disabled" data-action="limpiar-camaras">
+            <span>🗑️</span>
+            <span>Limpiar todas las cámaras</span>
+          </div>
+          <div class="dropdown-separator"></div>
+          <div class="dropdown-item disabled" data-action="actualizar-conos">
+            <span>🔄</span>
+            <span>Actualizar conos SVG</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="menu-item" data-menu="ver">
+        Ver
+        <div class="dropdown-menu" id="menu-ver">
+          <div class="dropdown-item disabled" data-action="zoom-in">
+            <span>🔍</span>
+            <span>Acercar (Ctrl++)</span>
+          </div>
+          <div class="dropdown-item disabled" data-action="zoom-out">
+            <span>🔍</span>
+            <span>Alejar (Ctrl+-)</span>
+          </div>
+          <div class="dropdown-item disabled" data-action="zoom-reset">
+            <span>🏠</span>
+            <span>Zoom 100% (Ctrl+0)</span>
+          </div>
+          <div class="dropdown-item disabled" data-action="zoom-fit">
+            <span>📐</span>
+            <span>Ajustar a ventana</span>
+          </div>
+          <div class="dropdown-separator"></div>
+          <div class="dropdown-item disabled" data-action="zoom-custom">
+            <span>🎯</span>
+            <span>Zoom personalizado...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="toolbar">
+      <div class="toolbar-button" data-action="abrir-imagen" title="Abrir Imagen (Ctrl+O)">📁</div>
+      <div class="toolbar-button" data-action="abrir-csv" title="Abrir CSV">📊</div>
+      <div class="toolbar-separator"></div>
+      <div class="toolbar-button disabled" data-action="modo-camara" title="Modo Cámara (P)" id="modo-camara-btn">📹</div>
+      <div class="toolbar-button disabled" data-action="actualizar-conos" title="Actualizar Conos">🔄</div>
+      <div class="toolbar-separator"></div>
+      
+      <div class="zoom-control-group">
+        <div class="toolbar-button disabled" data-action="zoom-out" title="Alejar (Ctrl+-)">➖</div>
+        <div class="zoom-display" id="zoom-display" title="Haga clic para zoom personalizado">100%</div>
+        <div class="toolbar-button disabled" data-action="zoom-in" title="Acercar (Ctrl++)">➕</div>
+        <div class="toolbar-button disabled" data-action="zoom-fit" title="Ajustar a ventana">📐</div>
+        <div class="toolbar-button disabled" data-action="zoom-reset" title="Zoom 100% (Ctrl+0)">🏠</div>
+      </div>
+    </div>
+    
+    <div class="content-area">
+      <div class="image-panel" id="image-panel">
+        <div class="drop-area" id="drop-area">
+          <div style="font-size: 14px; margin-bottom: 8px;">📹 Visor de Cámaras</div>
+          <div>Arrastre una imagen aquí o use Archivo → Abrir Imagen</div>
+        </div>
+        <div class="image-wrapper" id="image-wrapper"></div>
+        <svg id="vision-layer" class="vision-overlay" xmlns="http://www.w3.org/2000/svg">
+          <g id="vision-group"></g>
+        </svg>
+      </div>
+      
+      <div class="coordinates-panel">
+        <div class="panel-header">📋 Lista de Cámaras</div>
+        <div class="panel-content" id="coordinates-list">
+          <div style="color: #666; font-size: 10px; padding: 8px;">
+            No hay cámaras colocadas.<br><br>
+            📋 <strong>Instrucciones:</strong><br>
+            • Abra una imagen desde Archivo<br>
+            • Active modo cámara (📹)<br>
+            • Haga clic para colocar cámaras<br>
+            • Doble clic para editar<br><br>
+            <strong>Configuración:</strong><br>
+            • Alcance: 150px<br>
+            • Apertura: 72° / 360°<br><br>
+            <strong>Zoom centrado en panel:</strong><br>
+            • Rueda del ratón: zoom dinámico<br>
+            • Botones: centrado en panel<br>
+            • Atajos: Ctrl + +/-/0/F/Z
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="status-bar">
+      <div class="status-panel" id="status-text">Listo - Sistema de zoom centrado en panel activado</div>
+      <div style="width: 120px; border: 1px inset #c0c0c0; padding: 1px 4px; text-align: center;" id="zoom-indicator">Zoom: 100%</div>
+    </div>
   </div>
-  <script src="inicio.js"></script>
+  
+  <input type="file" id="image-input" class="hidden-input" accept="image/*">
+  <input type="file" id="csv-input" class="hidden-input" accept=".csv">
+  
+  <dialog class="zoom-modal" id="zoom-modal">
+    <div class="zoom-modal-title">🎯 Zoom Personalizado</div>
+    <div class="zoom-modal-content">
+      <div class="zoom-presets">
+        <div class="zoom-preset-btn" data-zoom="25">25%</div>
+        <div class="zoom-preset-btn" data-zoom="50">50%</div>
+        <div class="zoom-preset-btn" data-zoom="75">75%</div>
+        <div class="zoom-preset-btn" data-zoom="100">100%</div>
+        <div class="zoom-preset-btn" data-zoom="125">125%</div>
+        <div class="zoom-preset-btn" data-zoom="150">150%</div>
+        <div class="zoom-preset-btn" data-zoom="200">200%</div>
+        <div class="zoom-preset-btn" data-zoom="300">300%</div>
+      </div>
+      
+      <input type="range" class="zoom-range" id="zoom-range" min="10" max="400" step="5" value="100">
+      
+      <div class="zoom-input-group">
+        <label>Zoom:</label>
+        <input type="number" class="zoom-input" id="zoom-input" min="10" max="400" step="1" value="100">
+        <span>%</span>
+      </div>
+      
+      <div style="font-size: 10px; color: #666; text-align: center;">
+        Rango válido: 10% - 400%<br>
+        Se centrará en el centro del panel
+      </div>
+    </div>
+    
+    <div class="zoom-modal-buttons">
+      <div class="zoom-modal-btn" id="zoom-apply">Aplicar</div>
+      <div class="zoom-modal-btn" id="zoom-cancel">Cancelar</div>
+    </div>
+  </dialog>
+  
+  <div class="notification" id="notification">
+    <div class="notification-title" id="notification-title">Información</div>
+    <div id="notification-message">Mensaje</div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
