@@ -295,6 +295,15 @@ body {
   border: 1px solid transparent;
 }
 
+.delete-camera-btn {
+  margin-left: 4px;
+  cursor: pointer;
+}
+
+.delete-camera-btn:hover {
+  color: #dc3545;
+}
+
 .coordinate-item:hover {
   background-color: #0a246a;
   color: white;
