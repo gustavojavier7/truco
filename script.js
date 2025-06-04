@@ -380,11 +380,11 @@ function parseCSVAndCreatePins(csvContent) {
   }
   
   const header = lines[0].toLowerCase();
-  const expectedHeaders = ['nombre', 'ejex', 'ejey', 'orient'];
+  const expectedHeaders = ['nombre', 'ejex', 'ejey', 'orient', 'tipo'];
   const hasValidHeader = expectedHeaders.every(h => header.includes(h));
   
   if (!hasValidHeader) {
-    throw new Error('El CSV debe tener las columnas: Nombre, EjeX, EjeY, Orient');
+    throw new Error('El CSV debe tener las columnas: Nombre, EjeX, EjeY, Orient, Tipo');
   }
   
   clearPins();
@@ -398,12 +398,12 @@ function parseCSVAndCreatePins(csvContent) {
     
     const values = parseCSVLine(line);
     
-    if (values.length < 4) {
+    if (values.length < 5) {
       console.warn(`Línea ${i + 1} incompleta, saltando...`);
       continue;
     }
     
-    const [nombre, ejeX, ejeY, orient] = values;
+    const [nombre, ejeX, ejeY, orient, tipo] = values;
     const x = parseInt(ejeX);
     const y = parseInt(ejeY);
     const orientation = parseFloat(orient);
@@ -421,13 +421,18 @@ function parseCSVAndCreatePins(csvContent) {
     pinCounter++;
     maxId = Math.max(maxId, pinCounter);
     
+    let visionAngle = VISION_ANGLE; // valor por defecto
+    if (tipo.toLowerCase() === '360') {
+      visionAngle = 360;
+    }
+    
     const pin = {
       id: pinCounter,
       name: nombre.trim() || `Cam_${pinCounter}`,
       x: x,
       y: y,
       orient: orientation,
-      visionAngle: VISION_ANGLE // Valor por defecto para CSV
+      visionAngle: visionAngle
     };
     
     pins.push(pin);
@@ -445,7 +450,7 @@ function parseCSVAndCreatePins(csvContent) {
   updateUI();
   
   const message = currentImage ? 
-    `${loadedCount} cámaras cargadas desde CSV` : 
+    `${loadedCount} cámaras cargadas desde la CSV` : 
     `${loadedCount} cámaras cargadas. Abra una imagen para visualizarlas.`;
   
   statusText.textContent = message;
