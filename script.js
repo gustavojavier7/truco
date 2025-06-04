@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setupFileInputs();
   setupKeyboardShortcuts();
   setupZoomControls();
+  setupListDeletion();
   updateUI();
 });
 
@@ -264,10 +265,21 @@ function setupFileInputs() {
       handleImage(e.target.files[0]);
     }
   });
-  
+
   csvInput.addEventListener('change', (e) => {
     if (e.target.files.length) {
       handleCSV(e.target.files[0]);
+    }
+  });
+}
+
+function setupListDeletion() {
+  coordinatesList.addEventListener('click', (e) => {
+    if (e.target.classList.contains('delete-camera-btn')) {
+      const index = parseInt(e.target.dataset.index, 10);
+      if (!isNaN(index)) {
+        removeCamera(index);
+      }
     }
   });
 }
@@ -899,16 +911,30 @@ function updatePinPosition(pin, pinElement) {
 }
 
 function removePin(pinId) {
-  pins = pins.filter(pin => pin.id !== pinId);
-  const pinElement = document.querySelector(`[data-pin-id="${pinId}"]`);
+  const index = pins.findIndex(p => p.id === pinId);
+  if (index !== -1) {
+    removeCamera(index);
+  }
+}
+
+function removeCamera(index) {
+  const removed = pins.splice(index, 1)[0];
+  if (!removed) return;
+
+  const pinElement = document.querySelector(`[data-pin-id="${removed.id}"]`);
   if (pinElement) {
     pinElement.remove();
   }
+
+  redrawAll();
+  statusText.textContent = 'Cámara eliminada';
+}
+
+function redrawAll() {
   updateCoordinatesList();
   updateUI();
-  renderConesSync(); // Agregar esta línea para actualizar los conos
+  renderConesSync();
   updateSynchronizedZoom();
-  statusText.textContent = 'Cámara eliminada';
 }
 
 function editPin(pinId) {
@@ -1048,12 +1074,16 @@ function updateCoordinatesList() {
   }
   
   coordinatesList.innerHTML = '';
-  pins.forEach(pin => {
+  pins.forEach((pin, idx) => {
     const item = document.createElement('div');
     item.className = 'coordinate-item';
     const tipo = pin.visionAngle === 360 ? '360°' : 'Fija';
     item.innerHTML = `
-      <div class="coordinate-name">${pin.name} (${tipo})</div>
+      <div>
+        <span class="coordinate-name">${pin.name}</span>
+        <span class="delete-camera-btn" data-index="${idx}" title="Eliminar">🗑️</span>
+        <span style="margin-left:4px;">(${tipo})</span>
+      </div>
       <div class="coordinate-details">X: ${pin.x}, Y: ${pin.y}</div>
       <div class="coordinate-details">Orient: ${pin.orient}°</div>
     `;
