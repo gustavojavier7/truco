@@ -1,690 +1,1241 @@
-// Versión 4.1.8 (JavaScript puro)
+// Variables globales
+const imagePanel = document.getElementById('image-panel');
+const imageWrapper = document.getElementById('image-wrapper');
+const dropArea = document.getElementById('drop-area');
+const coordinatesList = document.getElementById('coordinates-list');
+const statusText = document.getElementById('status-text');
+const zoomIndicator = document.getElementById('zoom-indicator');
+const zoomDisplay = document.getElementById('zoom-display');
+const imageInput = document.getElementById('image-input');
+const csvInput = document.getElementById('csv-input');
+const notification = document.getElementById('notification');
+const notificationTitle = document.getElementById('notification-title');
+const notificationMessage = document.getElementById('notification-message');
+const zoomModal = document.getElementById('zoom-modal');
+const zoomRange = document.getElementById('zoom-range');
+const zoomInput = document.getElementById('zoom-input');
 
-// Estado inicial del juego
-let credits = 0;
-let currentPlayer = 'jugador'; // Puede ser 'jugador' o 'cpu'
+// Estado de la aplicación
+let currentImage = null;
+let currentImageOriginal = null;
+let originalFileName = '';
+let scale = 1;
+const scaleStep = 0.1;
+const minScale = 0.1;
+const maxScale = 4;
+let imagePositionX = 0;
+let imagePositionY = 0;
+let isDragging = false;
+let startX, startY, initialX, initialY;
+let isPinMode = false;
+let pins = [];
+let pinCounter = 0;
+let consolidateCounter = 1;
 
-// Función para crear una carta
-function crearCarta(palo, valor) {
-    return {
-        palo: palo,
-        valor: valor,
-        obtenerNombre: function () {
-            const nombres = { 1: 'As', 10: 'Sota', 11: 'Caballo', 12: 'Rey' };
-            return nombres[this.valor] || this.valor.toString();
-        },
-        obtenerValorTruco: function () {
-            const valoresTruco = { 1: 14, 7: 13, 3: 12, 2: 11, 12: 10, 11: 9, 10: 8, 6: 7, 5: 6, 4: 5 };
-            return valoresTruco[this.valor] || 0;
+// Configuración del cono de visión
+const VISION_RANGE = 150;
+const VISION_ANGLE = 72;
+
+// Inicialización
+document.addEventListener('DOMContentLoaded', function() {
+  setupMenuSystem();
+  setupDragAndDrop();
+  setupImageInteraction();
+  setupFileInputs();
+  setupKeyboardShortcuts();
+  setupZoomControls();
+  updateUI();
+});
+
+// Sistema de zoom mejorado con centro en panel
+function setupZoomControls() {
+  zoomDisplay.addEventListener('click', () => {
+    if (currentImage) {
+      showZoomModal();
+    }
+  });
+  
+  document.querySelectorAll('.zoom-preset-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const zoomValue = parseInt(e.target.getAttribute('data-zoom'));
+      setZoomValue(zoomValue);
+    });
+  });
+  
+  zoomRange.addEventListener('input', (e) => {
+    const value = parseInt(e.target.value);
+    zoomInput.value = value;
+  });
+  
+  zoomInput.addEventListener('input', (e) => {
+    const value = parseInt(e.target.value);
+    if (value >= 10 && value <= 400) {
+      zoomRange.value = value;
+    }
+  });
+  
+  document.getElementById('zoom-apply').addEventListener('click', () => {
+    const value = parseInt(zoomInput.value);
+    if (value >= 10 && value <= 400) {
+      updateScale(value / 100);
+      hideZoomModal();
+    } else {
+      showNotification('Error', 'El zoom debe estar entre 10% y 400%');
+    }
+  });
+  
+  document.getElementById('zoom-cancel').addEventListener('click', hideZoomModal);
+  
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && zoomModal.classList.contains('show')) {
+      hideZoomModal();
+    }
+  });
+}
+
+function showZoomModal() {
+  const currentZoom = Math.round(scale * 100);
+  zoomInput.value = currentZoom;
+  zoomRange.value = currentZoom;
+  zoomModal.classList.add('show');
+  zoomInput.focus();
+  zoomInput.select();
+}
+
+function hideZoomModal() {
+  zoomModal.classList.remove('show');
+}
+
+function setZoomValue(percent) {
+  zoomInput.value = percent;
+  zoomRange.value = percent;
+}
+
+function updateScale(newScale) {
+  const oldScale = scale;
+  scale = Math.min(maxScale, Math.max(minScale, newScale));
+
+  if (currentImage) {
+    const panelRect = imagePanel.getBoundingClientRect();
+    let pivotX = panelRect.width / 2;
+    let pivotY = panelRect.height / 2;
+    statusText.textContent = `Zoom: ${Math.round(scale * 100)}% (centrado en panel)`;
+
+    const scaleRatio = scale / oldScale;
+    if (scaleRatio !== 1) {
+      imagePositionX = pivotX - (pivotX - imagePositionX) * scaleRatio;
+      imagePositionY = pivotY - (pivotY - imagePositionY) * scaleRatio;
+    }
+
+    updateImagePosition();
+    updatePinPositions();
+    updateZoomDisplay();
+  }
+}
+
+function resetView() {
+  scale = 1;
+  if (currentImage) {
+    const panelRect = imagePanel.getBoundingClientRect();
+    let pivotX = panelRect.width / 2;
+    let pivotY = panelRect.height / 2;
+
+    const imageX = (pivotX - imagePositionX) / scale;
+    const imageY = (pivotY - imagePositionY) / scale;
+
+    imagePositionX = pivotX - imageX * scale;
+    imagePositionY = pivotY - imageY * scale;
+
+    updateImagePosition();
+    updatePinPositions();
+    updateZoomDisplay();
+    statusText.textContent = `Vista restablecida (100%)`;
+  }
+}
+
+// Sistema de menús Windows 98
+function setupMenuSystem() {
+  const menuItems = document.querySelectorAll('.menu-item');
+  const toolbarButtons = document.querySelectorAll('.toolbar-button');
+  const dropdownItems = document.querySelectorAll('.dropdown-item');
+
+  menuItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const menuId = item.getAttribute('data-menu');
+      const dropdown = document.getElementById(`menu-${menuId}`);
+
+      document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        if (menu.id !== `menu-${menuId}`) {
+          menu.classList.remove('show');
         }
+      });
+      document.querySelectorAll('.menu-item').forEach(mi => {
+        if (mi !== item) {
+          mi.classList.remove('active');
+        }
+      });
+
+      dropdown.classList.toggle('show');
+      item.classList.toggle('active');
+    });
+  });
+
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+      menu.classList.remove('show');
+    });
+    document.querySelectorAll('.menu-item').forEach(item => {
+      item.classList.remove('active');
+    });
+  });
+
+  [...dropdownItems, ...toolbarButtons].forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (item.classList.contains('disabled')) {
+        console.log('Elemento deshabilitado:', item.getAttribute('data-action'));
+        return;
+      }
+      const action = item.getAttribute('data-action');
+      console.log('Ejecutando acción desde elemento:', action);
+      executeAction(action);
+
+      document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        menu.classList.remove('show');
+      });
+      document.querySelectorAll('.menu-item').forEach(menuItem => {
+        menuItem.classList.remove('active');
+      });
+    });
+  });
+}
+
+// Ejecutor de acciones
+function executeAction(action) {
+  console.log('Ejecutando acción:', action);
+  
+  switch(action) {
+    case 'abrir-imagen':
+      imageInput.click();
+      break;
+    case 'abrir-csv':
+      csvInput.click();
+      break;
+    case 'guardar-imagen':
+      consolidateAndSave();
+      break;
+    case 'guardar-csv':
+      downloadCSV();
+      break;
+    case 'modo-camara':
+      console.log('Modo cámara - currentImage:', !!currentImage);
+      if (!currentImage) {
+        showNotification('Error', 'Debe cargar una imagen antes de activar el modo cámara');
+        return;
+      }
+      togglePinMode();
+      break;
+    case 'limpiar-camaras':
+      clearPins();
+      break;
+    case 'actualizar-conos':
+      updateSVGCones();
+      break;
+    case 'zoom-in':
+      updateScale(scale + scaleStep);
+      break;
+    case 'zoom-out':
+      updateScale(scale - scaleStep);
+      break;
+    case 'zoom-reset':
+      resetView();
+      break;
+    case 'zoom-fit':
+      fitToWindow();
+      break;
+    case 'zoom-custom':
+      if (currentImage) showZoomModal();
+      break;
+  }
+}
+
+// Manejo de archivos
+function setupFileInputs() {
+  imageInput.addEventListener('change', (e) => {
+    if (e.target.files.length) {
+      handleImage(e.target.files[0]);
+    }
+  });
+  
+  csvInput.addEventListener('change', (e) => {
+    if (e.target.files.length) {
+      handleCSV(e.target.files[0]);
+    }
+  });
+}
+
+function updateZoomDisplay() {
+  const zoomPercent = Math.round(scale * 100);
+  zoomDisplay.textContent = zoomPercent + '%';
+  zoomIndicator.textContent = `Zoom: ${zoomPercent}%`;
+}
+
+function fitToWindow() {
+  if (!currentImage) return;
+
+  const panelRect = imagePanel.getBoundingClientRect();
+  const imageWidth = currentImage.naturalWidth;
+  const imageHeight = currentImage.naturalHeight;
+
+  const scaleX = (panelRect.width - 40) / imageWidth;
+  const scaleY = (panelRect.height - 40) / imageHeight;
+  const fitScale = Math.min(scaleX, scaleY, maxScale);
+
+  let pivotX = panelRect.width / 2;
+  let pivotY = panelRect.height / 2;
+
+  const imageX = (pivotX - imagePositionX) / scale;
+  const imageY = (pivotY - imagePositionY) / scale;
+
+  scale = fitScale;
+
+  imagePositionX = pivotX - imageX * scale;
+  imagePositionY = pivotY - imageY * scale;
+
+  updateImagePosition();
+  updatePinPositions();
+  updateZoomDisplay();
+  statusText.textContent = `Vista ajustada a ventana (${Math.round(scale * 100)}%)`;
+}
+
+function handleImage(file) {
+  const maxSize = 10 * 1024 * 1024;
+  if (!file.type.startsWith('image/') || file.size > maxSize) {
+    showNotification('Error', 'Archivo inválido. Seleccione una imagen menor a 10MB.');
+    return;
+  }
+
+  originalFileName = file.name;
+  statusText.textContent = 'Cargando imagen...';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.src = e.target.result;
+    img.onload = () => {
+      currentImageOriginal = new Image();
+      currentImageOriginal.src = img.src;
+      imageWrapper.innerHTML = '';
+      imageWrapper.appendChild(img);
+      currentImage = img;
+      
+      // Establecer tamaño del SVG para cubrir el panel
+      const visionLayer = document.getElementById('vision-layer');
+      visionLayer.style.width = '100%';
+      visionLayer.style.height = '100%';
+      visionLayer.setAttribute('viewBox', `0 0 ${img.naturalWidth} ${img.naturalHeight}`);
+      
+      dropArea.style.display = 'none';
+      statusText.textContent = `Imagen cargada: ${img.naturalWidth}x${img.naturalHeight}px`;
+      
+      resetView();
+      clearPins();
+      updateUI();
+      
+      showNotification('Imagen Cargada', `${originalFileName} se ha cargado correctamente.`);
     };
+  };
+  reader.readAsDataURL(file);
 }
 
-// Función para crear un mazo
-function crearMazo() {
-    const cartas = [];
-    const palos = ['Espadas', 'Bastos', 'Copas', 'Oros'];
-    palos.forEach(palo => {
-        for (let valor = 1; valor <= 7; valor++) {
-            cartas.push(crearCarta(palo, valor));
-        }
-        for (let valor = 10; valor <= 12; valor++) {
-            cartas.push(crearCarta(palo, valor));
-        }
+function handleCSV(file) {
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    showNotification('Error', 'Seleccione un archivo CSV válido.');
+    return;
+  }
+  
+  statusText.textContent = 'Cargando archivo CSV...';
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      parseCSVAndCreatePins(e.target.result);
+    } catch (error) {
+      showNotification('Error', `Error al procesar CSV: ${error.message}`);
+      statusText.textContent = 'Error al cargar CSV';
+    }
+  };
+  reader.readAsText(file);
+}
+
+function parseCSVAndCreatePins(csvContent) {
+  const lines = csvContent.trim().split('\n');
+  
+  if (lines.length < 2) {
+    throw new Error('El archivo CSV debe tener al menos una línea de datos además del encabezado.');
+  }
+  
+  const header = lines[0].toLowerCase();
+  const expectedHeaders = ['nombre', 'ejex', 'ejey', 'orient'];
+  const hasValidHeader = expectedHeaders.every(h => header.includes(h));
+  
+  if (!hasValidHeader) {
+    throw new Error('El CSV debe tener las columnas: Nombre, EjeX, EjeY, Orient');
+  }
+  
+  clearPins();
+  
+  let loadedCount = 0;
+  let maxId = 0;
+  
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    
+    const values = parseCSVLine(line);
+    
+    if (values.length < 4) {
+      console.warn(`Línea ${i + 1} incompleta, saltando...`);
+      continue;
+    }
+    
+    const [nombre, ejeX, ejeY, orient] = values;
+    const x = parseInt(ejeX);
+    const y = parseInt(ejeY);
+    const orientation = parseFloat(orient);
+    
+    if (isNaN(x) || isNaN(y) || isNaN(orientation)) {
+      console.warn(`Línea ${i + 1} tiene valores inválidos, saltando...`);
+      continue;
+    }
+    
+    if (currentImage && (x < 0 || x > currentImage.naturalWidth || y < 0 || y > currentImage.naturalHeight)) {
+      console.warn(`Cámara ${nombre} fuera de los límites de la imagen, saltando...`);
+      continue;
+    }
+    
+    pinCounter++;
+    maxId = Math.max(maxId, pinCounter);
+    
+    const pin = {
+      id: pinCounter,
+      name: nombre.trim() || `Cam_${pinCounter}`,
+      x: x,
+      y: y,
+      orient: orientation,
+      visionAngle: VISION_ANGLE // Valor por defecto para CSV
+    };
+    
+    pins.push(pin);
+    
+    if (currentImage) {
+      createPinElement(pin);
+    }
+    
+    loadedCount++;
+  }
+  
+  pinCounter = maxId;
+  
+  updateCoordinatesList();
+  updateUI();
+  
+  const message = currentImage ? 
+    `${loadedCount} cámaras cargadas desde CSV` : 
+    `${loadedCount} cámaras cargadas. Abra una imagen para visualizarlas.`;
+  
+  statusText.textContent = message;
+  showNotification('CSV Cargado', message);
+}
+
+function parseCSVLine(line) {
+  const values = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      values.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  
+  values.push(current.trim());
+  return values;
+}
+
+// Drag and drop
+function setupDragAndDrop() {
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    imagePanel.addEventListener(eventName, preventDefaults, false);
+  });
+  
+  ['dragenter', 'dragover'].forEach(eventName => {
+    imagePanel.addEventListener(eventName, () => {
+      if (dropArea.style.display !== 'none') {
+        dropArea.classList.add('highlight');
+      }
+    }, false);
+  });
+  
+  ['dragleave', 'drop'].forEach(eventName => {
+    imagePanel.addEventListener(eventName, () => {
+      dropArea.classList.remove('highlight');
+    }, false);
+  });
+  
+  imagePanel.addEventListener('drop', handleDrop, false);
+  dropArea.addEventListener('click', () => imageInput.click());
+}
+
+function preventDefaults(e) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+function handleDrop(e) {
+  const files = Array.from(e.dataTransfer.files);
+  const imageFile = files.find(f => f.type.startsWith('image/'));
+  const csvFile = files.find(f => f.name.toLowerCase().endsWith('.csv'));
+  
+  if (imageFile) {
+    handleImage(imageFile);
+  } else if (csvFile) {
+    handleCSV(csvFile);
+  } else {
+    showNotification('Error', 'Arrastre una imagen o archivo CSV válido.');
+  }
+}
+
+// Interacción con imagen
+function setupImageInteraction() {
+  imagePanel.addEventListener('mousedown', handleMouseDown);
+  imagePanel.addEventListener('mousemove', handleMouseMove);
+  imagePanel.addEventListener('mouseup', handleMouseUp);
+  imagePanel.addEventListener('mouseleave', handleMouseUp);
+
+  // Zoom con rueda del ratón
+  imagePanel.addEventListener('wheel', (e) => {
+    if (!currentImage) return;
+    e.preventDefault();
+
+    const delta = e.deltaY > 0 ? -scaleStep : scaleStep;
+    const newScale = Math.min(maxScale, Math.max(minScale, scale + delta));
+
+    if (newScale !== scale) {
+      scale = newScale;
+      updateImagePosition();
+      updatePinPositions();
+      updateZoomDisplay();
+      statusText.textContent = `Zoom: ${Math.round(scale * 100)}% (centrado en panel)`;
+    }
+  });
+}
+
+function handleMouseDown(e) {
+  if (!currentImage) return;
+  
+  if (e.target.classList.contains('pin-center')) {
+    return;
+  }
+  
+  if (isPinMode) {
+    addPin(e);
+  } else {
+    isDragging = true;
+    imagePanel.classList.add('dragging');
+    startX = e.clientX;
+    startY = e.clientY;
+    initialX = imagePositionX;
+    initialY = imagePositionY;
+  }
+}
+
+function handleMouseMove(e) {
+  if (!isDragging || !currentImage || isPinMode) return;
+  
+  e.preventDefault();
+  const deltaX = e.clientX - startX;
+  const deltaY = e.clientY - startY;
+  
+  imagePositionX = initialX + deltaX;
+  imagePositionY = initialY + deltaY;
+  
+  updateImagePosition();
+  updatePinPositions();
+}
+
+function handleMouseUp() {
+  if (isDragging) {
+    isDragging = false;
+    imagePanel.classList.remove('dragging');
+  }
+}
+
+function addPin(e) {
+  const rect = imagePanel.getBoundingClientRect();
+  
+  const x = (e.clientX - rect.left - imagePositionX) / scale;
+  const y = (e.clientY - rect.top - imagePositionY) / scale;
+  
+  const imageX = Math.round(x);
+  const imageY = Math.round(y);
+  
+  if (imageX >= 0 && imageX <= currentImage.naturalWidth && 
+      imageY >= 0 && imageY <= currentImage.naturalHeight) {
+    
+    pinCounter++;
+    const pin = {
+      id: pinCounter,
+      name: `Cam_${pinCounter}`,
+      x: imageX,
+      y: imageY,
+      orient: 0,
+      visionAngle: VISION_ANGLE // Valor por defecto
+    };
+    
+    pins.push(pin);
+    createPinElement(pin);
+    updateCoordinatesList();
+    updateUI();
+    
+    statusText.textContent = `${pin.name} agregado en (${imageX}, ${imageY}) - Orient: 0°`;
+  }
+}
+
+function renderAllCones() {
+  const visionLayer = document.getElementById('vision-layer');
+  visionLayer.innerHTML = ''; // Limpiar conos anteriores
+
+  // Crear grupo <g> sin transformación (las coordenadas ya incluyen escala y traslación)
+  const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  visionLayer.appendChild(group);
+
+  pins.forEach(pin => {
+    const angle = pin.visionAngle || VISION_ANGLE;
+    // Ajustar coordenadas al espacio escalado y trasladado
+    const centerX = (pin.x * scale) + imagePositionX;
+    const centerY = (pin.y * scale) + imagePositionY;
+    const scaledRange = VISION_RANGE * scale;
+
+    if (angle === 360) {
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', centerX);
+      circle.setAttribute('cy', centerY);
+      circle.setAttribute('r', scaledRange);
+      circle.setAttribute('fill', 'rgba(53, 162, 235, 0.3)');
+      circle.setAttribute('stroke', '#3593eb');
+      circle.setAttribute('stroke-width', '2'); // Grosor fijo, como en el canvas
+      group.appendChild(circle);
+    } else {
+      const cone = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      const startAngle = -angle / 2;
+      const endAngle = angle / 2;
+      const pathData = createSectorPath(centerX, centerY, scaledRange, startAngle + pin.orient, endAngle + pin.orient);
+
+      cone.setAttribute('d', pathData);
+      cone.setAttribute('fill', 'rgba(220, 53, 69, 0.3)');
+      cone.setAttribute('stroke', '#dc3545');
+      cone.setAttribute('stroke-width', '2'); // Grosor fijo, como en el canvas
+      group.appendChild(cone);
+    }
+  });
+}
+
+// FUNCIÓN CLAVE: Crear elemento pin con escalado automático CSS
+function createPinElement(pin) {
+  const pinContainer = document.createElement('div');
+  pinContainer.className = 'pin';
+  pinContainer.dataset.pinId = pin.id;
+  pinContainer.title = `${pin.name}: (${pin.x}, ${pin.y}) - Orient: ${pin.orient}° - Tipo: ${pin.visionAngle === 360 ? '360°' : 'Fija'}`;
+
+  const pinCenter = document.createElement('div');
+  pinCenter.className = 'pin-center';
+  pinCenter.style.width = `${8 * scale}px`;
+  pinCenter.style.height = `${8 * scale}px`;
+  pinCenter.style.borderWidth = `${2 * scale}px`;
+  pinCenter.style.left = `${-4 * scale}px`;
+  pinCenter.style.top = `${-4 * scale}px`;
+
+  const pinLabel = document.createElement('div');
+  pinLabel.className = 'pin-label';
+  pinLabel.textContent = pin.name;
+  pinLabel.style.fontSize = `${9 * scale}px`;
+  pinLabel.style.padding = `${1 * scale}px ${3 * scale}px`;
+  pinLabel.style.marginTop = `${-6 * scale}px`;
+  
+  pinCenter.addEventListener('click', (e) => {
+    e.stopPropagation();
+    removePin(pin.id);
+  });
+  
+  pinContainer.appendChild(pinCenter);
+  pinContainer.appendChild(pinLabel);
+  
+  imagePanel.appendChild(pinContainer);
+  updatePinPosition(pin, pinContainer);
+}
+
+// FUNCIÓN CLAVE: Crear cono SVG con tamaño fijo (se escala con CSS transform)
+function createVisionCone(pin) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  const scaledRadius = VISION_RANGE * scale;
+  const size = scaledRadius * 2 + 20;
+  
+  svg.setAttribute('width', size);
+  svg.setAttribute('height', size);
+  svg.style.position = 'absolute';
+  svg.style.pointerEvents = 'none';
+  svg.style.left = `${-scaledRadius - 10}px`;
+  svg.style.top = `${-scaledRadius - 10}px`;
+  
+  const centerX = size / 2;
+  const centerY = size / 2;
+  const radius = scaledRadius;
+  const angle = pin.visionAngle || VISION_ANGLE;
+  
+  if (angle === 360) {
+    // Cámara 360: crear círculo completo
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', centerX);
+    circle.setAttribute('cy', centerY);
+    circle.setAttribute('r', radius);
+    circle.setAttribute('fill', 'rgba(53, 162, 235, 0.3)'); // Azul para 360°
+    circle.setAttribute('stroke', '#3593eb');
+    circle.setAttribute('stroke-width', '2');
+    svg.appendChild(circle);
+  } else {
+    // Cámara fija: crear sector
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const startAngle = -angle / 2;
+    const endAngle = angle / 2;
+    const pathData = createSectorPath(centerX, centerY, radius, startAngle, endAngle);
+    
+    path.setAttribute('d', pathData);
+    path.setAttribute('transform', `rotate(${pin.orient} ${centerX} ${centerY})`);
+    path.setAttribute('fill', 'rgba(220, 53, 69, 0.3)'); // Rojo para fija
+    path.setAttribute('stroke', '#dc3545');
+    path.setAttribute('stroke-width', '2');
+    svg.appendChild(path);
+  }
+  
+  return svg;
+}
+
+function createSectorPath(cx, cy, radius, startAngle, endAngle) {
+  const startRad = (startAngle * Math.PI) / 180;
+  const endRad = (endAngle * Math.PI) / 180;
+
+  const x1 = cx + radius * Math.cos(startRad);
+  const y1 = cy + radius * Math.sin(startRad);
+  const x2 = cx + radius * Math.cos(endRad);
+  const y2 = cy + radius * Math.sin(endRad);
+
+  const largeArcFlag = (endAngle - startAngle <= 180) ? '0' : '1';
+
+  return [
+    "M", cx, cy,
+    "L", x1, y1,
+    "A", radius, radius, 0, largeArcFlag, 1, x2, y2,
+    "Z"
+  ].join(" ");
+}
+
+function updatePinPosition(pin, pinElement) {
+  const pinX = imagePositionX + (pin.x * scale);
+  const pinY = imagePositionY + (pin.y * scale);
+
+  pinElement.style.left = pinX + 'px';
+  pinElement.style.top = pinY + 'px';
+
+  const pinCenter = pinElement.querySelector('.pin-center');
+  if (pinCenter) {
+    pinCenter.style.width = `${8 * scale}px`;
+    pinCenter.style.height = `${8 * scale}px`;
+    pinCenter.style.borderWidth = `${2 * scale}px`;
+    pinCenter.style.left = `${-4 * scale}px`;
+    pinCenter.style.top = `${-4 * scale}px`;
+  }
+
+  const pinLabel = pinElement.querySelector('.pin-label');
+  if (pinLabel) {
+    pinLabel.style.fontSize = `${9 * scale}px`;
+    pinLabel.style.padding = `${1 * scale}px ${3 * scale}px`;
+    pinLabel.style.marginTop = `${-6 * scale}px`;
+  }
+
+  const containerWidth = imagePanel.offsetWidth;
+  const containerHeight = imagePanel.offsetHeight;
+
+  // Calcular visibilidad en el espacio de la imagen real
+  const unscaledPinX = pin.x;
+  const unscaledPinY = pin.y;
+  const unscaledContainerWidth = containerWidth / scale - imagePositionX / scale;
+  const unscaledContainerHeight = containerHeight / scale - imagePositionY / scale;
+  const unscaledRange = VISION_RANGE;
+
+  const isVisible = unscaledPinX >= -unscaledRange && unscaledPinX <= unscaledContainerWidth + unscaledRange && 
+                   unscaledPinY >= -unscaledRange && unscaledPinY <= unscaledContainerHeight + unscaledRange;
+
+  pinElement.classList.toggle('hidden', !isVisible);
+}
+
+function removePin(pinId) {
+  pins = pins.filter(pin => pin.id !== pinId);
+  const pinElement = document.querySelector(`[data-pin-id="${pinId}"]`);
+  if (pinElement) {
+    pinElement.remove();
+  }
+  updateCoordinatesList();
+  updateUI();
+  statusText.textContent = 'Cámara eliminada';
+}
+
+function editPin(pinId) {
+  const pin = pins.find(p => p.id === pinId);
+  if (!pin) return;
+
+  const newName = prompt('Nombre del punto:', pin.name);
+  if (newName === null) return;
+
+  const newOrient = prompt('Orientación (grados):', pin.orient);
+  if (newOrient === null) return;
+
+  const newType = prompt('Tipo de cámara:\n"fija" = Cono direccional\n"360" = Visión completa\n\nIngrese tipo:', 
+                        pin.visionAngle === 360 ? '360' : 'fija');
+  if (newType === null) return;
+
+  const orientValue = parseFloat(newOrient);
+  if (isNaN(orientValue)) {
+    showNotification('Error', 'La orientación debe ser un número válido');
+    return;
+  }
+
+  let visionAngle = VISION_ANGLE; // valor por defecto
+  if (newType.toLowerCase() === '360') {
+    visionAngle = 360;
+  }
+
+  const oldName = pin.name;
+  const oldOrient = pin.orient;
+  const oldType = pin.visionAngle === 360 ? '360°' : 'Fija';
+  
+  pin.name = newName.trim() || ('Cam_' + pin.id);
+  pin.orient = orientValue;
+  pin.visionAngle = visionAngle;
+
+  recreatePinWithNewOrientation(pin, pin.name, orientValue);
+
+  updateCoordinatesList();
+  updateUI();
+  const newTypeDisplay = pin.visionAngle === 360 ? '360°' : 'Fija';
+  statusText.textContent = `${pin.name} editado: ${oldName}→${pin.name}, ${oldOrient}°→${pin.orient}°, ${oldType}→${newTypeDisplay}`;
+  showNotification('Pin Editado', `${pin.name} actualizado correctamente`);
+}
+
+function recreatePinWithNewOrientation(pin, newName, newOrientation) {
+  const oldPinElement = document.querySelector(`[data-pin-id="${pin.id}"]`);
+  if (oldPinElement) {
+    oldPinElement.remove();
+  }
+  
+  pin.name = newName;
+  pin.orient = newOrientation;
+  
+  if (currentImage) {
+    createPinElement(pin);
+  }
+}
+
+function clearPins() {
+  pins = [];
+  pinCounter = 0;
+  document.querySelectorAll('.pin').forEach(pin => pin.remove());
+  updateCoordinatesList();
+  updateUI();
+  statusText.textContent = 'Todas las cámaras eliminadas';
+}
+
+function updateSVGCones() {
+  if (!currentImage || pins.length === 0) {
+    showNotification('Advertencia', 'No hay imagen o cámaras para actualizar');
+    return;
+  }
+  
+  let recreatedCount = 0;
+  
+  pins.forEach(pin => {
+    const oldPinElement = document.querySelector(`[data-pin-id="${pin.id}"]`);
+    if (oldPinElement) {
+      oldPinElement.remove();
+    }
+    
+    createPinElement(pin);
+    recreatedCount++;
+  });
+  
+  statusText.textContent = `${recreatedCount} conos SVG recreados`;
+  showNotification('Conos Actualizados', `${recreatedCount} conos recreados correctamente`);
+}
+
+function togglePinMode() {
+  if (!currentImage) {
+    showNotification('Error', 'Debe cargar una imagen antes de activar el modo cámara');
+    return;
+  }
+  
+  isPinMode = !isPinMode;
+  updateUI();
+  
+  const modeText = isPinMode ? 'ACTIVO' : 'Navegación';
+  statusText.textContent = `Modo cámara ${modeText}`;
+  showNotification('Modo Cámara', `Modo cámara ${modeText.toLowerCase()}`);
+  
+  if (isPinMode) {
+    imagePanel.classList.add('pinning');
+    imagePanel.style.cursor = 'crosshair';
+  } else {
+    imagePanel.classList.remove('pinning');
+    imagePanel.style.cursor = 'grab';
+  }
+}
+
+function updateImagePosition() {
+  imageWrapper.style.transform = `translate(${imagePositionX}px, ${imagePositionY}px) scale(${scale})`;
+}
+
+// FUNCIÓN CLAVE: Actualizar posiciones de todos los pines (simplificada)
+function updatePinPositions() {
+  pins.forEach(pin => {
+    const pinElement = document.querySelector(`[data-pin-id="${pin.id}"]`);
+    if (pinElement) {
+      updatePinPosition(pin, pinElement);
+    }
+  });
+  renderAllCones();
+}
+
+function updateCoordinatesList() {
+  if (pins.length === 0) {
+    coordinatesList.innerHTML = `
+      <div style="color: #666; font-size: 10px; padding: 8px;">
+        No hay cámaras colocadas.<br><br>
+        📋 <strong>Instrucciones:</strong><br>
+        • Abra una imagen desde Archivo<br>
+        • Active modo cámara (📹)<br>
+        • Haga clic para colocar cámaras<br>
+        • Doble clic para editar<br><br>
+        <strong>Configuración:</strong><br>
+        • Alcance: 150px<br>
+        • Apertura: 72° / 360°<br><br>
+        <strong>Zoom centrado en panel:</strong><br>
+        • Rueda del ratón: zoom dinámico<br>
+        • Botones: centrado en panel<br>
+        • Atajos: Ctrl + +/-/0/F/Z
+      </div>
+    `;
+    return;
+  }
+  
+  coordinatesList.innerHTML = '';
+  pins.forEach(pin => {
+    const item = document.createElement('div');
+    item.className = 'coordinate-item';
+    const tipo = pin.visionAngle === 360 ? '360°' : 'Fija';
+    item.innerHTML = `
+      <div class="coordinate-name">${pin.name} (${tipo})</div>
+      <div class="coordinate-details">X: ${pin.x}, Y: ${pin.y}</div>
+      <div class="coordinate-details">Orient: ${pin.orient}°</div>
+    `;
+    
+    item.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      editPin(pin.id);
     });
-    barajar(cartas);
-    return cartas;
-}
-
-// Función para barajar el mazo
-function barajar(cartas) {
-    for (let i = cartas.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [cartas[i], cartas[j]] = [cartas[j], cartas[i]];
-    }
-}
-
-// Función para repartir cartas
-function repartirCartas(jugador, cpu, mazo) {
-    if (mazo.length < 6) {
-        throw new Error("No hay suficientes cartas en el mazo");
-    }
-    for (let i = 0; i < 3; i++) {
-        jugador.mano.push(mazo.pop());
-        cpu.mano.push(mazo.pop());
-    }
-}
-
-// Función para determinar si un jugador tiene flor
-function tieneFlor(jugador) {
-    const palos = jugador.mano.map(carta => carta.palo);
-    const frecuencia = {};
-    palos.forEach(palo => {
-        frecuencia[palo] = (frecuencia[palo] || 0) + 1;
+    
+    item.addEventListener('click', (e) => {
+      if (e.detail === 1) {
+        centerViewOnPin(pin);
+      }
     });
-    for (let palo in frecuencia) {
-        if (frecuencia[palo] === 3) {
-            return palo;
-        }
-    }
-    return false;
+    
+    coordinatesList.appendChild(item);
+  });
 }
 
-// Función para calcular el valor de la flor
-function calcularValorFlor(jugador) {
-    return calcularPuntosPorPalo(jugador.mano, 3);
+function centerViewOnPin(pin) {
+  if (!currentImage) return;
+
+  const containerRect = imagePanel.getBoundingClientRect();
+  const centerX = containerRect.width / 2;
+  const centerY = containerRect.height / 2;
+
+  imagePositionX = centerX - (pin.x * scale);
+  imagePositionY = centerY - (pin.y * scale);
+
+  updateImagePosition();
+  updatePinPositions();
+
+  statusText.textContent = `Vista centrada en ${pin.name}`;
 }
 
-// Función para calcular el valor de envido
-function calcularEnvido(mano) {
-    return calcularPuntosPorPalo(mano);
+function updateUI() {
+  const hasImage = !!currentImage;
+  const hasPins = pins.length > 0;
+
+  const menuItems = document.querySelectorAll('[data-action="guardar-imagen"], [data-action="guardar-csv"], [data-action="modo-camara"], [data-action="limpiar-camaras"], [data-action="actualizar-conos"], [data-action="zoom-in"], [data-action="zoom-out"], [data-action="zoom-reset"], [data-action="zoom-fit"], [data-action="zoom-custom"]');
+
+  menuItems.forEach(item => {
+    if (['guardar-imagen', 'guardar-csv'].includes(item.getAttribute('data-action'))) {
+      item.classList.toggle('disabled', !hasPins);
+    } else {
+      item.classList.toggle('disabled', !hasImage);
+    }
+  });
+
+  const modoCamaraBtn = document.getElementById('modo-camara-btn');
+  if (modoCamaraBtn) {
+    modoCamaraBtn.classList.toggle('active', isPinMode);
+    modoCamaraBtn.title = isPinMode ? 'Modo Cámara (ACTIVO)' : 'Modo Cámara';
+  }
+
+  updateZoomDisplay();
 }
 
-// Función auxiliar para calcular puntos por palo
-function calcularPuntosPorPalo(mano, minCartas = 2) {
-    const frecuencia = mano.reduce((acc, carta) => {
-        acc[carta.palo] = (acc[carta.palo] || 0) + 1;
-        return acc;
-    }, {});
-    for (let palo in frecuencia) {
-        if (frecuencia[palo] >= minCartas) {
-            const cartasDelPalo = mano.filter(carta => carta.palo === palo);
-            return cartasDelPalo.reduce((sum, carta) => sum + carta.valor, 0) + 20;
-        }
-    }
-    return Math.max(...mano.map(carta => carta.valor));
+// Funciones de guardado
+function downloadCSV() {
+  if (pins.length === 0) {
+    showNotification('Advertencia', 'No hay cámaras para guardar');
+    return;
+  }
+
+  let csvContent = 'Nombre,EjeX,EjeY,Orient,Tipo\n';
+
+  pins.forEach(pin => {
+    const tipo = pin.visionAngle === 360 ? '360' : 'fija';
+    csvContent += `"${pin.name}",${pin.x},${pin.y},${pin.orient},"${tipo}"\n`;
+  });
+
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+  downloadBlob(blob, 'camaras.csv');
+
+  statusText.textContent = `CSV guardado con ${pins.length} cámaras`;
+  showNotification('CSV Guardado', `Archivo guardado con ${pins.length} cámaras`);
 }
 
-// Función para mostrar mensajes en el juego
-function mostrarMensaje(mensaje) {
-    const gameMessages = document.getElementById('gameMessages');
-    if (!gameMessages) return;
+function consolidateAndSave() {
+  if (!currentImage || pins.length === 0) {
+    showNotification('Advertencia', 'No hay imagen o cámaras para consolidar');
+    return;
+  }
 
-    const mensajeElement = document.createElement('div');
-    mensajeElement.textContent = mensaje;
-    gameMessages.appendChild(mensajeElement);
-    gameMessages.scrollTop = gameMessages.scrollHeight;
+  statusText.textContent = 'Consolidando imagen...';
 
-    if (gameMessages.children.length > 5) {
-        gameMessages.removeChild(gameMessages.firstChild);
-    }
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  canvas.width = currentImage.naturalWidth;
+  canvas.height = currentImage.naturalHeight;
+
+  ctx.drawImage(currentImageOriginal, 0, 0);
+
+  pins.forEach(pin => {
+    drawVisionConeOnCanvas(ctx, pin.x, pin.y, pin.orient, pin.name, pin.visionAngle);
+  });
+
+  canvas.toBlob((blob) => {
+    const fileName = generateVersionedFileName(originalFileName);
+    downloadBlob(blob, fileName);
+
+    statusText.textContent = `Imagen consolidada: ${fileName}`;
+    showNotification('Imagen Guardada', `Archivo guardado como: ${fileName}`);
+    consolidateCounter++;
+  }, 'image/png');
 }
 
-// Crear la CPU
-const cpu = {
-    nombre: 'CPU',
-    mano: [],
-    puntos: 0,
-    ultimaCartaJugada: null,
-    recibirCarta(carta) {
-        this.mano.push(carta);
-    },
-    mostrarMano() {
-        return this.mano;
-    },
-    obtenerPuntos() {
-        return this.puntos;
-    },
-    sumarPuntos(puntos) {
-        this.puntos += puntos;
-    },
-    decidirAnunciarFlor() {
-        if (this.mano.length === 3) {
-            const paloFlor = this.mano.reduce((mapa, carta) => {
-                mapa[carta.palo] = (mapa[carta.palo] || 0) + 1;
-                return mapa;
-            }, {});
-            return Object.values(paloFlor).some(count => count === 3);
-        }
-        return false;
-    },
-    decidirApostarEnvido() {
-        const valorEnvido = calcularEnvido(this.mano);
-        if (valorEnvido >= 27) return 'Quiero';
-        if (valorEnvido >= 22 && Math.random() < 0.7) return 'Quiero';
-        if (valorEnvido >= 18 && Math.random() < 0.3) return 'Quiero';
-        return 'No Quiero';
-    },
-    decidirApostarTruco() {
-        const valoresAltos = [14, 13, 12];
-        const cartasFuertes = this.mano.filter(carta => valoresAltos.includes(carta.obtenerValorTruco()));
-        if (cartasFuertes.length >= 2) return 'Truco';
-        if (cartasFuertes.length === 1) return Math.random() < 0.5 ? 'Truco' : null;
-        return null;
-    },
-    elegirCartaImperativa() {
-        return this.mano.sort((a, b) => a.obtenerValorTruco() - b.obtenerValorTruco()).shift();
-    },
-    jugarTurno(juego) {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                if (this.decidirAnunciarFlor()) {
-                    juego.anunciarFlor('cpu');
-                } else {
-                    const apuestaEnvido = this.decidirApostarEnvido();
-                    if (apuestaEnvido === 'Quiero') {
-                        juego.jugarEnvido('cpu');
-                    } else {
-                        const carta = this.elegirCartaImperativa();
-                        this.ultimaCartaJugada = carta;
-                        mostrarMensaje(`CPU juega ${carta.obtenerNombre()} de ${carta.palo}`);
-                        resolve();
-                    }
-                }
-            }, 1000);
-        });
+function drawVisionConeOnCanvas(ctx, x, y, orientation, label, visionAngle = VISION_ANGLE) {
+  ctx.save();
+
+  if (visionAngle === 360) {
+    // Cámara 360: dibujar círculo azul
+    ctx.fillStyle = 'rgba(53, 162, 235, 0.3)';
+    ctx.strokeStyle = '#3593eb';
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.arc(x, y, VISION_RANGE, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  } else {
+    // Cámara fija: dibujar sector rojo
+    ctx.fillStyle = 'rgba(220, 53, 69, 0.3)';
+    ctx.strokeStyle = '#dc3545';
+    ctx.lineWidth = 2;
+
+    const orientRad = (orientation * Math.PI) / 180;
+    const halfAngle = (visionAngle / 2) * Math.PI / 180;
+    const startAngle = orientRad - halfAngle;
+    const endAngle = orientRad + halfAngle;
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.arc(x, y, VISION_RANGE, startAngle, endAngle);
+    ctx.lineTo(x, y);
+    ctx.closePath();
+
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  // Dibujar punto central
+  ctx.fillStyle = visionAngle === 360 ? '#3593eb' : '#dc3545';
+  ctx.strokeStyle = 'white';
+  ctx.lineWidth = 2;
+
+  ctx.beginPath();
+  ctx.arc(x, y, 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.arc(x, y, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Dibujar etiqueta
+  if (label && label !== '') {
+    ctx.fillStyle = 'black';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+
+    const textMetrics = ctx.measureText(label);
+    const textWidth = textMetrics.width;
+    const textHeight = 14;
+
+    ctx.fillStyle = 'rgba(255, 255, 192, 0.9)';
+    ctx.fillRect(x - (textWidth / 2) - 3, y - textHeight - 12, textWidth + 6, textHeight + 6);
+
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x - (textWidth / 2) - 3, y - textHeight - 12, textWidth + 6, textHeight + 6);
+
+    ctx.fillStyle = 'black';
+    ctx.fillText(label, x, y - 6);
+  }
+
+  ctx.restore();
+}
+
+function generateVersionedFileName(originalName) {
+  const lastDotIndex = originalName.lastIndexOf('.');
+  let baseName, extension;
+
+  if (lastDotIndex !== -1) {
+    baseName = originalName.substring(0, lastDotIndex);
+    extension = originalName.substring(lastDotIndex + 1);
+  } else {
+    baseName = originalName;
+    extension = 'png';
+  }
+
+  const versionNumber = consolidateCounter.toString().padStart(4, '0');
+  return `${baseName}_camaras_${versionNumber}.${extension}`;
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+// Atajos de teclado
+function setupKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      switch(e.key.toLowerCase()) {
+        case 'o':
+          e.preventDefault();
+          imageInput.click();
+          break;
+        case 's':
+          e.preventDefault();
+          if (e.shiftKey) {
+            downloadCSV();
+          } else {
+            consolidateAndSave();
+          }
+          break;
+        case '=':
+        case '+':
+          e.preventDefault();
+          if (currentImage) {
+            updateScale(scale + scaleStep);
+          }
+          break;
+        case '-':
+          e.preventDefault();
+          if (currentImage) {
+            updateScale(scale - scaleStep);
+          }
+          break;
+        case '0':
+          e.preventDefault();
+          if (currentImage) {
+            resetView();
+          }
+          break;
+      }
+    } else {
+      switch(e.key.toLowerCase()) {
+        case 'p':
+          if (currentImage) {
+            togglePinMode();
+          }
+          break;
+        case 'f':
+          if (currentImage) {
+            fitToWindow();
+          }
+          break;
+        case 'z':
+          if (currentImage) {
+            showZoomModal();
+          }
+          break;
+      }
     }
-};
+  });
+}
 
-// Crear el jugador humano
-const jugador = {
-    nombre: 'Humano',
-    mano: [],
-    puntos: 0,
-    ultimaCartaJugada: null,
-    recibirCarta(carta) {
-        this.mano.push(carta);
-    },
-    mostrarMano() {
-        return this.mano;
-    },
-    obtenerPuntos() {
-        return this.puntos;
-    },
-    sumarPuntos(puntos) {
-        this.puntos += puntos;
-    },
-    decidirAnunciarFlor() {
-        return true;
-    },
-    decidirApostarFlor(valorFlor) {
-        return 'Quiero';
-    },
-    elegirCarta() {
-        return new Promise((resolve) => {
-            const playerContainer = document.querySelector('.player-cards');
-            const cartasJugador = playerContainer.querySelectorAll('.carta');
+function showNotification(title, message) {
+  notificationTitle.textContent = title;
+  notificationMessage.textContent = message;
+  notification.classList.add('show');
 
-            const desactivarCartas = () => {
-                cartasJugador.forEach(cartaElement => {
-                    cartaElement.removeEventListener('click', handleClick);
-                    cartaElement.style.pointerEvents = 'none';
-                });
-            };
+  setTimeout(() => {
+    notification.classList.remove('show');
+  }, 3000);
 
-            const handleClick = (event) => {
-                const cartaElement = event.currentTarget;
-                const index = cartaElement.dataset.index;
-                const cartaSeleccionada = this.mano[index];
-                this.mano.splice(index, 1);
-                this.ultimaCartaJugada = cartaSeleccionada;
-                desactivarCartas();
-                resolve(cartaSeleccionada);
-            };
+  notification.onclick = () => {
+    notification.classList.remove('show');
+  };
+}
 
-            cartasJugador.forEach(cartaElement => {
-                cartaElement.addEventListener('click', handleClick);
-            });
-        });
-    },
-    jugarTurno(juego) {
-        juego.rondaIniciada = true; // Marcar inicio de ronda
-        this.elegirCarta().then(cartaSeleccionada => {
-            mostrarMensaje(`Has jugado: ${cartaSeleccionada.obtenerNombre()} de ${cartaSeleccionada.palo}`);
-            juego.cambiarTurno();
-            juego.jugarTurnoCPU();
-        });
-    },
-    elegirCartaImperativa() {
-        return this.mano.sort((a, b) => a.obtenerValorTruco() - b.obtenerValorTruco()).shift();
-    }
-};
-
-// Crear el juego
-const juego = {
-    jugador: jugador,
-    cpu: cpu,
-    mazo: crearMazo(),
-    turno: Math.random() < 0.5 ? 'jugador' : 'cpu',
-    mano: Math.random() < 0.5 ? 'jugador' : 'cpu',
-    trucoApostado: 1,
-    ultimaApuestaEnvido: 0,
-    puntosJugador: 0, // Puntos totales del jugador
-    puntosCPU: 0,     // Puntos totales de la CPU
-    rondaIniciada: false, // Para controlar el primer truco
-    repartidor: 'cpu', // Comienza con CPU
-    estadoDelJuego: {
-        florActivo: false,
-        envidoActivo: false,
-        trucoActivo: false,
-        florResuelto: false,
-        envidoResuelto: false,
-        trucoResuelto: false,
-        retrucoActivo: false,
-        retrucoResuelto: false,
-        valeCuatroActivo: false,
-        valeCuatroResuelto: false,
-        contraflorActivo: false,
-        contraflorResuelto: false,
-        contraflorAlRestoActivo: false,
-        contraflorAlRestoResuelto: false,
-        realEnvidoActivo: false,
-        faltaEnvidoActivo: false,
-    },
-    florJugador: tieneFlor(jugador),
-    florCPU: tieneFlor(cpu),
-    repartirCartas() {
-        repartirCartas(this.jugador, this.cpu, this.mazo);
-    },
-    tieneFlor(jugador) {
-        return tieneFlor(jugador);
-    },
-    iniciarJuego() {
-        this.mazo = crearMazo();
-        this.repartirCartas();
-        this.florJugador = this.tieneFlor(this.jugador);
-        this.florCPU = this.tieneFlor(this.cpu);
-        this.mostrarCartas();
-        this.actualizarCreditos();
-        this.rondaIniciada = false;
-        this.mano = this.repartidor === 'cpu' ? 'jugador' : 'cpu';
-        this.turno = this.mano;
-
-        const manoDisplay = document.getElementById('manoDisplay');
-        manoDisplay.textContent = this.mano === 'jugador' ? 'Vos sos mano' : 'CPU es mano';
-        manoDisplay.style.display = 'block';
-
-        this.mostrarMensaje('¡Comienza el juego!');
-        this.mostrarMensaje(`Turno inicial: ${this.turno === 'jugador' ? 'Jugador' : 'CPU'}`);
-
-        // Priorizar Flor
-        if (this.florJugador && this.mano === 'jugador') {
-            this.anunciarFlor('jugador');
-        } else if (this.florCPU && this.mano === 'cpu') {
-            this.anunciarFlor('cpu');
-        } else {
-            this.mostrarOpciones();
-        }
-    },
-    jugarTurnoCPU() {
-        this.cpu.jugarTurno(this).then(() => {
-            mostrarMensaje(`CPU juega ${this.cpu.ultimaCartaJugada.obtenerNombre()} de ${this.cpu.ultimaCartaJugada.palo}`);
-            this.rondaIniciada = true; // Marcar inicio de ronda
-            this.cambiarTurno();
-            this.mostrarOpciones();
-        });
-    },
-    jugarTurnoJugador() {
-        mostrarMensaje('Es tu turno. Elige una carta para jugar.');
-        this.rondaIniciada = true; // Marcar inicio de ronda
-        this.jugador.elegirCarta().then(cartaSeleccionada => {
-            mostrarMensaje(`Has jugado: ${cartaSeleccionada.obtenerNombre()} de ${cartaSeleccionada.palo}`);
-            this.cambiarTurno();
-            this.jugarTurnoCPU();
-        });
-    },
-    manejarFlor() {
-        if (this.florJugador) {
-            mostrarMensaje('El jugador tiene Flor');
-            document.getElementById('florAnnouncement').style.display = 'block';
-            document.getElementById('anunciarFlorBtn').addEventListener('click', () => {
-                this.anunciarFlor('jugador');
-                document.getElementById('florAnnouncement').style.display = 'none';
-            });
-        } else if (this.florCPU) {
-            mostrarMensaje('La CPU tiene Flor');
-            const anunciarCPU = this.cpu.decidirAnunciarFlor();
-            if (anunciarCPU) {
-                this.anunciarFlor('cpu');
-            } else {
-                this.mostrarOpciones();
-            }
-        } else {
-            this.mostrarOpciones();
-        }
-    },
-    anunciarFlor(iniciador) {
-        this.estadoDelJuego.florActivo = true;
-        this.rondaIniciada = false; // Resetear para forzar anuncio antes del truco
-        let floresAnunciadas = {
-            jugador: this.florJugador,
-            cpu: this.florCPU
-        };
-
-        if (iniciador === 'jugador') {
-            mostrarMensaje('Jugador anuncia Flor');
-            this.manejarRespuestaFlor('cpu', floresAnunciadas);
-        } else {
-            mostrarMensaje('CPU anuncia Flor');
-            this.manejarRespuestaFlor('jugador', floresAnunciadas);
-        }
-    },
-    manejarRespuestaFlor(respondedor, flores) {
-        const florAnnouncement = document.getElementById('florAnnouncement');
-        florAnnouncement.innerHTML = ''; // Limpiar antes de agregar
-
-        const oponente = respondedor === 'jugador' ? this.jugador : this.cpu;
-        const iniciador = respondedor === 'jugador' ? this.cpu : this.jugador;
-
-        if (flores[respondedor]) {
-            if (respondedor === 'jugador') {
-                florAnnouncement.innerHTML = `
-                    <button id="florBtn">Flor</button>
-                    <button id="achicoBtn">Con flor me achico</button>
-                    <button id="contraflorBtn">Contraflor</button>
-                    <button id="contraflorRestoBtn">Contraflor al resto</button>
-                `;
-                florAnnouncement.style.display = 'block';
-
-                florAnnouncement.querySelector('#florBtn').addEventListener('click', () => this.resolverFlorSimple(flores, 'jugador', 'flor'));
-                florAnnouncement.querySelector('#achicoBtn').addEventListener('click', () => this.resolverFlorAchico(iniciador, oponente));
-                florAnnouncement.querySelector('#contraflorBtn').addEventListener('click', () => this.manejarContraflor(iniciador, oponente, flores));
-                florAnnouncement.querySelector('#contraflorRestoBtn').addEventListener('click', () => this.manejarContraflorResto(iniciador, oponente, flores));
-            } else {
-                const valorFlorCPU = calcularValorFlor(this.cpu);
-                const valorFlorJugador = calcularValorFlor(this.jugador);
-                if (valorFlorCPU < valorFlorJugador - 5) {
-                    this.resolverFlorAchico(this.jugador, this.cpu);
-                } else if (valorFlorCPU > valorFlorJugador + 5) {
-                    this.manejarContraflorResto(this.jugador, this.cpu, flores);
-                } else {
-                    this.resolverFlorSimple(flores, 'cpu', 'flor');
-                }
-            }
-        } else {
-            iniciador.sumarPuntos(3);
-            mostrarMensaje(`${iniciador.nombre} gana 3 puntos por Flor`);
-            this.finalizarFlor();
-        }
-    },
-    resolverFlorSimple(flores, ultimo, apuesta) {
-        mostrarMensaje(`${ultimo === 'jugador' ? 'Jugador' : 'CPU'} dice "${apuesta}"`);
-        const valorJugador = flores.jugador ? calcularValorFlor(this.jugador) : 0;
-        const valorCPU = flores.cpu ? calcularValorFlor(this.cpu) : 0;
-        const puntos = (flores.jugador ? 3 : 0) + (flores.cpu ? 3 : 0);
-
-        if (valorJugador > valorCPU || (valorJugador === valorCPU && this.mano === 'jugador')) {
-            this.jugador.sumarPuntos(puntos);
-            mostrarMensaje(`Jugador gana ${puntos} puntos por Flor`);
-        } else {
-            this.cpu.sumarPuntos(puntos);
-            mostrarMensaje(`CPU gana ${puntos} puntos por Flor`);
-        }
-        this.finalizarFlor();
-    },
-    resolverFlorAchico(ganador, perdedor) {
-        mostrarMensaje(`${perdedor.nombre} dice "Con flor me achico"`);
-        ganador.sumarPuntos(4); // 3 por su Flor + 1 por el achico
-        mostrarMensaje(`${ganador.nombre} gana 4 puntos`);
-        this.finalizarFlor();
-    },
-    manejarContraflor(iniciador, respondedor, flores) {
-        mostrarMensaje(`${respondedor.nombre} dice "Contraflor"`);
-        if (respondedor === this.jugador) {
-            const florAnnouncement = document.getElementById('florAnnouncement');
-            florAnnouncement.innerHTML = `
-                <button id="quieroBtn">Con flor quiero</button>
-                <button id="achicoBtn">Con flor me achico</button>
-                <button id="contraflorRestoBtn">Contraflor al resto</button>
-            `;
-            florAnnouncement.style.display = 'block';
-
-            florAnnouncement.querySelector('#quieroBtn').addEventListener('click', () => this.resolverFlorSimple(flores, 'jugador', 'Con flor quiero'));
-            florAnnouncement.querySelector('#achicoBtn').addEventListener('click', () => this.resolverFlorAchico(iniciador, respondedor));
-            florAnnouncement.querySelector('#contraflorRestoBtn').addEventListener('click', () => this.manejarContraflorResto(iniciador, respondedor, flores));
-        } else {
-            const valorFlorCPU = calcularValorFlor(this.cpu);
-            const valorFlorJugador = calcularValorFlor(this.jugador);
-            if (valorFlorCPU < valorFlorJugador - 5) {
-                this.resolverFlorAchico(this.jugador, this.cpu);
-            } else if (valorFlorCPU > valorFlorJugador + 5) {
-                this.manejarContraflorResto(this.jugador, this.cpu, flores);
-            } else {
-                this.resolverFlorSimple(flores, 'cpu', 'Con flor quiero');
-            }
-        }
-    },
-    manejarContraflorResto(iniciador, respondedor, flores) {
-        mostrarMensaje(`${respondedor.nombre} dice "Contraflor al resto"`);
-        const puntosParaGanar = 30 - Math.max(this.puntosJugador, this.puntosCPU);
-        const puntosFlores = (flores.jugador ? 3 : 0) + (flores.cpu ? 3 : 0);
-        const apuestaTotal = puntosParaGanar + puntosFlores;
-
-        if (respondedor === this.jugador) {
-            const florAnnouncement = document.getElementById('florAnnouncement');
-            florAnnouncement.innerHTML = `
-                <button id="quieroBtn">Con flor quiero</button>
-                <button id="achicoBtn">Con flor me achico</button>
-            `;
-            florAnnouncement.style.display = 'block';
-
-            florAnnouncement.querySelector('#quieroBtn').addEventListener('click', () => this.resolverContraflorResto(iniciador, respondedor, apuestaTotal));
-            florAnnouncement.querySelector('#achicoBtn').addEventListener('click', () => this.resolverFlorAchico(iniciador, respondedor));
-        } else {
-            const valorFlorCPU = calcularValorFlor(this.cpu);
-            const valorFlorJugador = calcularValorFlor(this.jugador);
-            if (valorFlorCPU < valorFlorJugador - 5) {
-                this.resolverFlorAchico(this.jugador, this.cpu);
-            } else {
-                this.resolverContraflorResto(this.jugador, this.cpu, apuestaTotal);
-            }
-        }
-    },
-    resolverContraflorResto(iniciador, respondedor, apuestaTotal) {
-        mostrarMensaje(`${iniciador.nombre} dice "Con flor quiero"`);
-        const valorIniciador = calcularValorFlor(iniciador);
-        const valorRespondedor = calcularValorFlor(respondedor);
-        if (valorIniciador > valorRespondedor || (valorIniciador === valorRespondedor && this.mano === iniciador.nombre.toLowerCase())) {
-            iniciador.sumarPuntos(apuestaTotal);
-            mostrarMensaje(`${iniciador.nombre} gana ${apuestaTotal} puntos y el juego termina`);
-            this.puntosJugador = iniciador === this.jugador ? this.puntosJugador + apuestaTotal : this.puntosJugador;
-            this.puntosCPU = iniciador === this.cpu ? this.puntosCPU + apuestaTotal : this.puntosCPU;
-            if (this.puntosJugador >= 30 || this.puntosCPU >= 30) this.finalizarJuego();
-        } else {
-            respondedor.sumarPuntos(apuestaTotal);
-            mostrarMensaje(`${respondedor.nombre} gana ${apuestaTotal} puntos y el juego termina`);
-            this.puntosJugador = respondedor === this.jugador ? this.puntosJugador + apuestaTotal : this.puntosJugador;
-            this.puntosCPU = respondedor === this.cpu ? this.puntosCPU + apuestaTotal : this.puntosCPU;
-            if (this.puntosJugador >= 30 || this.puntosCPU >= 30) this.finalizarJuego();
-        }
-        this.finalizarFlor();
-    },
-    finalizarFlor() {
-        this.estadoDelJuego.florActivo = false;
-        this.estadoDelJuego.florResuelto = true;
-        document.getElementById('florAnnouncement').style.display = 'none';
-        this.mostrarOpciones();
-    },
-    mostrarCartas() {
-        const cpuContainer = document.querySelector('.cpu-cards');
-        const playerContainer = document.querySelector('.player-cards');
-
-        cpuContainer.innerHTML = '<div class="area-label">CPU</div>';
-        playerContainer.innerHTML = '<div class="area-label">JUGADOR</div>';
-
-        this.cpu.mostrarMano().forEach(() => {
-            const cartaBack = document.createElement('div');
-            cartaBack.className = 'carta-back';
-            cpuContainer.appendChild(cartaBack);
-        });
-
-        this.jugador.mostrarMano().forEach((carta, index) => {
-            const cartaElement = document.createElement('div');
-            cartaElement.className = `carta ${carta.palo.toLowerCase()}`;
-            cartaElement.textContent = `${carta.obtenerNombre()} de ${carta.palo}`;
-            cartaElement.dataset.index = index.toString();
-            cartaElement.addEventListener('click', () => {
-                playerContainer.querySelectorAll('.carta').forEach(c => c.classList.remove('carta-seleccionada'));
-                cartaElement.classList.add('carta-seleccionada');
-            });
-            playerContainer.appendChild(cartaElement);
-        });
-
-        this.actualizarCreditos();
-    },
-    actualizarCreditos() {
-        const creditDisplay = document.getElementById('creditDisplay');
-        if (creditDisplay) {
-            creditDisplay.textContent = `Jugador: ${this.puntosJugador} - CPU: ${this.puntosCPU}`;
-        }
-    },
-    mostrarOpciones() {
-        const opciones = document.querySelector('.game-options');
-        opciones.innerHTML = '';
-
-        if (!this.estadoDelJuego.florResuelto && (this.florJugador || this.florCPU)) {
-            return; // Flor debe resolverse primero
-        }
-
-        if (this.turno === 'jugador' && !this.rondaIniciada) {
-            opciones.innerHTML = `
-                ${this.florJugador && !this.estadoDelJuego.florActivo ? '<div class="option" id="florBtn">FLOR</div>' : ''}
-                ${!this.estadoDelJuego.envidoActivo ? '<div class="option" id="envidoBtn">ENVIDO</div>' : ''}
-                ${!this.estadoDelJuego.trucoActivo ? '<div class="option" id="trucoBtn">TRUCO</div>' : ''}
-                <div class="option" id="retirarseBtn">RETIRARSE</div>
-            `;
-            if (this.florJugador && !this.estadoDelJuego.florActivo) document.getElementById('florBtn').addEventListener('click', () => this.anunciarFlor('jugador'));
-            if (!this.estadoDelJuego.envidoActivo) document.getElementById('envidoBtn').addEventListener('click', () => this.jugarEnvido('jugador'));
-            if (!this.estadoDelJuego.trucoActivo) document.getElementById('trucoBtn').addEventListener('click', () => this.jugarTruco('jugador'));
-            document.getElementById('retirarseBtn').addEventListener('click', () => this.retirarse('jugador'));
-        } else if (this.turno === 'jugador' && this.rondaIniciada) {
-            opciones.innerHTML = `
-                <div class="option" id="pedirFlorBtn">PEDIR FLOR</div>
-            `;
-            document.getElementById('pedirFlorBtn').addEventListener('click', () => this.pedirFlor('jugador'));
-        } else if (this.turno === 'cpu') {
-            this.jugarCPU();
-        }
-    },
-    jugarTruco(jugador) {
-        if (this.estadoDelJuego.trucoResuelto || this.estadoDelJuego.trucoActivo) {
-            mostrarMensaje('No puedes apostar Truco en este momento.');
-            return;
-        }
-
-        mostrarMensaje(`${jugador} juega TRUCO`);
-        this.estadoDelJuego.trucoActivo = true;
-        this.cambiarTurno();
-    },
-    jugarEnvido(jugador) {
-        if (this.estadoDelJuego.trucoActivo || this.estadoDelJuego.envidoResuelto) {
-            mostrarMensaje('No puedes apostar Envido en este momento.');
-            return;
-        }
-
-        mostrarMensaje(`${jugador} juega ENVIDO`);
-        this.estadoDelJuego.envidoActivo = true;
-        this.ultimaApuestaEnvido = 2;
-
-        if (jugador === 'jugador') {
-            const deseaAumentar = confirm('¿Deseas aumentar la apuesta?');
-            if (deseaAumentar) {
-                this.ultimaApuestaEnvido += 2;
-                mostrarMensaje(`Jugador aumenta la apuesta a ${this.ultimaApuestaEnvido}`);
-            }
-        } else {
-            const respuestaCPU = this.cpu.decidirApostarEnvido();
-            if (respuestaCPU === 'Quiero') {
-                this.ultimaApuestaEnvido += 2;
-                mostrarMensaje(`CPU aumenta la apuesta a ${this.ultimaApuestaEnvido}`);
-            }
-        }
-
-        this.resolverEnvido();
-    },
-    jugarFlor(jugador) {
-        if (this.estadoDelJuego.trucoActivo || this.estadoDelJuego.envidoActivo) {
-            mostrarMensaje('No puedes apostar Flor en este momento.');
-            return;
-        }
-
-        mostrarMensaje(`${jugador} juega FLOR`);
-        this.estadoDelJuego.florActivo = true;
-        this.resolverFlor();
-    },
-    retirarse(jugador) {
-        mostrarMensaje(`${jugador} se retira del juego`);
-        if (jugador === 'jugador') {
-            this.cpu.sumarPuntos(this.jugador.obtenerPuntos());
-            mostrarMensaje('CPU gana el juego');
-        } else {
-            this.jugador.sumarPuntos(this.cpu.obtenerPuntos());
-            mostrarMensaje('Jugador gana el juego');
-        }
-        this.actualizarCreditos();
-    },
-    pedirFlor(quienPide) {
-        if (this.estadoDelJuego.florResuelto || this.estadoDelJuego.trucoActivo || this.estadoDelJuego.envidoActivo) {
-            mostrarMensaje('No puedes pedir Flor en este momento.');
-            return;
-        }
-
-        const acusado = quienPide === 'jugador' ? this.cpu : this.jugador;
-        const tieneFlorAcusado = this.tieneFlor(acusado);
-        if (tieneFlorAcusado) {
-            mostrarMensaje(`${quienPide} dice "Pedir Flor". ${acusado.nombre} no anunció y pierde 3 puntos.`);
-            quienPide === 'jugador' ? this.puntosJugador += 3 : this.puntosCPU += 3;
-        } else {
-            mostrarMensaje(`${quienPide} dice "Pedir Flor". ${acusado.nombre} no tenía Flor, ${quienPide} pierde 1 punto.`);
-            quienPide === 'jugador' ? this.puntosCPU += 1 : this.puntosJugador += 1;
-        }
-        this.actualizarCreditos();
-    },
-    resolverEnvido() {
-        const valorEnvidoJugador = calcularEnvido(this.jugador.mano);
-        const valorEnvidoCPU = calcularEnvido(this.cpu.mano);
-
-        mostrarMensaje(`Envido Jugador: ${valorEnvidoJugador}`);
-        mostrarMensaje(`Envido CPU: ${valorEnvidoCPU}`);
-
-        if (valorEnvidoJugador > valorEnvidoCPU) {
-            mostrarMensaje('El jugador gana el Envido.');
-            this.jugador.sumarPuntos(this.ultimaApuestaEnvido);
-        } else if (valorEnvidoJugador < valorEnvidoCPU) {
-            mostrarMensaje('La CPU gana el Envido.');
-            this.cpu.sumarPuntos(this.ultimaApuestaEnvido);
-        } else {
-            mostrarMensaje('Empate en el Envido. Gana el jugador más cercano al mano.');
-            this.mano === 'jugador' ? this.jugador.sumarPuntos(this.ultimaApuestaEnvido) : this.cpu.sumarPuntos(this.ultimaApuestaEnvido);
-        }
-
-        this.actualizarCreditos();
-        this.estadoDelJuego.envidoActivo = false;
-        this.estadoDelJuego.envidoResuelto = true;
-    },
-    resolverFlor() {
-        const valorFlorJugador = calcularValorFlor(this.jugador);
-        const valorFlorCPU = calcularValorFlor(this.cpu);
-
-        if (valorFlorJugador > valorFlorCPU) {
-            this.jugador.sumarPuntos(3);
-            mostrarMensaje('Jugador gana la Flor.');
-        } else {
-            this.cpu.sumarPuntos(3);
-            mostrarMensaje('CPU gana la Flor.');
-        }
-
-        this.estadoDelJuego.florActivo = false;
-        this.estadoDelJuego.florResuelto = true;
-    },
-    cambiarTurno() {
-        this.turno = this.turno === 'jugador' ? 'cpu' : 'jugador';
-    },
-    jugarCPU() {
-        this.cpu.jugarTurno(this);
-    },
-    finalizarJuego() {
-        const ganador = this.puntosJugador >= 30 ? 'Jugador' : 'CPU';
-        mostrarMensaje(`${ganador} gana el juego con ${this.puntosJugador >= 30 ? this.puntosJugador : this.puntosCPU} puntos!`);
-        // Reiniciar puntos
-        this.puntosJugador = 0;
-        this.puntosCPU = 0;
-        // Mostrar botón de reinicio
-        const opciones = document.querySelector('.game-options');
-        opciones.innerHTML = `<button id="reiniciarBtn">Reiniciar Juego</button>`;
-        document.getElementById('reiniciarBtn').addEventListener('click', () => this.iniciarJuego());
-    }
-};
-
-// Inicialización del juego
-juego.iniciarJuego();
+// Hacer funciones accesibles globalmente para eventos
+window.removePin = removePin;
+window.editPin = editPin;
