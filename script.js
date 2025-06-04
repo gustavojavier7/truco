@@ -439,6 +439,11 @@ function parseCSVAndCreatePins(csvContent) {
     
     if (currentImage) {
       createPinElement(pin);
+      if (visionAngle === 360) {
+        drawCircle(pin.x, pin.y, pin.orient, pin.name);
+      } else {
+        drawCone(pin.x, pin.y, pin.orient, pin.name);
+      }
     }
     
     loadedCount++;
@@ -711,36 +716,10 @@ function renderConesSync() {
   // Renderizar conos usando coordenadas originales de la imagen (sin escalar)
   pins.forEach(pin => {
     const angle = pin.visionAngle || VISION_ANGLE;
-    
-    // Usar coordenadas originales - el SVG se escala automáticamente con el contenedor
-    const centerX = pin.x;
-    const centerY = pin.y;
-    const range = VISION_RANGE; // Rango original, sin escalar
-    
     if (angle === 360) {
-      // Cámara 360°: círculo completo
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', centerX);
-      circle.setAttribute('cy', centerY);
-      circle.setAttribute('r', range);
-      circle.setAttribute('fill', 'rgba(53, 162, 235, 0.3)');
-      circle.setAttribute('stroke', '#3593eb');
-      circle.setAttribute('stroke-width', '2');
-      circle.setAttribute('vector-effect', 'non-scaling-stroke'); // Mantener grosor constante
-      group.appendChild(circle);
+      drawCircle(pin.x, pin.y, pin.orient, pin.name);
     } else {
-      // Cámara fija: sector direccional
-      const cone = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      const startAngle = -angle / 2;
-      const endAngle = angle / 2;
-      const pathData = createSectorPath(centerX, centerY, range, startAngle + pin.orient, endAngle + pin.orient);
-
-      cone.setAttribute('d', pathData);
-      cone.setAttribute('fill', 'rgba(220, 53, 69, 0.3)');
-      cone.setAttribute('stroke', '#dc3545');
-      cone.setAttribute('stroke-width', '2');
-      cone.setAttribute('vector-effect', 'non-scaling-stroke'); // Mantener grosor constante
-      group.appendChild(cone);
+      drawCone(pin.x, pin.y, pin.orient, pin.name);
     }
   });
 }
@@ -847,6 +826,37 @@ function createSectorPath(cx, cy, radius, startAngle, endAngle) {
     "A", radius, radius, 0, largeArcFlag, 1, x2, y2,
     "Z"
   ].join(" ");
+}
+
+function drawCircle(x, y, orient, name) {
+  console.log('drawCircle', name, x, y, orient);
+  const svg = document.getElementById('vision-layer');
+  const group = svg.querySelector('#vision-group');
+  const el = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  el.setAttribute('cx', x);
+  el.setAttribute('cy', y);
+  el.setAttribute('r', VISION_RANGE);
+  el.setAttribute('fill', 'rgba(53,162,235,0.3)');
+  el.setAttribute('stroke', '#3593eb');
+  el.setAttribute('stroke-width', '2');
+  el.setAttribute('vector-effect', 'non-scaling-stroke');
+  group.appendChild(el);
+}
+
+function drawCone(x, y, orient, name) {
+  console.log('drawCone', name, x, y, orient);
+  const svg = document.getElementById('vision-layer');
+  const group = svg.querySelector('#vision-group');
+  const start = -VISION_ANGLE / 2;
+  const end = VISION_ANGLE / 2;
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d',
+    createSectorPath(x, y, VISION_RANGE, start + orient, end + orient));
+  path.setAttribute('fill', 'rgba(220,53,69,0.3)');
+  path.setAttribute('stroke', '#dc3545');
+  path.setAttribute('stroke-width', '2');
+  path.setAttribute('vector-effect', 'non-scaling-stroke');
+  group.appendChild(path);
 }
 
 function updatePinPosition(pin, pinElement) {
@@ -963,6 +973,8 @@ function clearPins() {
   pins = [];
   pinCounter = 0;
   document.querySelectorAll('.pin').forEach(pin => pin.remove());
+  const vg = document.getElementById('vision-group');
+  if (vg) vg.innerHTML = '';
   updateCoordinatesList();
   updateUI();
   statusText.textContent = 'Todas las cámaras eliminadas';
