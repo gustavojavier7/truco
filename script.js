@@ -194,11 +194,10 @@ function setupMenuSystem() {
     item.addEventListener('click', (e) => {
       e.stopPropagation();
       if (item.classList.contains('disabled')) {
-        console.log('Elemento deshabilitado:', item.getAttribute('data-action'));
+        showNotification('Opción deshabilitada', 'Esta opción no está disponible.');
         return;
       }
       const action = item.getAttribute('data-action');
-      console.log('Ejecutando acción desde elemento:', action);
       executeAction(action);
 
       document.querySelectorAll('.dropdown-menu').forEach(menu => {
@@ -213,7 +212,6 @@ function setupMenuSystem() {
 
 // Ejecutor de acciones
 function executeAction(action) {
-  console.log('Ejecutando acción:', action);
   
   switch(action) {
     case 'abrir-imagen':
@@ -229,7 +227,6 @@ function executeAction(action) {
       downloadCSV();
       break;
     case 'modo-camara':
-      console.log('Modo cámara - currentImage:', !!currentImage);
       if (!currentImage) {
         showNotification('Error', 'Debe cargar una imagen antes de activar el modo cámara');
         return;
