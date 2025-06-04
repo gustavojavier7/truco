@@ -127,8 +127,8 @@ function updateScale(newScale) {
       imagePositionY = pivotY - (pivotY - imagePositionY) * scaleRatio;
     }
 
-    updateImagePosition();
-    updatePinPositions();
+    // NUEVA IMPLEMENTACIÓN: Zoom sincronizado para imagen y SVG
+    updateSynchronizedZoom();
     updateZoomDisplay();
   }
 }
@@ -330,20 +330,25 @@ function handleImage(file) {
       imageWrapper.appendChild(img);
       currentImage = img;
       
-      // Establecer tamaño del SVG para cubrir el panel
+      // CONFIGURACIÓN MEJORADA: Preparar SVG para zoom sincronizado
       const visionLayer = document.getElementById('vision-layer');
       visionLayer.style.width = '100%';
       visionLayer.style.height = '100%';
+      visionLayer.style.position = 'absolute';
+      visionLayer.style.top = '0';
+      visionLayer.style.left = '0';
+      visionLayer.style.pointerEvents = 'none';
+      visionLayer.style.transformOrigin = '0 0'; // Crucial para sincronización
       visionLayer.setAttribute('viewBox', `0 0 ${img.naturalWidth} ${img.naturalHeight}`);
       
       dropArea.style.display = 'none';
-      statusText.textContent = `Imagen cargada: ${img.naturalWidth}x${img.naturalHeight}px`;
+      statusText.textContent = `Imagen cargada: ${img.naturalWidth}x${img.naturalHeight}px - Zoom sincronizado activado`;
       
       resetView();
       clearPins();
       updateUI();
       
-      showNotification('Imagen Cargada', `${originalFileName} se ha cargado correctamente.`);
+      showNotification('Imagen Cargada', `${originalFileName} cargado con zoom sincronizado.`);
     };
   };
   reader.readAsDataURL(file);
@@ -610,46 +615,131 @@ function addPin(e) {
   }
 }
 
-function renderAllCones() {
+// NUEVA FUNCIÓN: Zoom sincronizado entre imagen y SVG
+function updateSynchronizedZoom() {
+  // Aplicar transformación conjunta al contenedor que incluye imagen + SVG
+  const transform = `translate(${imagePositionX}px, ${imagePositionY}px) scale(${scale})`;
+  
+  // Actualizar la imagen
+  imageWrapper.style.transform = transform;
+  
+  // Sincronizar el SVG overlay con la misma transformación
   const visionLayer = document.getElementById('vision-layer');
-  visionLayer.innerHTML = ''; // Limpiar conos anteriores
+  if (visionLayer) {
+    // El SVG se transforma con el mismo contenedor, manteniendo sincronización perfecta
+    visionLayer.style.transform = transform;
+    visionLayer.style.transformOrigin = '0 0'; // Mantener origen en esquina superior izquierda
+  }
+  
+  // Actualizar pines con nueva escala sincronizada
+  updatePinPositionsSync();
+  
+  // Re-renderizar conos con coordenadas originales (sin recalcular manualmente)
+  renderConesSync();
+}
 
-  // Crear grupo <g> sin transformación (las coordenadas ya incluyen escala y traslación)
-  const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-  visionLayer.appendChild(group);
+// NUEVA FUNCIÓN: Actualizar posiciones de pines sin recalcular coordenadas SVG
+function updatePinPositionsSync() {
+  pins.forEach(pin => {
+    const pinElement = document.querySelector(`[data-pin-id="${pin.id}"]`);
+    if (pinElement) {
+      // Los pines mantienen sus coordenadas originales de la imagen
+      // La transformación del contenedor los coloca automáticamente
+      const pinX = pin.x * scale + imagePositionX;
+      const pinY = pin.y * scale + imagePositionY;
+      
+      pinElement.style.left = pinX + 'px';
+      pinElement.style.top = pinY + 'px';
+      
+      // Escalar elementos del pin proporcionalmente
+      const pinCenter = pinElement.querySelector('.pin-center');
+      if (pinCenter) {
+        pinCenter.style.width = `${8 * scale}px`;
+        pinCenter.style.height = `${8 * scale}px`;
+        pinCenter.style.borderWidth = `${2 * scale}px`;
+        pinCenter.style.left = `${-4 * scale}px`;
+        pinCenter.style.top = `${-4 * scale}px`;
+      }
 
+      const pinLabel = pinElement.querySelector('.pin-label');
+      if (pinLabel) {
+        pinLabel.style.fontSize = `${9 * scale}px`;
+        pinLabel.style.padding = `${1 * scale}px ${3 * scale}px`;
+        pinLabel.style.marginTop = `${-6 * scale}px`;
+      }
+
+      // Calcular visibilidad optimizada
+      const containerWidth = imagePanel.offsetWidth;
+      const containerHeight = imagePanel.offsetHeight;
+      const visibilityMargin = VISION_RANGE * scale;
+      
+      const isVisible = pinX >= -visibilityMargin && pinX <= containerWidth + visibilityMargin && 
+                       pinY >= -visibilityMargin && pinY <= containerHeight + visibilityMargin;
+      
+      pinElement.classList.toggle('hidden', !isVisible);
+    }
+  });
+}
+
+// NUEVA FUNCIÓN: Renderizar conos sincronizados usando coordenadas originales
+function renderConesSync() {
+  const visionLayer = document.getElementById('vision-layer');
+  if (!visionLayer) return;
+  
+  // Limpiar conos anteriores
+  const group = visionLayer.querySelector('#vision-group') || 
+                document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  group.innerHTML = '';
+  group.id = 'vision-group';
+  
+  if (!visionLayer.contains(group)) {
+    visionLayer.appendChild(group);
+  }
+
+  // Configurar viewBox del SVG para que coincida con las dimensiones originales de la imagen
+  if (currentImage) {
+    visionLayer.setAttribute('viewBox', `0 0 ${currentImage.naturalWidth} ${currentImage.naturalHeight}`);
+    visionLayer.style.width = `${currentImage.naturalWidth}px`;
+    visionLayer.style.height = `${currentImage.naturalHeight}px`;
+  }
+
+  // Renderizar conos usando coordenadas originales de la imagen (sin escalar)
   pins.forEach(pin => {
     const angle = pin.visionAngle || VISION_ANGLE;
-    // Ajustar coordenadas al espacio escalado y trasladado
-    const centerX = (pin.x * scale) + imagePositionX;
-    const centerY = (pin.y * scale) + imagePositionY;
-    const scaledRange = VISION_RANGE * scale;
-
+    
+    // Usar coordenadas originales - el SVG se escala automáticamente con el contenedor
+    const centerX = pin.x;
+    const centerY = pin.y;
+    const range = VISION_RANGE; // Rango original, sin escalar
+    
     if (angle === 360) {
+      // Cámara 360°: círculo completo
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       circle.setAttribute('cx', centerX);
       circle.setAttribute('cy', centerY);
-      circle.setAttribute('r', scaledRange);
+      circle.setAttribute('r', range);
       circle.setAttribute('fill', 'rgba(53, 162, 235, 0.3)');
       circle.setAttribute('stroke', '#3593eb');
-      circle.setAttribute('stroke-width', '2'); // Grosor fijo, como en el canvas
+      circle.setAttribute('stroke-width', '2');
+      circle.setAttribute('vector-effect', 'non-scaling-stroke'); // Mantener grosor constante
       group.appendChild(circle);
     } else {
+      // Cámara fija: sector direccional
       const cone = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       const startAngle = -angle / 2;
       const endAngle = angle / 2;
-      const pathData = createSectorPath(centerX, centerY, scaledRange, startAngle + pin.orient, endAngle + pin.orient);
+      const pathData = createSectorPath(centerX, centerY, range, startAngle + pin.orient, endAngle + pin.orient);
 
       cone.setAttribute('d', pathData);
       cone.setAttribute('fill', 'rgba(220, 53, 69, 0.3)');
       cone.setAttribute('stroke', '#dc3545');
-      cone.setAttribute('stroke-width', '2'); // Grosor fijo, como en el canvas
+      cone.setAttribute('stroke-width', '2');
+      cone.setAttribute('vector-effect', 'non-scaling-stroke'); // Mantener grosor constante
       group.appendChild(cone);
     }
   });
 }
 
-// FUNCIÓN CLAVE: Crear elemento pin con escalado automático CSS
 function createPinElement(pin) {
   const pinContainer = document.createElement('div');
   pinContainer.className = 'pin';
@@ -658,18 +748,20 @@ function createPinElement(pin) {
 
   const pinCenter = document.createElement('div');
   pinCenter.className = 'pin-center';
-  pinCenter.style.width = `${8 * scale}px`;
-  pinCenter.style.height = `${8 * scale}px`;
-  pinCenter.style.borderWidth = `${2 * scale}px`;
-  pinCenter.style.left = `${-4 * scale}px`;
-  pinCenter.style.top = `${-4 * scale}px`;
+  // Tamaño inicial - se ajustará automáticamente con updatePinPositionsSync()
+  pinCenter.style.width = `${8}px`;
+  pinCenter.style.height = `${8}px`;
+  pinCenter.style.borderWidth = `${2}px`;
+  pinCenter.style.left = `${-4}px`;
+  pinCenter.style.top = `${-4}px`;
 
   const pinLabel = document.createElement('div');
   pinLabel.className = 'pin-label';
   pinLabel.textContent = pin.name;
-  pinLabel.style.fontSize = `${9 * scale}px`;
-  pinLabel.style.padding = `${1 * scale}px ${3 * scale}px`;
-  pinLabel.style.marginTop = `${-6 * scale}px`;
+  // Tamaño inicial - se ajustará automáticamente con updatePinPositionsSync()
+  pinLabel.style.fontSize = `${9}px`;
+  pinLabel.style.padding = `${1}px ${3}px`;
+  pinLabel.style.marginTop = `${-6}px`;
   
   pinCenter.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -680,7 +772,9 @@ function createPinElement(pin) {
   pinContainer.appendChild(pinLabel);
   
   imagePanel.appendChild(pinContainer);
-  updatePinPosition(pin, pinContainer);
+  
+  // Usar el método sincronizado para posicionamiento inicial
+  updatePinPositionsSync();
 }
 
 // FUNCIÓN CLAVE: Crear cono SVG con tamaño fijo (se escala con CSS transform)
@@ -851,6 +945,8 @@ function recreatePinWithNewOrientation(pin, newName, newOrientation) {
   
   if (currentImage) {
     createPinElement(pin);
+    // Re-renderizar conos con nueva orientación usando método sincronizado
+    renderConesSync();
   }
 }
 
@@ -869,20 +965,11 @@ function updateSVGCones() {
     return;
   }
   
-  let recreatedCount = 0;
+  // MÉTODO SIMPLIFICADO: usar renderizado sincronizado
+  renderConesSync();
   
-  pins.forEach(pin => {
-    const oldPinElement = document.querySelector(`[data-pin-id="${pin.id}"]`);
-    if (oldPinElement) {
-      oldPinElement.remove();
-    }
-    
-    createPinElement(pin);
-    recreatedCount++;
-  });
-  
-  statusText.textContent = `${recreatedCount} conos SVG recreados`;
-  showNotification('Conos Actualizados', `${recreatedCount} conos recreados correctamente`);
+  statusText.textContent = `${pins.length} conos SVG sincronizados correctamente`;
+  showNotification('Conos Actualizados', `${pins.length} conos sincronizados con zoom`);
 }
 
 function togglePinMode() {
@@ -908,18 +995,13 @@ function togglePinMode() {
 }
 
 function updateImagePosition() {
-  imageWrapper.style.transform = `translate(${imagePositionX}px, ${imagePositionY}px) scale(${scale})`;
+  // MÉTODO SIMPLIFICADO: usar zoom sincronizado
+  updateSynchronizedZoom();
 }
 
-// FUNCIÓN CLAVE: Actualizar posiciones de todos los pines (simplificada)
+// FUNCIÓN SIMPLIFICADA: Actualizar posiciones usando método sincronizado
 function updatePinPositions() {
-  pins.forEach(pin => {
-    const pinElement = document.querySelector(`[data-pin-id="${pin.id}"]`);
-    if (pinElement) {
-      updatePinPosition(pin, pinElement);
-    }
-  });
-  renderAllCones();
+  updatePinPositionsSync();
 }
 
 function updateCoordinatesList() {
