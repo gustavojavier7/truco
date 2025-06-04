@@ -892,6 +892,7 @@ function removePin(pinId) {
   updateCoordinatesList();
   updateUI();
   renderConesSync(); // Agregar esta línea para actualizar los conos
+  updateSynchronizedZoom();
   statusText.textContent = 'Cámara eliminada';
 }
 
