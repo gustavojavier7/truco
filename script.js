@@ -608,7 +608,9 @@ function addPin(e) {
     createPinElement(pin);
     updateCoordinatesList();
     updateUI();
-    
+    // Dibujar el cono inmediatamente tras agregar el pin
+    renderConesSync();
+
     statusText.textContent = `${pin.name} agregado en (${imageX}, ${imageY}) - Orient: 0°`;
   }
 }
@@ -770,9 +772,11 @@ function createPinElement(pin) {
   pinContainer.appendChild(pinLabel);
   
   imagePanel.appendChild(pinContainer);
-  
+
   // Usar el método sincronizado para posicionamiento inicial
   updatePinPositionsSync();
+  // Renderizar conos inmediatamente cuando se crea el pin
+  renderConesSync();
 }
 
 // FUNCIÓN CLAVE: Crear cono SVG con tamaño fijo (se escala con CSS transform)
