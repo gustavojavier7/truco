@@ -325,6 +325,7 @@ function handleImage(file) {
       currentImageOriginal.src = img.src;
       imageWrapper.innerHTML = '';
       imageWrapper.appendChild(img);
+      imageWrapper.style.transformOrigin = '0 0';
       currentImage = img;
       
       // CONFIGURACIÓN MEJORADA: Preparar SVG para zoom sincronizado
