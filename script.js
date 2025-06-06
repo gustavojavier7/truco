@@ -9,6 +9,7 @@ const zoomIndicator = document.getElementById('zoom-indicator');
 const zoomDisplay = document.getElementById('zoom-display');
 const imageInput = document.getElementById('image-input');
 const csvInput = document.getElementById('csv-input');
+const searchInput = document.getElementById('search-input');
 const notification = document.getElementById('notification');
 const notificationTitle = document.getElementById('notification-title');
 const notificationMessage = document.getElementById('notification-message');
@@ -32,33 +33,16 @@ let isPinMode = false;
 let pins = [];
 let pinCounter = 0;
 let consolidateCounter = 1;
+let searchQuery = '';
 
 // Configuración del cono de visión
 const VISION_RANGE = 150;
 const VISION_ANGLE = 72;
+const EXPECTED_COLUMNS = ['Nombre', 'EjeX', 'EjeY', 'Orient', 'Tipo', 'Servidor'];
 
 // Estructura de carpetas HIK y DIGIFORT
 const SYSTEM_FOLDERS = {};
 
-// Carpetas HIK (1-11)
-for (let i = 1; i <= 11; i++) {
-  SYSTEM_FOLDERS[`HIK${i}`] = {
-    name: `HIK${i}`,
-    type: 'HIK',
-    cameras: [],
-    expanded: false
-  };
-}
-
-// Carpetas DIGIFORT (1-6)
-for (let i = 1; i <= 6; i++) {
-  SYSTEM_FOLDERS[`DIGIFORT${i}`] = {
-    name: `DIGIFORT${i}`,
-    type: 'DIGIFORT',
-    cameras: [],
-    expanded: false
-  };
-}
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
@@ -66,6 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setupDragAndDrop();
   setupImageInteraction();
   setupFileInputs();
+  setupSearch();
   setupKeyboardShortcuts();
   setupZoomControls();
   setupTreeView();
@@ -79,8 +64,15 @@ function generateTreeStructure() {
 
   Object.keys(SYSTEM_FOLDERS).forEach(folderName => {
     const folder = SYSTEM_FOLDERS[folderName];
+    const folderMatches = folderName.toLowerCase().includes(searchQuery);
+    const camerasToShow = folder.cameras.filter(p => p.name.toLowerCase().includes(searchQuery));
+    if (searchQuery && !folderMatches && camerasToShow.length === 0) {
+      return;
+    }
     const folderNode = createTreeNode(folderName, '📁', true, folder.expanded);
-    folderNode.classList.add(folder.type === 'HIK' ? 'hik-folder' : 'digifort-folder');
+    const folderClass = folder.type === 'HIK' ? 'hik-folder' :
+                       folder.type === 'DIGIFORT' ? 'digifort-folder' : 'server-folder';
+    folderNode.classList.add(folderClass);
 
     const toggle = folderNode.querySelector('.tree-toggle');
     toggle.addEventListener('click', (e) => {
@@ -95,7 +87,7 @@ function generateTreeStructure() {
       childrenContainer.classList.add('expanded');
     }
 
-    updateFolderCameras(folderName, childrenContainer);
+    updateFolderCameras(folderName, childrenContainer, camerasToShow);
     treeContainer.appendChild(folderNode);
     treeContainer.appendChild(childrenContainer);
   });
@@ -202,11 +194,12 @@ function createCameraNode(pin) {
   return container;
 }
 
-function updateFolderCameras(folderName, container) {
+function updateFolderCameras(folderName, container, cameraList = null) {
   const folder = SYSTEM_FOLDERS[folderName];
+  const cameras = cameraList || folder.cameras;
   container.innerHTML = '';
 
-  if (folder.cameras.length === 0) {
+  if (cameras.length === 0) {
     const emptyNode = document.createElement('div');
     emptyNode.className = 'tree-item';
     emptyNode.style.fontStyle = 'italic';
@@ -217,7 +210,7 @@ function updateFolderCameras(folderName, container) {
       <span class="tree-label">Sin cámaras asignadas</span>`;
     container.appendChild(emptyNode);
   } else {
-    folder.cameras.forEach(pin => {
+    cameras.forEach(pin => {
       const cameraNode = createCameraNode(pin);
       container.appendChild(cameraNode);
     });
@@ -247,6 +240,11 @@ function toggleFolder(folderName) {
       node.dataset.folder = folderName;
     }
   });
+}
+
+function filterTree(query) {
+  searchQuery = query.toLowerCase();
+  updateTreeView();
 }
 
 function expandAllFolders() {
@@ -546,6 +544,14 @@ function setupTreeView() {
   // Eventos generados dinámicamente en generateTreeStructure
 }
 
+function setupSearch() {
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      filterTree(searchInput.value);
+    });
+  }
+}
+
 function updateZoomDisplay() {
   const zoomPercent = Math.round(scale * 100);
   zoomDisplay.textContent = zoomPercent + '%';
@@ -646,49 +652,24 @@ function handleCSV(file) {
 }
 
 function parseCSVAndCreatePins(csvContent) {
-  const lines = csvContent.trim().split('\n');
-
-  if (lines.length < 2) {
-    throw new Error('El archivo CSV debe tener al menos una línea de datos además del encabezado.');
-  }
-
-  const header = lines[0].toLowerCase();
-  const expectedHeaders = ['nombre', 'ejex', 'ejey', 'orient', 'tipo'];
-  const hasValidHeader = expectedHeaders.every(h => header.includes(h));
-
-  if (!hasValidHeader) {
-    throw new Error('El CSV debe tener las columnas: Nombre, EjeX, EjeY, Orient, Tipo');
-  }
-
+  const registros = validateAndParseCSV(csvContent);
   clearPins();
+
+  Object.keys(SYSTEM_FOLDERS).forEach(k => delete SYSTEM_FOLDERS[k]);
 
   let loadedCount = 0;
   let maxId = 0;
 
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
+  registros.forEach(fila => {
+    const nombre = fila.Nombre;
+    const x = parseInt(fila.EjeX);
+    const y = parseInt(fila.EjeY);
+    const orientation = parseFloat(fila.Orient);
+    const tipo = fila.Tipo;
+    const servidor = fila.Servidor || 'Sin Servidor';
 
-    const values = parseCSVLine(line);
-
-    if (values.length < 5) {
-      console.warn(`Línea ${i + 1} incompleta, saltando...`);
-      continue;
-    }
-
-    const [nombre, ejeX, ejeY, orient, tipo] = values;
-    const x = parseInt(ejeX);
-    const y = parseInt(ejeY);
-    const orientation = parseFloat(orient);
-
-    if (isNaN(x) || isNaN(y) || isNaN(orientation)) {
-      console.warn(`Línea ${i + 1} tiene valores inválidos, saltando...`);
-      continue;
-    }
-
-    if (currentImage && (x < 0 || x > currentImage.naturalWidth || y < 0 || y > currentImage.naturalHeight)) {
-      console.warn(`Cámara ${nombre} fuera de los límites de la imagen, saltando...`);
-      continue;
+    if (!SYSTEM_FOLDERS[servidor]) {
+      SYSTEM_FOLDERS[servidor] = { name: servidor, type: 'SERVER', cameras: [], expanded: false };
     }
 
     pinCounter++;
@@ -709,6 +690,7 @@ function parseCSVAndCreatePins(csvContent) {
     };
 
     pins.push(pin);
+    SYSTEM_FOLDERS[servidor].cameras.push(pin);
 
     if (currentImage) {
       createPinElement(pin);
@@ -720,20 +702,55 @@ function parseCSVAndCreatePins(csvContent) {
     }
 
     loadedCount++;
-  }
+  });
 
   pinCounter = maxId;
 
-  assignCamerasToFolders();
   updateTreeView();
   updateUI();
 
   const message = currentImage ?
-    `${loadedCount} cámaras cargadas y organizadas en carpetas HIK/DIGIFORT` :
+    `${loadedCount} cámaras cargadas en ${Object.keys(SYSTEM_FOLDERS).length} servidores` :
     `${loadedCount} cámaras cargadas. Abra una imagen para visualizarlas.`;
 
   statusText.textContent = message;
   showNotification('CSV Cargado', message);
+}
+
+function validateAndParseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) {
+    throw new Error('El archivo CSV está vacío o sin datos.');
+  }
+
+  const headers = lines[0].split(',').map(h => h.trim());
+  const missing = EXPECTED_COLUMNS.filter(c => !headers.includes(c));
+  if (missing.length > 0) {
+    throw new Error(`Faltan columnas requeridas: ${missing.join(', ')}`);
+  }
+
+  const registros = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    const values = parseCSVLine(line);
+    if (values.length !== headers.length) {
+      console.error(`Error en la línea ${i + 1}: cantidad de columnas incorrecta`);
+      continue;
+    }
+
+    const fila = Object.fromEntries(headers.map((h, j) => [h, values[j] ? values[j].trim() : '']));
+
+    if (isNaN(fila.EjeX) || isNaN(fila.EjeY) || isNaN(fila.Orient)) {
+      console.error(`Coordenadas inválidas en la línea ${i + 1}: EjeX=${fila.EjeX}, EjeY=${fila.EjeY}, Orient=${fila.Orient}`);
+      continue;
+    }
+
+    registros.push(fila);
+  }
+
+  return registros;
 }
 
 function parseCSVLine(line) {
