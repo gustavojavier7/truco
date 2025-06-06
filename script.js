@@ -3,6 +3,7 @@ const imagePanel = document.getElementById('image-panel');
 const imageWrapper = document.getElementById('image-wrapper');
 const dropArea = document.getElementById('drop-area');
 const coordinatesList = document.getElementById('coordinates-list');
+const treeContainer = document.getElementById('tree-container');
 const statusText = document.getElementById('status-text');
 const zoomIndicator = document.getElementById('zoom-indicator');
 const zoomDisplay = document.getElementById('zoom-display');
@@ -36,6 +37,29 @@ let consolidateCounter = 1;
 const VISION_RANGE = 150;
 const VISION_ANGLE = 72;
 
+// Estructura de carpetas HIK y DIGIFORT
+const SYSTEM_FOLDERS = {};
+
+// Carpetas HIK (1-11)
+for (let i = 1; i <= 11; i++) {
+  SYSTEM_FOLDERS[`HIK${i}`] = {
+    name: `HIK${i}`,
+    type: 'HIK',
+    cameras: [],
+    expanded: false
+  };
+}
+
+// Carpetas DIGIFORT (1-6)
+for (let i = 1; i <= 6; i++) {
+  SYSTEM_FOLDERS[`DIGIFORT${i}`] = {
+    name: `DIGIFORT${i}`,
+    type: 'DIGIFORT',
+    cameras: [],
+    expanded: false
+  };
+}
+
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
   setupMenuSystem();
@@ -44,37 +68,287 @@ document.addEventListener('DOMContentLoaded', function() {
   setupFileInputs();
   setupKeyboardShortcuts();
   setupZoomControls();
-  setupListDeletion();
+  setupTreeView();
   updateUI();
+  generateTreeStructure();
 });
 
-// Sistema de zoom mejorado con centro en panel
+// Generar estructura de árbol
+function generateTreeStructure() {
+  treeContainer.innerHTML = '';
+
+  Object.keys(SYSTEM_FOLDERS).forEach(folderName => {
+    const folder = SYSTEM_FOLDERS[folderName];
+    const folderNode = createTreeNode(folderName, '📁', true, folder.expanded);
+    folderNode.classList.add(folder.type === 'HIK' ? 'hik-folder' : 'digifort-folder');
+
+    const toggle = folderNode.querySelector('.tree-toggle');
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleFolder(folderName);
+    });
+
+    const childrenContainer = document.createElement('div');
+    childrenContainer.className = 'tree-children';
+    childrenContainer.id = `children-${folderName}`;
+    if (folder.expanded) {
+      childrenContainer.classList.add('expanded');
+    }
+
+    updateFolderCameras(folderName, childrenContainer);
+    treeContainer.appendChild(folderNode);
+    treeContainer.appendChild(childrenContainer);
+  });
+}
+
+function createTreeNode(label, icon, hasChildren = false, expanded = false) {
+  const node = document.createElement('div');
+  node.className = 'tree-item';
+
+  const toggle = document.createElement('span');
+  toggle.className = 'tree-toggle';
+  if (hasChildren) {
+    toggle.textContent = expanded ? '▼' : '▶';
+  } else {
+    toggle.classList.add('empty');
+  }
+
+  const iconSpan = document.createElement('span');
+  iconSpan.className = 'tree-icon';
+  iconSpan.textContent = icon;
+
+  const labelSpan = document.createElement('span');
+  labelSpan.className = 'tree-label';
+  labelSpan.textContent = label;
+
+  node.appendChild(toggle);
+  node.appendChild(iconSpan);
+  node.appendChild(labelSpan);
+
+  return node;
+}
+
+function createCameraNode(pin) {
+  const node = document.createElement('div');
+  node.className = 'tree-item camera-item';
+  if (pin.visionAngle === 360) {
+    node.classList.add('camera-360');
+  }
+  node.dataset.pinId = pin.id;
+
+  const toggle = document.createElement('span');
+  toggle.className = 'tree-toggle empty';
+
+  const icon = document.createElement('span');
+  icon.className = 'tree-icon';
+  icon.textContent = pin.visionAngle === 360 ? '🔵' : '📹';
+
+  const label = document.createElement('span');
+  label.className = 'tree-label';
+  label.textContent = pin.name;
+
+  const controls = document.createElement('div');
+  controls.className = 'camera-controls';
+
+  const editBtn = document.createElement('button');
+  editBtn.className = 'camera-btn';
+  editBtn.textContent = '✏️';
+  editBtn.title = 'Editar cámara';
+  editBtn.onclick = (e) => {
+    e.stopPropagation();
+    editPin(pin.id);
+  };
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'camera-btn';
+  deleteBtn.textContent = '🗑️';
+  deleteBtn.title = 'Eliminar cámara';
+  deleteBtn.onclick = (e) => {
+    e.stopPropagation();
+    removePin(pin.id);
+  };
+
+  const centerBtn = document.createElement('button');
+  centerBtn.className = 'camera-btn';
+  centerBtn.textContent = '🎯';
+  centerBtn.title = 'Centrar vista';
+  centerBtn.onclick = (e) => {
+    e.stopPropagation();
+    centerViewOnPin(pin);
+  };
+
+  controls.appendChild(editBtn);
+  controls.appendChild(centerBtn);
+  controls.appendChild(deleteBtn);
+
+  node.appendChild(toggle);
+  node.appendChild(icon);
+  node.appendChild(label);
+  node.appendChild(controls);
+
+  const info = document.createElement('div');
+  info.className = 'camera-info';
+  info.textContent = `(${pin.x}, ${pin.y}) - ${pin.orient}° - ${pin.visionAngle === 360 ? '360°' : 'Fija'}`;
+
+  const container = document.createElement('div');
+  container.appendChild(node);
+  container.appendChild(info);
+
+  node.addEventListener('click', (e) => {
+    e.stopPropagation();
+    selectCamera(pin.id);
+  });
+
+  return container;
+}
+
+function updateFolderCameras(folderName, container) {
+  const folder = SYSTEM_FOLDERS[folderName];
+  container.innerHTML = '';
+
+  if (folder.cameras.length === 0) {
+    const emptyNode = document.createElement('div');
+    emptyNode.className = 'tree-item';
+    emptyNode.style.fontStyle = 'italic';
+    emptyNode.style.color = '#666';
+    emptyNode.innerHTML = `
+      <span class="tree-toggle empty"></span>
+      <span class="tree-icon">📝</span>
+      <span class="tree-label">Sin cámaras asignadas</span>`;
+    container.appendChild(emptyNode);
+  } else {
+    folder.cameras.forEach(pin => {
+      const cameraNode = createCameraNode(pin);
+      container.appendChild(cameraNode);
+    });
+  }
+}
+
+function toggleFolder(folderName) {
+  const folder = SYSTEM_FOLDERS[folderName];
+  folder.expanded = !folder.expanded;
+
+  const childrenContainer = document.getElementById(`children-${folderName}`);
+  const toggle = document.querySelector(`[data-folder="${folderName}"] .tree-toggle`);
+
+  if (folder.expanded) {
+    childrenContainer.classList.add('expanded');
+    if (toggle) toggle.textContent = '▼';
+  } else {
+    childrenContainer.classList.remove('expanded');
+    if (toggle) toggle.textContent = '▶';
+  }
+
+  const folderNodes = treeContainer.querySelectorAll('.hik-folder, .digifort-folder');
+  folderNodes.forEach(node => {
+    if (node.querySelector('.tree-label').textContent === folderName) {
+      const nodeToggle = node.querySelector('.tree-toggle');
+      nodeToggle.textContent = folder.expanded ? '▼' : '▶';
+      node.dataset.folder = folderName;
+    }
+  });
+}
+
+function expandAllFolders() {
+  Object.keys(SYSTEM_FOLDERS).forEach(folderName => {
+    SYSTEM_FOLDERS[folderName].expanded = true;
+  });
+  generateTreeStructure();
+  statusText.textContent = 'Todas las carpetas HIK y DIGIFORT expandidas';
+}
+
+function collapseAllFolders() {
+  Object.keys(SYSTEM_FOLDERS).forEach(folderName => {
+    SYSTEM_FOLDERS[folderName].expanded = false;
+  });
+  generateTreeStructure();
+  statusText.textContent = 'Todas las carpetas HIK y DIGIFORT contraídas';
+}
+
+function assignCamerasToFolders() {
+  if (pins.length === 0) {
+    showNotification('Advertencia', 'No hay cámaras para asignar');
+    return;
+  }
+
+  Object.keys(SYSTEM_FOLDERS).forEach(folderName => {
+    SYSTEM_FOLDERS[folderName].cameras = [];
+  });
+
+  const allFolders = Object.keys(SYSTEM_FOLDERS);
+  const totalFolders = allFolders.length;
+
+  pins.forEach((pin, index) => {
+    const folderIndex = index % totalFolders;
+    const folderName = allFolders[folderIndex];
+    SYSTEM_FOLDERS[folderName].cameras.push(pin);
+  });
+
+  updateTreeView();
+  statusText.textContent = `${pins.length} cámaras distribuidas en ${totalFolders} carpetas del sistema`;
+  showNotification('Auto-Asignación', `${pins.length} cámaras distribuidas automáticamente en HIK y DIGIFORT`);
+}
+
+function selectCamera(pinId) {
+  treeContainer.querySelectorAll('.tree-item').forEach(item => {
+    item.classList.remove('selected');
+  });
+
+  const cameraNode = treeContainer.querySelector(`[data-pin-id="${pinId}"]`);
+  if (cameraNode) {
+    cameraNode.classList.add('selected');
+  }
+
+  const pin = pins.find(p => p.id === pinId);
+  if (pin) {
+    centerViewOnPin(pin);
+    statusText.textContent = `Cámara seleccionada: ${pin.name}`;
+  }
+}
+
+function updateTreeView() {
+  generateTreeStructure();
+}
+
+function assignCameraToFolder(pinId, folderName) {
+  const pin = pins.find(p => p.id === pinId);
+  if (!pin) return;
+
+  Object.keys(SYSTEM_FOLDERS).forEach(key => {
+    const folder = SYSTEM_FOLDERS[key];
+    folder.cameras = folder.cameras.filter(p => p.id !== pinId);
+  });
+
+  SYSTEM_FOLDERS[folderName].cameras.push(pin);
+  updateTreeView();
+}
+
 function setupZoomControls() {
   zoomDisplay.addEventListener('click', () => {
     if (currentImage) {
       showZoomModal();
     }
   });
-  
+
   document.querySelectorAll('.zoom-preset-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const zoomValue = parseInt(e.target.getAttribute('data-zoom'));
       setZoomValue(zoomValue);
     });
   });
-  
+
   zoomRange.addEventListener('input', (e) => {
     const value = parseInt(e.target.value);
     zoomInput.value = value;
   });
-  
+
   zoomInput.addEventListener('input', (e) => {
     const value = parseInt(e.target.value);
     if (value >= 10 && value <= 400) {
       zoomRange.value = value;
     }
   });
-  
+
   document.getElementById('zoom-apply').addEventListener('click', () => {
     const value = parseInt(zoomInput.value);
     if (value >= 10 && value <= 400) {
@@ -84,9 +358,9 @@ function setupZoomControls() {
       showNotification('Error', 'El zoom debe estar entre 10% y 400%');
     }
   });
-  
+
   document.getElementById('zoom-cancel').addEventListener('click', hideZoomModal);
-  
+
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && zoomModal.classList.contains('show')) {
       hideZoomModal();
@@ -128,7 +402,6 @@ function updateScale(newScale) {
       imagePositionY = pivotY - (pivotY - imagePositionY) * scaleRatio;
     }
 
-    // NUEVA IMPLEMENTACIÓN: Zoom sincronizado para imagen y SVG
     updateSynchronizedZoom();
     updateZoomDisplay();
   }
@@ -154,7 +427,6 @@ function resetView() {
   }
 }
 
-// Sistema de menús Windows 98
 function setupMenuSystem() {
   const menuItems = document.querySelectorAll('.menu-item');
   const toolbarButtons = document.querySelectorAll('.toolbar-button');
@@ -211,9 +483,7 @@ function setupMenuSystem() {
   });
 }
 
-// Ejecutor de acciones
 function executeAction(action) {
-  
   switch(action) {
     case 'abrir-imagen':
       imageInput.click();
@@ -258,7 +528,6 @@ function executeAction(action) {
   }
 }
 
-// Manejo de archivos
 function setupFileInputs() {
   imageInput.addEventListener('change', (e) => {
     if (e.target.files.length) {
@@ -273,15 +542,8 @@ function setupFileInputs() {
   });
 }
 
-function setupListDeletion() {
-  coordinatesList.addEventListener('click', (e) => {
-    if (e.target.classList.contains('delete-camera-btn')) {
-      const index = parseInt(e.target.dataset.index, 10);
-      if (!isNaN(index)) {
-        removeCamera(index);
-      }
-    }
-  });
+function setupTreeView() {
+  // Eventos generados dinámicamente en generateTreeStructure
 }
 
 function updateZoomDisplay() {
@@ -339,8 +601,7 @@ function handleImage(file) {
       imageWrapper.appendChild(img);
       imageWrapper.style.transformOrigin = '0 0';
       currentImage = img;
-      
-      // CONFIGURACIÓN MEJORADA: Preparar SVG para zoom sincronizado
+
       const visionLayer = document.getElementById('vision-layer');
       visionLayer.style.width = '100%';
       visionLayer.style.height = '100%';
@@ -348,17 +609,17 @@ function handleImage(file) {
       visionLayer.style.top = '0';
       visionLayer.style.left = '0';
       visionLayer.style.pointerEvents = 'none';
-      visionLayer.style.transformOrigin = '0 0'; // Crucial para sincronización
+      visionLayer.style.transformOrigin = '0 0';
       visionLayer.setAttribute('viewBox', `0 0 ${img.naturalWidth} ${img.naturalHeight}`);
-      
+
       dropArea.style.display = 'none';
-      statusText.textContent = `Imagen cargada: ${img.naturalWidth}x${img.naturalHeight}px - Zoom sincronizado activado`;
-      
+      statusText.textContent = `Imagen cargada: ${img.naturalWidth}x${img.naturalHeight}px - Sistemas HIK & DIGIFORT activos`;
+
       resetView();
       clearPins();
       updateUI();
-      
-      showNotification('Imagen Cargada', `${originalFileName} cargado con zoom sincronizado.`);
+
+      showNotification('Imagen Cargada', `${originalFileName} cargado en sistemas HIK & DIGIFORT.`);
     };
   };
   reader.readAsDataURL(file);
@@ -369,9 +630,9 @@ function handleCSV(file) {
     showNotification('Error', 'Seleccione un archivo CSV válido.');
     return;
   }
-  
+
   statusText.textContent = 'Cargando archivo CSV...';
-  
+
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
@@ -386,58 +647,58 @@ function handleCSV(file) {
 
 function parseCSVAndCreatePins(csvContent) {
   const lines = csvContent.trim().split('\n');
-  
+
   if (lines.length < 2) {
     throw new Error('El archivo CSV debe tener al menos una línea de datos además del encabezado.');
   }
-  
+
   const header = lines[0].toLowerCase();
   const expectedHeaders = ['nombre', 'ejex', 'ejey', 'orient', 'tipo'];
   const hasValidHeader = expectedHeaders.every(h => header.includes(h));
-  
+
   if (!hasValidHeader) {
     throw new Error('El CSV debe tener las columnas: Nombre, EjeX, EjeY, Orient, Tipo');
   }
-  
+
   clearPins();
-  
+
   let loadedCount = 0;
   let maxId = 0;
-  
+
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
-    
+
     const values = parseCSVLine(line);
-    
+
     if (values.length < 5) {
       console.warn(`Línea ${i + 1} incompleta, saltando...`);
       continue;
     }
-    
+
     const [nombre, ejeX, ejeY, orient, tipo] = values;
     const x = parseInt(ejeX);
     const y = parseInt(ejeY);
     const orientation = parseFloat(orient);
-    
+
     if (isNaN(x) || isNaN(y) || isNaN(orientation)) {
       console.warn(`Línea ${i + 1} tiene valores inválidos, saltando...`);
       continue;
     }
-    
+
     if (currentImage && (x < 0 || x > currentImage.naturalWidth || y < 0 || y > currentImage.naturalHeight)) {
       console.warn(`Cámara ${nombre} fuera de los límites de la imagen, saltando...`);
       continue;
     }
-    
+
     pinCounter++;
     maxId = Math.max(maxId, pinCounter);
-    
-    let visionAngle = VISION_ANGLE; // valor por defecto
+
+    let visionAngle = VISION_ANGLE;
     if (tipo.toLowerCase() === '360') {
       visionAngle = 360;
     }
-    
+
     const pin = {
       id: pinCounter,
       name: nombre.trim() || `Cam_${pinCounter}`,
@@ -446,9 +707,9 @@ function parseCSVAndCreatePins(csvContent) {
       orient: orientation,
       visionAngle: visionAngle
     };
-    
+
     pins.push(pin);
-    
+
     if (currentImage) {
       createPinElement(pin);
       if (visionAngle === 360) {
@@ -457,19 +718,20 @@ function parseCSVAndCreatePins(csvContent) {
         drawCone(pin.x, pin.y, pin.orient, pin.name);
       }
     }
-    
+
     loadedCount++;
   }
-  
+
   pinCounter = maxId;
-  
-  updateCoordinatesList();
+
+  assignCamerasToFolders();
+  updateTreeView();
   updateUI();
-  
-  const message = currentImage ? 
-    `${loadedCount} cámaras cargadas desde la CSV` : 
+
+  const message = currentImage ?
+    `${loadedCount} cámaras cargadas y organizadas en carpetas HIK/DIGIFORT` :
     `${loadedCount} cámaras cargadas. Abra una imagen para visualizarlas.`;
-  
+
   statusText.textContent = message;
   showNotification('CSV Cargado', message);
 }
@@ -478,10 +740,10 @@ function parseCSVLine(line) {
   const values = [];
   let current = '';
   let inQuotes = false;
-  
+
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
-    
+
     if (char === '"') {
       inQuotes = !inQuotes;
     } else if (char === ',' && !inQuotes) {
@@ -491,17 +753,16 @@ function parseCSVLine(line) {
       current += char;
     }
   }
-  
+
   values.push(current.trim());
   return values;
 }
 
-// Drag and drop
 function setupDragAndDrop() {
   ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
     imagePanel.addEventListener(eventName, preventDefaults, false);
   });
-  
+
   ['dragenter', 'dragover'].forEach(eventName => {
     imagePanel.addEventListener(eventName, () => {
       if (dropArea.style.display !== 'none') {
@@ -509,13 +770,13 @@ function setupDragAndDrop() {
       }
     }, false);
   });
-  
+
   ['dragleave', 'drop'].forEach(eventName => {
     imagePanel.addEventListener(eventName, () => {
       dropArea.classList.remove('highlight');
     }, false);
   });
-  
+
   imagePanel.addEventListener('drop', handleDrop, false);
   dropArea.addEventListener('click', () => imageInput.click());
 }
@@ -529,7 +790,7 @@ function handleDrop(e) {
   const files = Array.from(e.dataTransfer.files);
   const imageFile = files.find(f => f.type.startsWith('image/'));
   const csvFile = files.find(f => f.name.toLowerCase().endsWith('.csv'));
-  
+
   if (imageFile) {
     handleImage(imageFile);
   } else if (csvFile) {
@@ -539,14 +800,12 @@ function handleDrop(e) {
   }
 }
 
-// Interacción con imagen
 function setupImageInteraction() {
   imagePanel.addEventListener('mousedown', handleMouseDown);
   imagePanel.addEventListener('mousemove', handleMouseMove);
   imagePanel.addEventListener('mouseup', handleMouseUp);
   imagePanel.addEventListener('mouseleave', handleMouseUp);
 
-  // Zoom con rueda del ratón
   imagePanel.addEventListener('wheel', (e) => {
     if (!currentImage) return;
     e.preventDefault();
@@ -566,11 +825,11 @@ function setupImageInteraction() {
 
 function handleMouseDown(e) {
   if (!currentImage) return;
-  
+
   if (e.target.classList.contains('pin-center')) {
     return;
   }
-  
+
   if (isPinMode) {
     addPin(e);
   } else {
@@ -585,14 +844,14 @@ function handleMouseDown(e) {
 
 function handleMouseMove(e) {
   if (!isDragging || !currentImage || isPinMode) return;
-  
+
   e.preventDefault();
   const deltaX = e.clientX - startX;
   const deltaY = e.clientY - startY;
-  
+
   imagePositionX = initialX + deltaX;
   imagePositionY = initialY + deltaY;
-  
+
   updateImagePosition();
   updatePinPositions();
 }
@@ -606,16 +865,16 @@ function handleMouseUp() {
 
 function addPin(e) {
   const rect = imagePanel.getBoundingClientRect();
-  
+
   const x = (e.clientX - rect.left - imagePositionX) / scale;
   const y = (e.clientY - rect.top - imagePositionY) / scale;
-  
+
   const imageX = Math.round(x);
   const imageY = Math.round(y);
-  
-  if (imageX >= 0 && imageX <= currentImage.naturalWidth && 
+
+  if (imageX >= 0 && imageX <= currentImage.naturalWidth &&
       imageY >= 0 && imageY <= currentImage.naturalHeight) {
-    
+
     pinCounter++;
     const pin = {
       id: pinCounter,
@@ -623,57 +882,50 @@ function addPin(e) {
       x: imageX,
       y: imageY,
       orient: 0,
-      visionAngle: VISION_ANGLE // Valor por defecto
+      visionAngle: VISION_ANGLE
     };
-    
+
     pins.push(pin);
     createPinElement(pin);
-    updateCoordinatesList();
+
+    const allFolders = Object.keys(SYSTEM_FOLDERS);
+    const folderIndex = (pins.length - 1) % allFolders.length;
+    const folderName = allFolders[folderIndex];
+    SYSTEM_FOLDERS[folderName].cameras.push(pin);
+
+    updateTreeView();
     updateUI();
-    // Dibujar el cono inmediatamente tras agregar el pin
     renderConesSync();
 
-    statusText.textContent = `${pin.name} agregado en (${imageX}, ${imageY}) - Orient: 0°`;
+    statusText.textContent = `${pin.name} agregado en (${imageX}, ${imageY}) - Asignado a ${folderName}`;
   }
 }
 
-// NUEVA FUNCIÓN: Zoom sincronizado entre imagen y SVG
 function updateSynchronizedZoom() {
-  // Aplicar transformación conjunta al contenedor que incluye imagen + SVG
   const transform = `translate(${imagePositionX}px, ${imagePositionY}px) scale(${scale})`;
-  
-  // Actualizar la imagen
+
   imageWrapper.style.transform = transform;
-  
-  // Sincronizar el SVG overlay con la misma transformación
+
   const visionLayer = document.getElementById('vision-layer');
   if (visionLayer) {
-    // El SVG se transforma con el mismo contenedor, manteniendo sincronización perfecta
     visionLayer.style.transform = transform;
-    visionLayer.style.transformOrigin = '0 0'; // Mantener origen en esquina superior izquierda
+    visionLayer.style.transformOrigin = '0 0';
   }
-  
-  // Actualizar pines con nueva escala sincronizada
+
   updatePinPositionsSync();
-  
-  // Re-renderizar conos con coordenadas originales (sin recalcular manualmente)
   renderConesSync();
 }
 
-// NUEVA FUNCIÓN: Actualizar posiciones de pines sin recalcular coordenadas SVG
 function updatePinPositionsSync() {
   pins.forEach(pin => {
     const pinElement = document.querySelector(`[data-pin-id="${pin.id}"]`);
     if (pinElement) {
-      // Los pines mantienen sus coordenadas originales de la imagen
-      // La transformación del contenedor los coloca automáticamente
       const pinX = pin.x * scale + imagePositionX;
       const pinY = pin.y * scale + imagePositionY;
-      
+
       pinElement.style.left = pinX + 'px';
       pinElement.style.top = pinY + 'px';
-      
-      // Escalar elementos del pin proporcionalmente
+
       const pinCenter = pinElement.querySelector('.pin-center');
       if (pinCenter) {
         pinCenter.style.width = `${8 * scale}px`;
@@ -690,42 +942,37 @@ function updatePinPositionsSync() {
         pinLabel.style.marginTop = `${-6 * scale}px`;
       }
 
-      // Calcular visibilidad optimizada
       const containerWidth = imagePanel.offsetWidth;
       const containerHeight = imagePanel.offsetHeight;
       const visibilityMargin = VISION_RANGE * scale;
-      
-      const isVisible = pinX >= -visibilityMargin && pinX <= containerWidth + visibilityMargin && 
+
+      const isVisible = pinX >= -visibilityMargin && pinX <= containerWidth + visibilityMargin &&
                        pinY >= -visibilityMargin && pinY <= containerHeight + visibilityMargin;
-      
+
       pinElement.classList.toggle('hidden', !isVisible);
     }
   });
 }
 
-// NUEVA FUNCIÓN: Renderizar conos sincronizados usando coordenadas originales
 function renderConesSync() {
   const visionLayer = document.getElementById('vision-layer');
   if (!visionLayer) return;
-  
-  // Limpiar conos anteriores
-  const group = visionLayer.querySelector('#vision-group') || 
+
+  const group = visionLayer.querySelector('#vision-group') ||
                 document.createElementNS('http://www.w3.org/2000/svg', 'g');
   group.innerHTML = '';
   group.id = 'vision-group';
-  
+
   if (!visionLayer.contains(group)) {
     visionLayer.appendChild(group);
   }
 
-  // Configurar viewBox del SVG para que coincida con las dimensiones originales de la imagen
   if (currentImage) {
     visionLayer.setAttribute('viewBox', `0 0 ${currentImage.naturalWidth} ${currentImage.naturalHeight}`);
     visionLayer.style.width = `${currentImage.naturalWidth}px`;
     visionLayer.style.height = `${currentImage.naturalHeight}px`;
   }
 
-  // Renderizar conos usando coordenadas originales de la imagen (sin escalar)
   pins.forEach(pin => {
     const angle = pin.visionAngle || VISION_ANGLE;
     if (angle === 360) {
@@ -744,7 +991,9 @@ function createPinElement(pin) {
 
   const pinCenter = document.createElement('div');
   pinCenter.className = 'pin-center';
-  // Tamaño inicial - se ajustará automáticamente con updatePinPositionsSync()
+  if (pin.visionAngle === 360) {
+    pinCenter.classList.add('camera-360');
+  }
   pinCenter.style.width = `${8}px`;
   pinCenter.style.height = `${8}px`;
   pinCenter.style.borderWidth = `${2}px`;
@@ -754,71 +1003,22 @@ function createPinElement(pin) {
   const pinLabel = document.createElement('div');
   pinLabel.className = 'pin-label';
   pinLabel.textContent = pin.name;
-  // Tamaño inicial - se ajustará automáticamente con updatePinPositionsSync()
   pinLabel.style.fontSize = `${9}px`;
   pinLabel.style.padding = `${1}px ${3}px`;
   pinLabel.style.marginTop = `${-6}px`;
-  
+
   pinCenter.addEventListener('click', (e) => {
     e.stopPropagation();
     removePin(pin.id);
   });
-  
+
   pinContainer.appendChild(pinCenter);
   pinContainer.appendChild(pinLabel);
-  
+
   imagePanel.appendChild(pinContainer);
 
-  // Usar el método sincronizado para posicionamiento inicial
   updatePinPositionsSync();
-  // Renderizar conos inmediatamente cuando se crea el pin
   renderConesSync();
-}
-
-// FUNCIÓN CLAVE: Crear cono SVG con tamaño fijo (se escala con CSS transform)
-function createVisionCone(pin) {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  const scaledRadius = VISION_RANGE * scale;
-  const size = scaledRadius * 2 + 20;
-  
-  svg.setAttribute('width', size);
-  svg.setAttribute('height', size);
-  svg.style.position = 'absolute';
-  svg.style.pointerEvents = 'none';
-  svg.style.left = `${-scaledRadius - 10}px`;
-  svg.style.top = `${-scaledRadius - 10}px`;
-  
-  const centerX = size / 2;
-  const centerY = size / 2;
-  const radius = scaledRadius;
-  const angle = pin.visionAngle || VISION_ANGLE;
-  
-  if (angle === 360) {
-    // Cámara 360: crear círculo completo
-    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    circle.setAttribute('cx', centerX);
-    circle.setAttribute('cy', centerY);
-    circle.setAttribute('r', radius);
-    circle.setAttribute('fill', 'rgba(53, 162, 235, 0.3)'); // Azul para 360°
-    circle.setAttribute('stroke', '#3593eb');
-    circle.setAttribute('stroke-width', '2');
-    svg.appendChild(circle);
-  } else {
-    // Cámara fija: crear sector
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    const startAngle = -angle / 2;
-    const endAngle = angle / 2;
-    const pathData = createSectorPath(centerX, centerY, radius, startAngle, endAngle);
-    
-    path.setAttribute('d', pathData);
-    path.setAttribute('transform', `rotate(${pin.orient} ${centerX} ${centerY})`);
-    path.setAttribute('fill', 'rgba(220, 53, 69, 0.3)'); // Rojo para fija
-    path.setAttribute('stroke', '#dc3545');
-    path.setAttribute('stroke-width', '2');
-    svg.appendChild(path);
-  }
-  
-  return svg;
 }
 
 function createSectorPath(cx, cy, radius, startAngle, endAngle) {
@@ -841,7 +1041,6 @@ function createSectorPath(cx, cy, radius, startAngle, endAngle) {
 }
 
 function drawCircle(x, y, orient, name) {
-  console.log('drawCircle', name, x, y, orient);
   const svg = document.getElementById('vision-layer');
   const group = svg.querySelector('#vision-group');
   const el = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -856,7 +1055,6 @@ function drawCircle(x, y, orient, name) {
 }
 
 function drawCone(x, y, orient, name) {
-  console.log('drawCone', name, x, y, orient);
   const svg = document.getElementById('vision-layer');
   const group = svg.querySelector('#vision-group');
   const start = -VISION_ANGLE / 2;
@@ -869,45 +1067,6 @@ function drawCone(x, y, orient, name) {
   path.setAttribute('stroke-width', '2');
   path.setAttribute('vector-effect', 'non-scaling-stroke');
   group.appendChild(path);
-}
-
-function updatePinPosition(pin, pinElement) {
-  const pinX = imagePositionX + (pin.x * scale);
-  const pinY = imagePositionY + (pin.y * scale);
-
-  pinElement.style.left = pinX + 'px';
-  pinElement.style.top = pinY + 'px';
-
-  const pinCenter = pinElement.querySelector('.pin-center');
-  if (pinCenter) {
-    pinCenter.style.width = `${8 * scale}px`;
-    pinCenter.style.height = `${8 * scale}px`;
-    pinCenter.style.borderWidth = `${2 * scale}px`;
-    pinCenter.style.left = `${-4 * scale}px`;
-    pinCenter.style.top = `${-4 * scale}px`;
-  }
-
-  const pinLabel = pinElement.querySelector('.pin-label');
-  if (pinLabel) {
-    pinLabel.style.fontSize = `${9 * scale}px`;
-    pinLabel.style.padding = `${1 * scale}px ${3 * scale}px`;
-    pinLabel.style.marginTop = `${-6 * scale}px`;
-  }
-
-  const containerWidth = imagePanel.offsetWidth;
-  const containerHeight = imagePanel.offsetHeight;
-
-  // Calcular visibilidad en el espacio de la imagen real
-  const unscaledPinX = pin.x;
-  const unscaledPinY = pin.y;
-  const unscaledContainerWidth = containerWidth / scale - imagePositionX / scale;
-  const unscaledContainerHeight = containerHeight / scale - imagePositionY / scale;
-  const unscaledRange = VISION_RANGE;
-
-  const isVisible = unscaledPinX >= -unscaledRange && unscaledPinX <= unscaledContainerWidth + unscaledRange && 
-                   unscaledPinY >= -unscaledRange && unscaledPinY <= unscaledContainerHeight + unscaledRange;
-
-  pinElement.classList.toggle('hidden', !isVisible);
 }
 
 function removePin(pinId) {
@@ -926,12 +1085,17 @@ function removeCamera(index) {
     pinElement.remove();
   }
 
+  Object.keys(SYSTEM_FOLDERS).forEach(key => {
+    const folder = SYSTEM_FOLDERS[key];
+    folder.cameras = folder.cameras.filter(p => p.id !== removed.id);
+  });
+
   redrawAll();
-  statusText.textContent = 'Cámara eliminada';
+  statusText.textContent = 'Cámara eliminada del sistema HIK/DIGIFORT';
 }
 
 function redrawAll() {
-  updateCoordinatesList();
+  updateTreeView();
   updateUI();
   renderConesSync();
   updateSynchronizedZoom();
@@ -947,8 +1111,8 @@ function editPin(pinId) {
   const newOrient = prompt('Orientación (grados):', pin.orient);
   if (newOrient === null) return;
 
-  const newType = prompt('Tipo de cámara:\n"fija" = Cono direccional\n"360" = Visión completa\n\nIngrese tipo:', 
-                        pin.visionAngle === 360 ? '360' : 'fija');
+  const newType = prompt('Tipo de cámara:\n"fija" = Cono direccional\n"360" = Visión completa\n\nIngrese tipo:',
+    pin.visionAngle === 360 ? '360' : 'fija');
   if (newType === null) return;
 
   const orientValue = parseFloat(newOrient);
@@ -957,7 +1121,7 @@ function editPin(pinId) {
     return;
   }
 
-  let visionAngle = VISION_ANGLE; // valor por defecto
+  let visionAngle = VISION_ANGLE;
   if (newType.toLowerCase() === '360') {
     visionAngle = 360;
   }
@@ -965,18 +1129,18 @@ function editPin(pinId) {
   const oldName = pin.name;
   const oldOrient = pin.orient;
   const oldType = pin.visionAngle === 360 ? '360°' : 'Fija';
-  
+
   pin.name = newName.trim() || ('Cam_' + pin.id);
   pin.orient = orientValue;
   pin.visionAngle = visionAngle;
 
   recreatePinWithNewOrientation(pin, pin.name, orientValue);
 
-  updateCoordinatesList();
+  updateTreeView();
   updateUI();
   const newTypeDisplay = pin.visionAngle === 360 ? '360°' : 'Fija';
   statusText.textContent = `${pin.name} editado: ${oldName}→${pin.name}, ${oldOrient}°→${pin.orient}°, ${oldType}→${newTypeDisplay}`;
-  showNotification('Pin Editado', `${pin.name} actualizado correctamente`);
+  showNotification('Pin Editado', `${pin.name} actualizado en sistema HIK/DIGIFORT`);
 }
 
 function recreatePinWithNewOrientation(pin, newName, newOrientation) {
@@ -984,13 +1148,12 @@ function recreatePinWithNewOrientation(pin, newName, newOrientation) {
   if (oldPinElement) {
     oldPinElement.remove();
   }
-  
+
   pin.name = newName;
   pin.orient = newOrientation;
-  
+
   if (currentImage) {
     createPinElement(pin);
-    // Re-renderizar conos con nueva orientación usando método sincronizado
     renderConesSync();
   }
 }
@@ -1001,9 +1164,14 @@ function clearPins() {
   document.querySelectorAll('.pin').forEach(pin => pin.remove());
   const vg = document.getElementById('vision-group');
   if (vg) vg.innerHTML = '';
-  updateCoordinatesList();
+
+  Object.keys(SYSTEM_FOLDERS).forEach(key => {
+    SYSTEM_FOLDERS[key].cameras = [];
+  });
+
+  updateTreeView();
   updateUI();
-  statusText.textContent = 'Todas las cámaras eliminadas';
+  statusText.textContent = 'Todas las cámaras eliminadas del sistema HIK/DIGIFORT';
 }
 
 function updateSVGCones() {
@@ -1011,12 +1179,11 @@ function updateSVGCones() {
     showNotification('Advertencia', 'No hay imagen o cámaras para actualizar');
     return;
   }
-  
-  // MÉTODO SIMPLIFICADO: usar renderizado sincronizado
+
   renderConesSync();
-  
-  statusText.textContent = `${pins.length} conos SVG sincronizados correctamente`;
-  showNotification('Conos Actualizados', `${pins.length} conos sincronizados con zoom`);
+
+  statusText.textContent = `${pins.length} conos SVG sincronizados en sistema HIK/DIGIFORT`;
+  showNotification('Conos Actualizados', `${pins.length} conos sincronizados con zoom HIK/DIGIFORT`);
 }
 
 function togglePinMode() {
@@ -1024,14 +1191,14 @@ function togglePinMode() {
     showNotification('Error', 'Debe cargar una imagen antes de activar el modo cámara');
     return;
   }
-  
+
   isPinMode = !isPinMode;
   updateUI();
-  
+
   const modeText = isPinMode ? 'ACTIVO' : 'Navegación';
-  statusText.textContent = `Modo cámara ${modeText}`;
-  showNotification('Modo Cámara', `Modo cámara ${modeText.toLowerCase()}`);
-  
+  statusText.textContent = `Modo cámara ${modeText} - Sistema HIK/DIGIFORT`;
+  showNotification('Modo Cámara', `Modo cámara ${modeText.toLowerCase()} en sistema HIK/DIGIFORT`);
+
   if (isPinMode) {
     imagePanel.classList.add('pinning');
     imagePanel.style.cursor = 'crosshair';
@@ -1042,65 +1209,11 @@ function togglePinMode() {
 }
 
 function updateImagePosition() {
-  // MÉTODO SIMPLIFICADO: usar zoom sincronizado
   updateSynchronizedZoom();
 }
 
-// FUNCIÓN SIMPLIFICADA: Actualizar posiciones usando método sincronizado
 function updatePinPositions() {
   updatePinPositionsSync();
-}
-
-function updateCoordinatesList() {
-  if (pins.length === 0) {
-    coordinatesList.innerHTML = `
-      <div style="color: #666; font-size: 10px; padding: 8px;">
-        No hay cámaras colocadas.<br><br>
-        📋 <strong>Instrucciones:</strong><br>
-        • Abra una imagen desde Archivo<br>
-        • Active modo cámara (📹)<br>
-        • Haga clic para colocar cámaras<br>
-        • Doble clic para editar<br><br>
-        <strong>Configuración:</strong><br>
-        • Alcance: 150px<br>
-        • Apertura: 72° / 360°<br><br>
-        <strong>Zoom centrado en panel:</strong><br>
-        • Rueda del ratón: zoom dinámico<br>
-        • Botones: centrado en panel<br>
-        • Atajos: Ctrl + +/-/0/F/Z
-      </div>
-    `;
-    return;
-  }
-  
-  coordinatesList.innerHTML = '';
-  pins.forEach((pin, idx) => {
-    const item = document.createElement('div');
-    item.className = 'coordinate-item';
-    const tipo = pin.visionAngle === 360 ? '360°' : 'Fija';
-    item.innerHTML = `
-      <div>
-        <span class="coordinate-name">${pin.name}</span>
-        <span class="delete-camera-btn" data-index="${idx}" title="Eliminar">🗑️</span>
-        <span style="margin-left:4px;">(${tipo})</span>
-      </div>
-      <div class="coordinate-details">X: ${pin.x}, Y: ${pin.y}</div>
-      <div class="coordinate-details">Orient: ${pin.orient}°</div>
-    `;
-    
-    item.addEventListener('dblclick', (e) => {
-      e.stopPropagation();
-      editPin(pin.id);
-    });
-    
-    item.addEventListener('click', (e) => {
-      if (e.detail === 1) {
-        centerViewOnPin(pin);
-      }
-    });
-    
-    coordinatesList.appendChild(item);
-  });
 }
 
 function centerViewOnPin(pin) {
@@ -1116,7 +1229,7 @@ function centerViewOnPin(pin) {
   updateImagePosition();
   updatePinPositions();
 
-  statusText.textContent = `Vista centrada en ${pin.name}`;
+  statusText.textContent = `Vista centrada en ${pin.name} (Sistema HIK/DIGIFORT)`;
 }
 
 function updateUI() {
@@ -1142,26 +1255,33 @@ function updateUI() {
   updateZoomDisplay();
 }
 
-// Funciones de guardado
 function downloadCSV() {
   if (pins.length === 0) {
     showNotification('Advertencia', 'No hay cámaras para guardar');
     return;
   }
 
-  let csvContent = 'Nombre,EjeX,EjeY,Orient,Tipo\n';
+  let csvContent = 'Nombre,EjeX,EjeY,Orient,Tipo,Sistema\n';
 
   pins.forEach(pin => {
     const tipo = pin.visionAngle === 360 ? '360' : 'fija';
-    csvContent += `"${pin.name}",${pin.x},${pin.y},${pin.orient},"${tipo}"\n`;
+    let sistemaAsignado = 'Sin_Asignar';
+
+    Object.keys(SYSTEM_FOLDERS).forEach(folderName => {
+      if (SYSTEM_FOLDERS[folderName].cameras.some(p => p.id === pin.id)) {
+        sistemaAsignado = folderName;
+      }
+    });
+
+    csvContent += `"${pin.name}",${pin.x},${pin.y},${pin.orient},"${tipo}","${sistemaAsignado}"\n`;
   });
 
   const BOM = '\uFEFF';
   const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-  downloadBlob(blob, 'camaras.csv');
+  downloadBlob(blob, 'camaras_sistema.csv');
 
-  statusText.textContent = `CSV guardado con ${pins.length} cámaras`;
-  showNotification('CSV Guardado', `Archivo guardado con ${pins.length} cámaras`);
+  statusText.textContent = `CSV del sistema guardado con ${pins.length} cámaras`;
+  showNotification('CSV Sistema Guardado', `Archivo guardado con ${pins.length} cámaras HIK/DIGIFORT`);
 }
 
 function consolidateAndSave() {
@@ -1170,7 +1290,7 @@ function consolidateAndSave() {
     return;
   }
 
-  statusText.textContent = 'Consolidando imagen...';
+  statusText.textContent = 'Consolidando imagen HIK...';
 
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
@@ -1188,8 +1308,8 @@ function consolidateAndSave() {
     const fileName = generateVersionedFileName(originalFileName);
     downloadBlob(blob, fileName);
 
-    statusText.textContent = `Imagen consolidada: ${fileName}`;
-    showNotification('Imagen Guardada', `Archivo guardado como: ${fileName}`);
+    statusText.textContent = `Imagen del sistema consolidada: ${fileName}`;
+    showNotification('Imagen Sistema Guardada', `Archivo guardado como: ${fileName}`);
     consolidateCounter++;
   }, 'image/png');
 }
@@ -1198,7 +1318,6 @@ function drawVisionConeOnCanvas(ctx, x, y, orientation, label, visionAngle = VIS
   ctx.save();
 
   if (visionAngle === 360) {
-    // Cámara 360: dibujar círculo azul
     ctx.fillStyle = 'rgba(53, 162, 235, 0.3)';
     ctx.strokeStyle = '#3593eb';
     ctx.lineWidth = 2;
@@ -1208,7 +1327,6 @@ function drawVisionConeOnCanvas(ctx, x, y, orientation, label, visionAngle = VIS
     ctx.fill();
     ctx.stroke();
   } else {
-    // Cámara fija: dibujar sector rojo
     ctx.fillStyle = 'rgba(220, 53, 69, 0.3)';
     ctx.strokeStyle = '#dc3545';
     ctx.lineWidth = 2;
@@ -1228,7 +1346,6 @@ function drawVisionConeOnCanvas(ctx, x, y, orientation, label, visionAngle = VIS
     ctx.stroke();
   }
 
-  // Dibujar punto central
   ctx.fillStyle = visionAngle === 360 ? '#3593eb' : '#dc3545';
   ctx.strokeStyle = 'white';
   ctx.lineWidth = 2;
@@ -1243,7 +1360,6 @@ function drawVisionConeOnCanvas(ctx, x, y, orientation, label, visionAngle = VIS
   ctx.arc(x, y, 3, 0, Math.PI * 2);
   ctx.fill();
 
-  // Dibujar etiqueta
   if (label && label !== '') {
     ctx.fillStyle = 'black';
     ctx.font = 'bold 14px Arial';
@@ -1281,7 +1397,7 @@ function generateVersionedFileName(originalName) {
   }
 
   const versionNumber = consolidateCounter.toString().padStart(4, '0');
-  return `${baseName}_camaras_${versionNumber}.${extension}`;
+  return `${baseName}_sistema_${versionNumber}.${extension}`;
 }
 
 function downloadBlob(blob, filename) {
@@ -1296,7 +1412,6 @@ function downloadBlob(blob, filename) {
   URL.revokeObjectURL(url);
 }
 
-// Atajos de teclado
 function setupKeyboardShortcuts() {
   document.addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey) {
@@ -1350,6 +1465,15 @@ function setupKeyboardShortcuts() {
             showZoomModal();
           }
           break;
+        case 'e':
+          expandAllFolders();
+          break;
+        case 'c':
+          collapseAllFolders();
+          break;
+        case 'a':
+          assignCamerasToFolders();
+          break;
       }
     }
   });
@@ -1369,6 +1493,9 @@ function showNotification(title, message) {
   };
 }
 
-// Hacer funciones accesibles globalmente para eventos
 window.removePin = removePin;
 window.editPin = editPin;
+window.expandAllFolders = expandAllFolders;
+window.collapseAllFolders = collapseAllFolders;
+window.assignCamerasToFolders = assignCamerasToFolders;
+
