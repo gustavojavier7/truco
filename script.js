@@ -47,6 +47,10 @@ const SYSTEM_FOLDERS = {};
 const undoStack = [];
 const redoStack = [];
 
+function canonicalServerName(name) {
+  return name.trim().toUpperCase();
+}
+
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
@@ -268,8 +272,9 @@ function collapseAllFolders() {
 }
 
 function addServer() {
-  const name = prompt('Nombre del nuevo servidor:');
+  let name = prompt('Nombre del nuevo servidor:');
   if (!name) return;
+  name = canonicalServerName(name);
   if (SYSTEM_FOLDERS[name]) {
     showNotification('Aviso', 'El servidor ya existe');
     return;
@@ -327,9 +332,16 @@ function updateTreeView() {
 }
 
 function saveState() {
+  const foldersState = {};
+  Object.keys(SYSTEM_FOLDERS).forEach(name => {
+    foldersState[name] = {
+      ...SYSTEM_FOLDERS[name],
+      cameras: SYSTEM_FOLDERS[name].cameras.map(p => p.id)
+    };
+  });
   const state = {
     pins: JSON.parse(JSON.stringify(pins)),
-    folders: JSON.parse(JSON.stringify(SYSTEM_FOLDERS))
+    folders: foldersState
   };
   undoStack.push(state);
   if (undoStack.length > 3) undoStack.shift();
@@ -339,7 +351,16 @@ function saveState() {
 function restoreState(state) {
   pins = JSON.parse(JSON.stringify(state.pins));
   Object.keys(SYSTEM_FOLDERS).forEach(k => delete SYSTEM_FOLDERS[k]);
-  Object.assign(SYSTEM_FOLDERS, JSON.parse(JSON.stringify(state.folders)));
+  Object.keys(state.folders).forEach(name => {
+    const f = state.folders[name];
+    SYSTEM_FOLDERS[name] = { ...f, cameras: [] };
+  });
+  pins.forEach(pin => {
+    const serv = pin.server;
+    if (SYSTEM_FOLDERS[serv] && !SYSTEM_FOLDERS[serv].cameras.some(p => p.id === pin.id)) {
+      SYSTEM_FOLDERS[serv].cameras.push(pin);
+    }
+  });
   pinCounter = pins.reduce((m, p) => Math.max(m, p.id), 0);
 
   document.querySelectorAll('.pin').forEach(p => p.remove());
@@ -353,9 +374,16 @@ function restoreState(state) {
 
 function undoAction() {
   if (undoStack.length === 0) return;
+  const foldersState = {};
+  Object.keys(SYSTEM_FOLDERS).forEach(name => {
+    foldersState[name] = {
+      ...SYSTEM_FOLDERS[name],
+      cameras: SYSTEM_FOLDERS[name].cameras.map(p => p.id)
+    };
+  });
   const current = {
     pins: JSON.parse(JSON.stringify(pins)),
-    folders: JSON.parse(JSON.stringify(SYSTEM_FOLDERS))
+    folders: foldersState
   };
   redoStack.push(current);
   if (redoStack.length > 3) redoStack.shift();
@@ -366,9 +394,16 @@ function undoAction() {
 
 function redoAction() {
   if (redoStack.length === 0) return;
+  const foldersState = {};
+  Object.keys(SYSTEM_FOLDERS).forEach(name => {
+    foldersState[name] = {
+      ...SYSTEM_FOLDERS[name],
+      cameras: SYSTEM_FOLDERS[name].cameras.map(p => p.id)
+    };
+  });
   const current = {
     pins: JSON.parse(JSON.stringify(pins)),
-    folders: JSON.parse(JSON.stringify(SYSTEM_FOLDERS))
+    folders: foldersState
   };
   undoStack.push(current);
   if (undoStack.length > 3) undoStack.shift();
@@ -379,6 +414,7 @@ function redoAction() {
 
 function assignCameraToFolder(pinId, folderName) {
   saveState();
+  folderName = canonicalServerName(folderName);
   const pin = pins.find(p => p.id === pinId);
   if (!pin) return;
 
@@ -387,7 +423,12 @@ function assignCameraToFolder(pinId, folderName) {
     folder.cameras = folder.cameras.filter(p => p.id !== pinId);
   });
 
-  SYSTEM_FOLDERS[folderName].cameras.push(pin);
+  if (!SYSTEM_FOLDERS[folderName]) {
+    SYSTEM_FOLDERS[folderName] = { name: folderName, type: 'SERVER', cameras: [], expanded: false };
+  }
+  if (!SYSTEM_FOLDERS[folderName].cameras.some(p => p.id === pin.id)) {
+    SYSTEM_FOLDERS[folderName].cameras.push(pin);
+  }
   pin.server = folderName;
   updateTreeView();
 }
@@ -744,7 +785,7 @@ function parseCSVAndCreatePins(csvContent) {
     const y = parseInt(fila.EjeY);
     const orientation = parseFloat(fila.Orient);
     const tipo = fila.Tipo;
-    const servidor = fila.Servidor || 'Sin Servidor';
+    const servidor = canonicalServerName(fila.Servidor || 'Sin Servidor');
 
     if (!SYSTEM_FOLDERS[servidor]) {
       SYSTEM_FOLDERS[servidor] = { name: servidor, type: 'SERVER', cameras: [], expanded: false };
@@ -975,7 +1016,7 @@ function addPin(e) {
     pinCounter++;
     const allFolders = Object.keys(SYSTEM_FOLDERS);
     const folderIndex = (pins.length) % allFolders.length;
-    const folderName = allFolders[folderIndex] || 'Sin Servidor';
+    const folderName = canonicalServerName(allFolders[folderIndex] || 'Sin Servidor');
 
     const pin = {
       id: pinCounter,
@@ -1220,12 +1261,15 @@ function editPin(pinId) {
     pin.visionAngle === 360 ? '360' : 'fija');
   if (newType === null) return;
 
-  const servers = Object.keys(SYSTEM_FOLDERS);
+  const servers = Object.keys(SYSTEM_FOLDERS)
+    .sort((a, b) => a.localeCompare(b))
+    .map(s => canonicalServerName(s));
   let serverPrompt = 'Seleccione servidor:\n';
   servers.forEach((s, i) => { serverPrompt += `${i + 1}. ${s}\n`; });
-  const currentServer = pin.server || servers[0] || '';
+  const currentServer = canonicalServerName(pin.server || servers[0] || '');
   let serverInput = prompt(serverPrompt, currentServer);
   if (serverInput === null) return;
+  serverInput = canonicalServerName(serverInput);
   let newServer = '';
   const idx = parseInt(serverInput, 10);
   if (!isNaN(idx) && idx >= 1 && idx <= servers.length) {
@@ -1257,14 +1301,7 @@ function editPin(pinId) {
   pin.visionAngle = visionAngle;
   const oldServer = pin.server;
   if (newServer && newServer !== oldServer) {
-    if (SYSTEM_FOLDERS[oldServer]) {
-      SYSTEM_FOLDERS[oldServer].cameras = SYSTEM_FOLDERS[oldServer].cameras.filter(p => p.id !== pin.id);
-    }
-    pin.server = newServer;
-    if (!SYSTEM_FOLDERS[newServer]) {
-      SYSTEM_FOLDERS[newServer] = { name: newServer, type: 'SERVER', cameras: [], expanded: false };
-    }
-    SYSTEM_FOLDERS[newServer].cameras.push(pin);
+    assignCameraToFolder(pin.id, newServer);
   }
 
   recreatePinWithNewOrientation(pin, pin.name, orientValue);
