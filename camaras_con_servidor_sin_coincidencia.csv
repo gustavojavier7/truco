@@ -1,0 +1,4 @@
+Nombre,EjeX,EjeY,Orient,Tipo,Servidor
+Cam1,100,150,90,fija,ServidorA
+Cam2,200,200,180,360,
+Cam3,300,250,45,fija,ServidorB

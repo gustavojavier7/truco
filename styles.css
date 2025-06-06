@@ -370,7 +370,15 @@ font-weight: bold;
 }
 
 .digifort-folder .tree-icon {
-color: #1e90ff;
+  color: #1e90ff;
+}
+
+.server-folder {
+  font-weight: bold;
+}
+
+.server-folder .tree-icon {
+  color: #6c757d;
 }
 
 .section-header {
@@ -451,7 +459,20 @@ background: #d0d0d0;
 }
 
 .folder-btn:active {
-border: 1px inset #c0c0c0;
+  border: 1px inset #c0c0c0;
+}
+
+.search-container {
+  padding: 4px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f8f8f8;
+}
+
+.search-container input {
+  width: 100%;
+  padding: 2px 4px;
+  font-size: 9px;
+  font-family: 'MS Sans Serif', sans-serif;
 }
 
 .pin {
