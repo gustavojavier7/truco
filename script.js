@@ -267,6 +267,18 @@ function collapseAllFolders() {
   statusText.textContent = 'Todas las carpetas HIK y DIGIFORT contraídas';
 }
 
+function addServer() {
+  const name = prompt('Nombre del nuevo servidor:');
+  if (!name) return;
+  if (SYSTEM_FOLDERS[name]) {
+    showNotification('Aviso', 'El servidor ya existe');
+    return;
+  }
+  SYSTEM_FOLDERS[name] = { name: name, type: 'SERVER', cameras: [], expanded: false };
+  updateTreeView();
+  showNotification('Servidor Agregado', `Servidor "${name}" creado`);
+}
+
 function assignCamerasToFolders() {
   saveState();
   if (pins.length === 0) {
@@ -284,6 +296,7 @@ function assignCamerasToFolders() {
   pins.forEach((pin, index) => {
     const folderIndex = index % totalFolders;
     const folderName = allFolders[folderIndex];
+    pin.server = folderName;
     SYSTEM_FOLDERS[folderName].cameras.push(pin);
   });
 
@@ -375,6 +388,7 @@ function assignCameraToFolder(pinId, folderName) {
   });
 
   SYSTEM_FOLDERS[folderName].cameras.push(pin);
+  pin.server = folderName;
   updateTreeView();
 }
 
@@ -750,7 +764,8 @@ function parseCSVAndCreatePins(csvContent) {
       x: x,
       y: y,
       orient: orientation,
-      visionAngle: visionAngle
+      visionAngle: visionAngle,
+      server: servidor
     };
 
     pins.push(pin);
@@ -958,21 +973,22 @@ function addPin(e) {
       imageY >= 0 && imageY <= currentImage.naturalHeight) {
 
     pinCounter++;
+    const allFolders = Object.keys(SYSTEM_FOLDERS);
+    const folderIndex = (pins.length) % allFolders.length;
+    const folderName = allFolders[folderIndex] || 'Sin Servidor';
+
     const pin = {
       id: pinCounter,
       name: `Cam_${pinCounter}`,
       x: imageX,
       y: imageY,
       orient: 0,
-      visionAngle: VISION_ANGLE
+      visionAngle: VISION_ANGLE,
+      server: folderName
     };
 
     pins.push(pin);
     createPinElement(pin);
-
-    const allFolders = Object.keys(SYSTEM_FOLDERS);
-    const folderIndex = (pins.length - 1) % allFolders.length;
-    const folderName = allFolders[folderIndex];
     SYSTEM_FOLDERS[folderName].cameras.push(pin);
 
     updateTreeView();
@@ -1168,10 +1184,14 @@ function removeCamera(index) {
     pinElement.remove();
   }
 
-  Object.keys(SYSTEM_FOLDERS).forEach(key => {
-    const folder = SYSTEM_FOLDERS[key];
-    folder.cameras = folder.cameras.filter(p => p.id !== removed.id);
-  });
+  if (removed.server && SYSTEM_FOLDERS[removed.server]) {
+    SYSTEM_FOLDERS[removed.server].cameras = SYSTEM_FOLDERS[removed.server].cameras.filter(p => p.id !== removed.id);
+  } else {
+    Object.keys(SYSTEM_FOLDERS).forEach(key => {
+      const folder = SYSTEM_FOLDERS[key];
+      folder.cameras = folder.cameras.filter(p => p.id !== removed.id);
+    });
+  }
 
   redrawAll();
   statusText.textContent = 'Cámara eliminada del sistema HIK/DIGIFORT';
@@ -1200,6 +1220,23 @@ function editPin(pinId) {
     pin.visionAngle === 360 ? '360' : 'fija');
   if (newType === null) return;
 
+  const servers = Object.keys(SYSTEM_FOLDERS);
+  let serverPrompt = 'Seleccione servidor:\n';
+  servers.forEach((s, i) => { serverPrompt += `${i + 1}. ${s}\n`; });
+  const currentServer = pin.server || servers[0] || '';
+  let serverInput = prompt(serverPrompt, currentServer);
+  if (serverInput === null) return;
+  let newServer = '';
+  const idx = parseInt(serverInput, 10);
+  if (!isNaN(idx) && idx >= 1 && idx <= servers.length) {
+    newServer = servers[idx - 1];
+  } else if (servers.includes(serverInput)) {
+    newServer = serverInput;
+  } else {
+    showNotification('Error', 'Servidor inválido');
+    return;
+  }
+
   const orientValue = parseFloat(newOrient);
   if (isNaN(orientValue)) {
     showNotification('Error', 'La orientación debe ser un número válido');
@@ -1218,6 +1255,17 @@ function editPin(pinId) {
   pin.name = newName.trim() || ('Cam_' + pin.id);
   pin.orient = orientValue;
   pin.visionAngle = visionAngle;
+  const oldServer = pin.server;
+  if (newServer && newServer !== oldServer) {
+    if (SYSTEM_FOLDERS[oldServer]) {
+      SYSTEM_FOLDERS[oldServer].cameras = SYSTEM_FOLDERS[oldServer].cameras.filter(p => p.id !== pin.id);
+    }
+    pin.server = newServer;
+    if (!SYSTEM_FOLDERS[newServer]) {
+      SYSTEM_FOLDERS[newServer] = { name: newServer, type: 'SERVER', cameras: [], expanded: false };
+    }
+    SYSTEM_FOLDERS[newServer].cameras.push(pin);
+  }
 
   recreatePinWithNewOrientation(pin, pin.name, orientValue);
 
@@ -1352,19 +1400,12 @@ function downloadCSV() {
     return;
   }
 
-  let csvContent = 'Nombre,EjeX,EjeY,Orient,Tipo,Sistema\n';
+  let csvContent = 'Nombre,EjeX,EjeY,Orient,Tipo,Servidor\n';
 
   pins.forEach(pin => {
     const tipo = pin.visionAngle === 360 ? '360' : 'fija';
-    let sistemaAsignado = 'Sin_Asignar';
-
-    Object.keys(SYSTEM_FOLDERS).forEach(folderName => {
-      if (SYSTEM_FOLDERS[folderName].cameras.some(p => p.id === pin.id)) {
-        sistemaAsignado = folderName;
-      }
-    });
-
-    csvContent += `"${pin.name}",${pin.x},${pin.y},${pin.orient},"${tipo}","${sistemaAsignado}"\n`;
+    const servidor = pin.server || 'Sin_Asignar';
+    csvContent += `"${pin.name}",${pin.x},${pin.y},${pin.orient},"${tipo}","${servidor}"\n`;
   });
 
   const BOM = '\uFEFF';
@@ -1597,6 +1638,7 @@ window.editPin = editPin;
 window.expandAllFolders = expandAllFolders;
 window.collapseAllFolders = collapseAllFolders;
 window.assignCamerasToFolders = assignCamerasToFolders;
+window.addServer = addServer;
 window.undoAction = undoAction;
 window.redoAction = redoAction;
 
