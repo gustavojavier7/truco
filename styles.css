@@ -68,17 +68,19 @@ border: 1px inset #c0c0c0;
 }
 
 .menu-bar {
-background-color: #c0c0c0;
-border-bottom: 1px solid #808080;
-display: flex;
-padding: 2px;
+  background-color: #c0c0c0;
+  border-bottom: 1px solid #808080;
+  display: flex;
+  padding: 2px;
+  font-size: 12px;
 }
 
 .menu-item {
-padding: 4px 8px;
-cursor: pointer;
-position: relative;
-border: 1px solid transparent;
+  padding: 4px 8px;
+  cursor: pointer;
+  position: relative;
+  border: 1px solid transparent;
+  font-size: 12px;
 }
 
 .menu-item:hover, .menu-item.active {
@@ -107,12 +109,13 @@ display: block;
 }
 
 .dropdown-item {
-padding: 4px 20px 4px 8px;
-cursor: pointer;
-display: flex;
-align-items: center;
-gap: 8px;
-border: 1px solid transparent;
+  padding: 4px 20px 4px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  font-size: 12px;
 }
 
 .dropdown-item:hover {
@@ -300,14 +303,14 @@ padding: 0;
 }
 
 .tree-item {
-display: flex;
-align-items: center;
-padding: 1px 2px;
-cursor: pointer;
-font-size: 10px;
-border: 1px solid transparent;
-user-select: none;
-white-space: nowrap;
+  display: flex;
+  align-items: center;
+  padding: 1px 2px;
+  cursor: pointer;
+  font-size: 12px;
+  border: 1px solid transparent;
+  user-select: none;
+  white-space: nowrap;
 }
 
 .tree-item:hover {

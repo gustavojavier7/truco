@@ -43,6 +43,10 @@ const EXPECTED_COLUMNS = ['Nombre', 'EjeX', 'EjeY', 'Orient', 'Tipo', 'Servidor'
 // Estructura de carpetas HIK y DIGIFORT
 const SYSTEM_FOLDERS = {};
 
+// Pilas para deshacer y rehacer
+const undoStack = [];
+const redoStack = [];
+
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
@@ -62,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function generateTreeStructure() {
   treeContainer.innerHTML = '';
 
-  Object.keys(SYSTEM_FOLDERS).forEach(folderName => {
+  Object.keys(SYSTEM_FOLDERS).sort((a, b) => a.localeCompare(b)).forEach(folderName => {
     const folder = SYSTEM_FOLDERS[folderName];
     const folderMatches = folderName.toLowerCase().includes(searchQuery);
     const camerasToShow = folder.cameras.filter(p => p.name.toLowerCase().includes(searchQuery));
@@ -264,6 +268,7 @@ function collapseAllFolders() {
 }
 
 function assignCamerasToFolders() {
+  saveState();
   if (pins.length === 0) {
     showNotification('Advertencia', 'No hay cámaras para asignar');
     return;
@@ -308,7 +313,59 @@ function updateTreeView() {
   generateTreeStructure();
 }
 
+function saveState() {
+  const state = {
+    pins: JSON.parse(JSON.stringify(pins)),
+    folders: JSON.parse(JSON.stringify(SYSTEM_FOLDERS))
+  };
+  undoStack.push(state);
+  if (undoStack.length > 3) undoStack.shift();
+  redoStack.length = 0;
+}
+
+function restoreState(state) {
+  pins = JSON.parse(JSON.stringify(state.pins));
+  Object.keys(SYSTEM_FOLDERS).forEach(k => delete SYSTEM_FOLDERS[k]);
+  Object.assign(SYSTEM_FOLDERS, JSON.parse(JSON.stringify(state.folders)));
+  pinCounter = pins.reduce((m, p) => Math.max(m, p.id), 0);
+
+  document.querySelectorAll('.pin').forEach(p => p.remove());
+  const vg = document.getElementById('vision-group');
+  if (vg) vg.innerHTML = '';
+  pins.forEach(pin => createPinElement(pin));
+  renderConesSync();
+  updateTreeView();
+  updateUI();
+}
+
+function undoAction() {
+  if (undoStack.length === 0) return;
+  const current = {
+    pins: JSON.parse(JSON.stringify(pins)),
+    folders: JSON.parse(JSON.stringify(SYSTEM_FOLDERS))
+  };
+  redoStack.push(current);
+  if (redoStack.length > 3) redoStack.shift();
+  const state = undoStack.pop();
+  restoreState(state);
+  statusText.textContent = 'Última acción deshecha';
+}
+
+function redoAction() {
+  if (redoStack.length === 0) return;
+  const current = {
+    pins: JSON.parse(JSON.stringify(pins)),
+    folders: JSON.parse(JSON.stringify(SYSTEM_FOLDERS))
+  };
+  undoStack.push(current);
+  if (undoStack.length > 3) undoStack.shift();
+  const state = redoStack.pop();
+  restoreState(state);
+  statusText.textContent = 'Acción rehecha';
+}
+
 function assignCameraToFolder(pinId, folderName) {
+  saveState();
   const pin = pins.find(p => p.id === pinId);
   if (!pin) return;
 
@@ -523,6 +580,12 @@ function executeAction(action) {
     case 'zoom-custom':
       if (currentImage) showZoomModal();
       break;
+    case 'deshacer':
+      undoAction();
+      break;
+    case 'rehacer':
+      redoAction();
+      break;
   }
 }
 
@@ -652,6 +715,7 @@ function handleCSV(file) {
 }
 
 function parseCSVAndCreatePins(csvContent) {
+  saveState();
   const registros = validateAndParseCSV(csvContent);
   clearPins();
 
@@ -881,6 +945,7 @@ function handleMouseUp() {
 }
 
 function addPin(e) {
+  saveState();
   const rect = imagePanel.getBoundingClientRect();
 
   const x = (e.clientX - rect.left - imagePositionX) / scale;
@@ -1094,6 +1159,7 @@ function removePin(pinId) {
 }
 
 function removeCamera(index) {
+  saveState();
   const removed = pins.splice(index, 1)[0];
   if (!removed) return;
 
@@ -1121,6 +1187,8 @@ function redrawAll() {
 function editPin(pinId) {
   const pin = pins.find(p => p.id === pinId);
   if (!pin) return;
+
+  saveState();
 
   const newName = prompt('Nombre del punto:', pin.name);
   if (newName === null) return;
@@ -1176,6 +1244,7 @@ function recreatePinWithNewOrientation(pin, newName, newOrientation) {
 }
 
 function clearPins() {
+  saveState();
   pins = [];
   pinCounter = 0;
   document.querySelectorAll('.pin').forEach(pin => pin.remove());
@@ -1262,6 +1331,11 @@ function updateUI() {
       item.classList.toggle('disabled', !hasImage);
     }
   });
+
+  const undoItem = document.querySelector('[data-action="deshacer"]');
+  const redoItem = document.querySelector('[data-action="rehacer"]');
+  if (undoItem) undoItem.classList.toggle('disabled', undoStack.length === 0);
+  if (redoItem) redoItem.classList.toggle('disabled', redoStack.length === 0);
 
   const modoCamaraBtn = document.getElementById('modo-camara-btn');
   if (modoCamaraBtn) {
@@ -1464,6 +1538,14 @@ function setupKeyboardShortcuts() {
             resetView();
           }
           break;
+        case 'z':
+          e.preventDefault();
+          undoAction();
+          break;
+        case 'y':
+          e.preventDefault();
+          redoAction();
+          break;
       }
     } else {
       switch(e.key.toLowerCase()) {
@@ -1515,4 +1597,6 @@ window.editPin = editPin;
 window.expandAllFolders = expandAllFolders;
 window.collapseAllFolders = collapseAllFolders;
 window.assignCamerasToFolders = assignCamerasToFolders;
+window.undoAction = undoAction;
+window.redoAction = redoAction;
 
