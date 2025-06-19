@@ -677,6 +677,25 @@ display: block;
 }
 
 .notification-title {
-font-weight: bold;
-margin-bottom: 8px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.unassigned-folder {
+    font-weight: bold;
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+}
+
+.unassigned-folder .tree-icon {
+    color: #e17055;
+}
+
+.unassigned-camera {
+    background-color: #fff3cd;
+    font-style: italic;
+}
+
+.unassigned-camera .tree-icon {
+    color: #e17055;
 }

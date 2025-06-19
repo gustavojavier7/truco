@@ -64,12 +64,35 @@ document.addEventListener('DOMContentLoaded', function() {
   setupTreeView();
   updateUI();
   generateTreeStructure();
+  enableDragAndDropAssignment();
 });
 
 // Generar estructura de árbol
 function generateTreeStructure() {
   treeContainer.innerHTML = '';
 
+  // NUEVA SECCIÓN: Cámaras sin asignar
+  const unassignedCameras = pins.filter(p => !p.server || !SYSTEM_FOLDERS[p.server]);
+  if (unassignedCameras.length > 0) {
+    const unassignedNode = createTreeNode('Sin Asignar', '❓', true, true);
+    unassignedNode.classList.add('unassigned-folder');
+
+    const childrenContainer = document.createElement('div');
+    childrenContainer.className = 'tree-children expanded';
+    childrenContainer.id = 'children-unassigned';
+
+    unassignedCameras.forEach(pin => {
+      if (pin.name.toLowerCase().includes(searchQuery)) {
+        const cameraNode = createCameraNode(pin);
+        childrenContainer.appendChild(cameraNode);
+      }
+    });
+
+    treeContainer.appendChild(unassignedNode);
+    treeContainer.appendChild(childrenContainer);
+  }
+
+  // Resto de carpetas del sistema
   Object.keys(SYSTEM_FOLDERS).sort((a, b) => a.localeCompare(b)).forEach(folderName => {
     const folder = SYSTEM_FOLDERS[folderName];
     const folderMatches = folderName.toLowerCase().includes(searchQuery);
@@ -134,6 +157,10 @@ function createCameraNode(pin) {
   if (pin.visionAngle === 360) {
     node.classList.add('camera-360');
   }
+  if (!pin.server || !SYSTEM_FOLDERS[pin.server]) {
+    node.classList.add('unassigned-camera');
+  }
+  node.draggable = true;
   node.dataset.pinId = pin.id;
 
   const toggle = document.createElement('span');
@@ -285,29 +312,25 @@ function addServer() {
 }
 
 function assignCamerasToFolders() {
-  saveState();
+  // Cambiar de auto-asignación a asignación manual solamente
   if (pins.length === 0) {
-    showNotification('Advertencia', 'No hay cámaras para asignar');
+    showNotification('Advertencia', 'No hay cámaras para gestionar');
     return;
   }
 
-  Object.keys(SYSTEM_FOLDERS).forEach(folderName => {
-    SYSTEM_FOLDERS[folderName].cameras = [];
-  });
+  // Mostrar diálogo de confirmación para asignación manual
+  const confirmed = confirm(
+    `Tienes ${pins.length} cámaras sin asignar.\n\n` +
+    '¿Deseas abrir el modo de asignación manual?\n\n' +
+    '(Las cámaras permanecerán sin asignar hasta que las muevas manualmente)'
+  );
 
-  const allFolders = Object.keys(SYSTEM_FOLDERS);
-  const totalFolders = allFolders.length;
-
-  pins.forEach((pin, index) => {
-    const folderIndex = index % totalFolders;
-    const folderName = allFolders[folderIndex];
-    pin.server = folderName;
-    SYSTEM_FOLDERS[folderName].cameras.push(pin);
-  });
-
-  updateTreeView();
-  statusText.textContent = `${pins.length} cámaras distribuidas en ${totalFolders} carpetas del sistema`;
-  showNotification('Auto-Asignación', `${pins.length} cámaras distribuidas automáticamente en HIK y DIGIFORT`);
+  if (confirmed) {
+    // Expandir todas las carpetas para facilitar asignación manual
+    expandAllFolders();
+    showNotification('Modo Manual Activo', 'Arrastra las cámaras a las carpetas deseadas');
+    statusText.textContent = 'Modo asignación manual activado - Arrastra cámaras a carpetas';
+  }
 }
 
 function selectCamera(pinId) {
@@ -431,6 +454,34 @@ function assignCameraToFolder(pinId, folderName) {
   }
   pin.server = folderName;
   updateTreeView();
+}
+
+function enableDragAndDropAssignment() {
+  // Hacer cámaras arrastrables
+  document.addEventListener('dragstart', (e) => {
+    if (e.target.closest('.camera-item')) {
+      const pinId = e.target.closest('.camera-item').dataset.pinId;
+      e.dataTransfer.setData('text/plain', pinId);
+    }
+  });
+
+  // Permitir soltar en carpetas
+  document.addEventListener('dragover', (e) => {
+    if (e.target.closest('.hik-folder, .digifort-folder, .server-folder')) {
+      e.preventDefault();
+    }
+  });
+
+  document.addEventListener('drop', (e) => {
+    const folderElement = e.target.closest('.hik-folder, .digifort-folder, .server-folder');
+    if (folderElement) {
+      e.preventDefault();
+      const pinId = parseInt(e.dataTransfer.getData('text/plain'));
+      const folderName = folderElement.querySelector('.tree-label').textContent;
+      assignCameraToFolder(pinId, folderName);
+      showNotification('Cámara Asignada', `Cámara movida a ${folderName}`);
+    }
+  });
 }
 
 function setupZoomControls() {
@@ -774,10 +825,12 @@ function parseCSVAndCreatePins(csvContent) {
   const registros = validateAndParseCSV(csvContent);
   clearPins();
 
-  Object.keys(SYSTEM_FOLDERS).forEach(k => delete SYSTEM_FOLDERS[k]);
+  // NO eliminar carpetas existentes
+  // Object.keys(SYSTEM_FOLDERS).forEach(k => delete SYSTEM_FOLDERS[k]);
 
   let loadedCount = 0;
   let maxId = 0;
+  let unassignedCount = 0;
 
   registros.forEach(fila => {
     const nombre = fila.Nombre;
@@ -785,10 +838,16 @@ function parseCSVAndCreatePins(csvContent) {
     const y = parseInt(fila.EjeY);
     const orientation = parseFloat(fila.Orient);
     const tipo = fila.Tipo;
-    const servidor = canonicalServerName(fila.Servidor || 'Sin Servidor');
+    const servidor = fila.Servidor ? canonicalServerName(fila.Servidor) : null; // ← CAMBIO
 
-    if (!SYSTEM_FOLDERS[servidor]) {
-      SYSTEM_FOLDERS[servidor] = { name: servidor, type: 'SERVER', cameras: [], expanded: false };
+    // Solo crear carpeta si está especificada en CSV
+    if (servidor && !SYSTEM_FOLDERS[servidor]) {
+      SYSTEM_FOLDERS[servidor] = { 
+        name: servidor, 
+        type: 'SERVER', 
+        cameras: [], 
+        expanded: false 
+      };
     }
 
     pinCounter++;
@@ -806,11 +865,17 @@ function parseCSVAndCreatePins(csvContent) {
       y: y,
       orient: orientation,
       visionAngle: visionAngle,
-      server: servidor
+      server: servidor  // ← Puede ser null si no se especifica
     };
 
     pins.push(pin);
-    SYSTEM_FOLDERS[servidor].cameras.push(pin);
+
+    // Solo asignar si hay servidor especificado
+    if (servidor && SYSTEM_FOLDERS[servidor]) {
+      SYSTEM_FOLDERS[servidor].cameras.push(pin);
+    } else {
+      unassignedCount++;
+    }
 
     if (currentImage) {
       createPinElement(pin);
@@ -830,8 +895,8 @@ function parseCSVAndCreatePins(csvContent) {
   updateUI();
 
   const message = currentImage ?
-    `${loadedCount} cámaras cargadas en ${Object.keys(SYSTEM_FOLDERS).length} servidores` :
-    `${loadedCount} cámaras cargadas. Abra una imagen para visualizarlas.`;
+    `${loadedCount} cámaras cargadas (${unassignedCount} sin asignar)` :
+    `${loadedCount} cámaras cargadas (${unassignedCount} sin asignar). Abra una imagen para visualizarlas.`;
 
   statusText.textContent = message;
   showNotification('CSV Cargado', message);
@@ -1014,10 +1079,8 @@ function addPin(e) {
       imageY >= 0 && imageY <= currentImage.naturalHeight) {
 
     pinCounter++;
-    const allFolders = Object.keys(SYSTEM_FOLDERS);
-    const folderIndex = (pins.length) % allFolders.length;
-    const folderName = canonicalServerName(allFolders[folderIndex] || 'Sin Servidor');
 
+    // ELIMINAR asignación automática - dejar sin asignar
     const pin = {
       id: pinCounter,
       name: `Cam_${pinCounter}`,
@@ -1025,18 +1088,22 @@ function addPin(e) {
       y: imageY,
       orient: 0,
       visionAngle: VISION_ANGLE,
-      server: folderName
+      server: null  // ← CAMBIO: Sin asignación automática
     };
 
     pins.push(pin);
     createPinElement(pin);
-    SYSTEM_FOLDERS[folderName].cameras.push(pin);
+
+    // NO agregar a ninguna carpeta automáticamente
+    // SYSTEM_FOLDERS[folderName].cameras.push(pin); ← ELIMINAR ESTA LÍNEA
 
     updateTreeView();
     updateUI();
     renderConesSync();
 
-    statusText.textContent = `${pin.name} agregado en (${imageX}, ${imageY}) - Asignado a ${folderName}`;
+    // Mostrar mensaje indicando que debe asignar manualmente
+    statusText.textContent = `${pin.name} creado en (${imageX}, ${imageY}) - Sin asignar (requiere asignación manual)`;
+    showNotification('Cámara Creada', `${pin.name} creado. Asígnalo manualmente a una carpeta.`);
   }
 }
 
