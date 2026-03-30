@@ -756,9 +756,9 @@ function fitToWindow() {
 }
 
 function handleImage(file) {
-  const maxSize = 10 * 1024 * 1024;
+  const maxSize = 15 * 1024 * 1024;
   if (!file.type.startsWith('image/') || file.size > maxSize) {
-    showNotification('Error', 'Archivo inválido. Seleccione una imagen menor a 10MB.');
+    showNotification('Error', 'Archivo inválido. Seleccione una imagen menor a 15MB.');
     return;
   }
 
