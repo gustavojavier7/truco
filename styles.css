@@ -815,3 +815,11 @@ display: block;
 .image-panel.correction-mode .pin-center.correction-ref {
   cursor: grabbing;
 }
+
+/* Highlight para modo corrección individual */
+.pin-center.correction1-target {
+  background-color: #17a2b8 !important;
+  border-color: #0dcaf0 !important;
+  box-shadow: 0 0 10px 3px rgba(13,202,240,0.7);
+  z-index: 20;
+}
