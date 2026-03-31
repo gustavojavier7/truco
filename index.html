@@ -69,6 +69,11 @@ Edición
 <span>🔄</span>
 <span>Actualizar conos SVG</span>
 </div>
+<div class="dropdown-separator"></div>
+<div class="dropdown-item disabled" data-action="corregir">
+<span>🔧</span>
+<span>Corregir posiciones...</span>
+</div>
 </div>
 </div>
 
@@ -106,6 +111,8 @@ Ver
 <div class="toolbar-separator"></div>
 <div class="toolbar-button disabled" data-action="modo-camara" title="Modo Cámara (P)" id="modo-camara-btn">📹</div>
 <div class="toolbar-button disabled" data-action="actualizar-conos" title="Actualizar Conos">🔄</div>
+<div class="toolbar-separator"></div>
+<div class="toolbar-button disabled" data-action="corregir" title="Corregir posiciones (R)" id="corregir-btn">🔧</div>
 <div class="toolbar-separator"></div>
 
 <div class="zoom-control-group">
@@ -196,6 +203,18 @@ Se centrará en el centro del panel
 <div class="zoom-modal-btn" id="zoom-cancel">Cancelar</div>
 </div>
 </dialog>
+
+<div class="correction-bar" id="correction-bar">
+<div class="correction-info">
+<span>🔧</span>
+<span id="correction-status">Modo Corrección: seleccione una cámara de referencia</span>
+</div>
+<div class="correction-offset" id="correction-offset"></div>
+<div class="correction-actions">
+<button class="correction-btn confirm-btn" id="correction-confirm" disabled>✔ Confirmar nueva ubicación</button>
+<button class="correction-btn cancel-btn" id="correction-cancel">✖ Cancelar</button>
+</div>
+</div>
 
 <div class="notification" id="notification">
 <div class="notification-title" id="notification-title">Información</div>
