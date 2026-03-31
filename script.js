@@ -756,48 +756,62 @@ function fitToWindow() {
 }
 
 function handleImage(file) {
-  const maxSize = 15 * 1024 * 1024;
-  if (!file.type.startsWith('image/') || file.size > maxSize) {
-    showNotification('Error', 'Archivo inválido. Seleccione una imagen menor a 15MB.');
+  const maxSize = 50 * 1024 * 1024;
+  if (!file.type.startsWith('image/')) {
+    showNotification('Error', 'Archivo inválido. Seleccione una imagen.');
+    return;
+  }
+  if (file.size > maxSize) {
+    showNotification('Error', `Imagen demasiado pesada (${(file.size / 1024 / 1024).toFixed(1)} MB). Máximo permitido: 50 MB.`);
     return;
   }
 
   originalFileName = file.name;
   statusText.textContent = 'Cargando imagen...';
 
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const img = new Image();
-    img.src = e.target.result;
-    img.onload = () => {
-      currentImageOriginal = new Image();
-      currentImageOriginal.src = img.src;
-      imageWrapper.innerHTML = '';
-      imageWrapper.appendChild(img);
-      imageWrapper.style.transformOrigin = '0 0';
-      currentImage = img;
+  // Usar createObjectURL en lugar de readAsDataURL para evitar duplicar
+  // la imagen en memoria como Base64 (~33% más de RAM).
+  const objectURL = URL.createObjectURL(file);
+  const img = new Image();
+  img.src = objectURL;
+  img.onload = () => {
+    // Liberar el objectURL del blob de carga (la imagen ya está decodificada)
+    URL.revokeObjectURL(objectURL);
 
-      const visionLayer = document.getElementById('vision-layer');
-      visionLayer.style.width = '100%';
-      visionLayer.style.height = '100%';
-      visionLayer.style.position = 'absolute';
-      visionLayer.style.top = '0';
-      visionLayer.style.left = '0';
-      visionLayer.style.pointerEvents = 'none';
-      visionLayer.style.transformOrigin = '0 0';
-      visionLayer.setAttribute('viewBox', `0 0 ${img.naturalWidth} ${img.naturalHeight}`);
+    // Guardar copia original para la exportación.
+    // Se crea desde el mismo blob para no duplicar la cadena Base64.
+    currentImageOriginal = new Image();
+    currentImageOriginal.src = URL.createObjectURL(file);
 
-      dropArea.style.display = 'none';
-      statusText.textContent = `Imagen cargada: ${img.naturalWidth}x${img.naturalHeight}px - Sistemas HIK & DIGIFORT activos`;
+    imageWrapper.innerHTML = '';
+    imageWrapper.appendChild(img);
+    imageWrapper.style.transformOrigin = '0 0';
+    currentImage = img;
 
-      resetView();
-      clearPins();
-      updateUI();
+    const visionLayer = document.getElementById('vision-layer');
+    visionLayer.style.width = '100%';
+    visionLayer.style.height = '100%';
+    visionLayer.style.position = 'absolute';
+    visionLayer.style.top = '0';
+    visionLayer.style.left = '0';
+    visionLayer.style.pointerEvents = 'none';
+    visionLayer.style.transformOrigin = '0 0';
+    visionLayer.setAttribute('viewBox', `0 0 ${img.naturalWidth} ${img.naturalHeight}`);
 
-      showNotification('Imagen Cargada', `${originalFileName} cargado en sistemas HIK & DIGIFORT.`);
-    };
+    dropArea.style.display = 'none';
+    statusText.textContent = `Imagen cargada: ${img.naturalWidth}x${img.naturalHeight}px - Sistemas HIK & DIGIFORT activos`;
+
+    resetView();
+    clearPins();
+    updateUI();
+
+    showNotification('Imagen Cargada', `${originalFileName} (${(file.size / 1024 / 1024).toFixed(1)} MB) cargado en sistemas HIK & DIGIFORT.`);
   };
-  reader.readAsDataURL(file);
+  img.onerror = () => {
+    URL.revokeObjectURL(objectURL);
+    showNotification('Error', 'No se pudo decodificar la imagen. Verifique que el archivo no esté corrupto.');
+    statusText.textContent = 'Error al cargar imagen';
+  };
 }
 
 function handleCSV(file) {
@@ -1526,13 +1540,40 @@ function consolidateAndSave() {
     return;
   }
 
+  const w = currentImage.naturalWidth;
+  const h = currentImage.naturalHeight;
+  const totalPixels = w * h;
+
+  // Límite seguro de canvas por navegador:
+  // Safari/iOS ~16.7M px, Firefox ~124M px, Chrome ~268M px.
+  // Usamos 16M como umbral conservador para máxima compatibilidad.
+  const MAX_CANVAS_PIXELS = 16777216; // 4096 * 4096
+
+  let exportW = w;
+  let exportH = h;
+
+  if (totalPixels > MAX_CANVAS_PIXELS) {
+    const scaleFactor = Math.sqrt(MAX_CANVAS_PIXELS / totalPixels);
+    exportW = Math.floor(w * scaleFactor);
+    exportH = Math.floor(h * scaleFactor);
+    showNotification(
+      'Aviso de Exportación',
+      `Imagen reducida a ${exportW}x${exportH}px para compatibilidad con el navegador (original: ${w}x${h}px).`
+    );
+  }
+
   statusText.textContent = 'Consolidando imagen HIK...';
 
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
-  canvas.width = currentImage.naturalWidth;
-  canvas.height = currentImage.naturalHeight;
+  canvas.width = exportW;
+  canvas.height = exportH;
+
+  // Si se redujo, escalar el contexto proporcionalmente
+  if (exportW !== w || exportH !== h) {
+    ctx.scale(exportW / w, exportH / h);
+  }
 
   ctx.drawImage(currentImageOriginal, 0, 0);
 
@@ -1541,10 +1582,15 @@ function consolidateAndSave() {
   });
 
   canvas.toBlob((blob) => {
+    if (!blob) {
+      showNotification('Error', 'No se pudo generar la imagen. Intente con una resolución menor.');
+      statusText.textContent = 'Error al consolidar imagen';
+      return;
+    }
     const fileName = generateVersionedFileName(originalFileName);
     downloadBlob(blob, fileName);
 
-    statusText.textContent = `Imagen del sistema consolidada: ${fileName}`;
+    statusText.textContent = `Imagen del sistema consolidada: ${fileName} (${exportW}x${exportH}px)`;
     showNotification('Imagen Sistema Guardada', `Archivo guardado como: ${fileName}`);
     consolidateCounter++;
   }, 'image/png');
