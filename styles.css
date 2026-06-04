@@ -1,3 +1,5 @@
+/* Última modificación: 2026-06-04 13:49 (por Codex) */
+/* Versión: 1.0.1 */
 * {
 box-sizing: border-box;
 }
@@ -715,7 +717,8 @@ display: block;
   align-items: center;
   gap: 12px;
   font-size: 11px;
-  white-space: nowrap;
+  white-space: normal;
+  flex-wrap: wrap;
   max-width: 90vw;
 }
 
@@ -734,8 +737,9 @@ display: block;
   font-family: 'Courier New', monospace;
   color: #0a246a;
   font-weight: bold;
-  min-width: 120px;
-  text-align: center;
+  min-width: 260px;
+  max-width: 70vw;
+  text-align: left;
 }
 
 .correction-actions {
@@ -809,11 +813,11 @@ display: block;
 }
 
 .image-panel.correction-mode .pin-center {
-  cursor: grab;
+  cursor: pointer;
 }
 
 .image-panel.correction-mode .pin-center.correction-ref {
-  cursor: grabbing;
+  cursor: pointer;
 }
 
 /* Highlight para modo corrección individual */

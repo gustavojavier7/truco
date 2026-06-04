@@ -1,3 +1,5 @@
+// Última modificación: 2026-06-04 13:49 (por Codex)
+// Versión: 1.0.0
 // Variables globales
 const imagePanel = document.getElementById('image-panel');
 const imageWrapper = document.getElementById('image-wrapper');
@@ -1831,22 +1833,174 @@ function showNotification(title, message) {
 
 // ========== MODO CORRECCIÓN MASIVA ==========
 
+const CORRECTION_PHASES = Object.freeze({
+  idle: 'idle',
+  selectingReference: 'selecting-reference',
+  selectingTarget: 'selecting-target',
+  awaitingConfirmation: 'awaiting-confirmation'
+});
+
 let isCorrectionMode = false;
-let correctionRefPin = null;       // Pin de referencia seleccionado
-let correctionDragging = false;    // Está arrastrando la cámara de referencia
-let correctionDragStartX = 0;     // Posición screen al empezar drag
-let correctionDragStartY = 0;
-let correctionOrigX = 0;           // Posición original del pin de referencia (image coords)
-let correctionOrigY = 0;
-let correctionDeltaX = 0;          // Delta acumulado en coordenadas de imagen
-let correctionDeltaY = 0;
-let correctionOriginalPositions = [];  // Posiciones originales de todos los pines
+let correctionPhase = CORRECTION_PHASES.idle;
+let correctionRefPin = null;
+let correctionOriginalPoint = null;
+let correctionTargetPoint = null;
+let correctionDisplacement = null;
+let correctionOriginalPositions = [];
 
 const correctionBar = document.getElementById('correction-bar');
 const correctionStatus = document.getElementById('correction-status');
 const correctionOffset = document.getElementById('correction-offset');
 const correctionConfirmBtn = document.getElementById('correction-confirm');
 const correctionCancelBtn = document.getElementById('correction-cancel');
+
+function screenToImageCoordinates(event) {
+  const rect = imagePanel.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left - imagePositionX) / scale,
+    y: (event.clientY - rect.top - imagePositionY) / scale
+  };
+}
+
+function calculateLinearDisplacement(from, to) {
+  const deltaX = to.x - from.x;
+  const deltaY = to.y - from.y;
+  return {
+    deltaX,
+    deltaY,
+    distance: Math.sqrt(deltaX ** 2 + deltaY ** 2)
+  };
+}
+
+function formatCoordinate(point) {
+  return `(${formatCorrectionNumber(point.x)}, ${formatCorrectionNumber(point.y)})`;
+}
+
+function formatCorrectionNumber(value) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+function formatSignedCorrectionNumber(value) {
+  const formatted = formatCorrectionNumber(value);
+  return value > 0 ? `+${formatted}` : formatted;
+}
+
+function formatCorrectionSummary({ mode, pin, originalPoint, targetPoint, displacement, affectedCount }) {
+  const subject = mode === 'all'
+    ? `Cámara de referencia: ${pin.name}`
+    : `Cámara: ${pin.name}`;
+
+  const affected = mode === 'all'
+    ? `Cámaras a desplazar: ${affectedCount}`
+    : 'Cámaras a desplazar: 1';
+
+  return [
+    subject,
+    `Original: ${formatCoordinate(originalPoint)}`,
+    `Nueva: ${formatCoordinate(targetPoint)}`,
+    `ΔX: ${formatSignedCorrectionNumber(displacement.deltaX)}`,
+    `ΔY: ${formatSignedCorrectionNumber(displacement.deltaY)}`,
+    `Distancia lineal: ${displacement.distance.toFixed(2)}`,
+    affected,
+    'Confirme para aplicar o cancele para conservar las posiciones actuales.'
+  ].join(' | ');
+}
+
+function refreshFolderCameraReferences() {
+  Object.keys(SYSTEM_FOLDERS).forEach(key => {
+    SYSTEM_FOLDERS[key].cameras = SYSTEM_FOLDERS[key].cameras.map(cam => pins.find(pin => pin.id === cam.id) || cam);
+  });
+}
+
+function redrawCorrectionResults() {
+  document.querySelectorAll('.pin').forEach(pinElement => pinElement.remove());
+  const visionGroup = document.getElementById('vision-group');
+  if (visionGroup) visionGroup.innerHTML = '';
+  pins.forEach(pin => createPinElement(pin));
+  renderConesSync();
+  updateTreeView();
+  updateUI();
+}
+
+function applyCorrectionToAll(deltaX, deltaY) {
+  saveState();
+  pins.forEach(pin => {
+    const original = correctionOriginalPositions.find(position => position.id === pin.id);
+    if (original) {
+      pin.x = Math.round(original.x + deltaX);
+      pin.y = Math.round(original.y + deltaY);
+    }
+  });
+  refreshFolderCameraReferences();
+}
+
+function applyCorrectionToOne(pinId, deltaX, deltaY) {
+  const pin = pins.find(candidate => candidate.id === pinId);
+  if (!pin) return;
+
+  saveState();
+  const original = correction1OriginalPoint || { x: pin.x, y: pin.y };
+  pin.x = Math.round(original.x + deltaX);
+  pin.y = Math.round(original.y + deltaY);
+  refreshFolderCameraReferences();
+}
+
+function setCorrectionStatus(mode, message) {
+  const statusElement = mode === 'all' ? correctionStatus : correction1Status;
+  if (statusElement) statusElement.textContent = message;
+  statusText.textContent = message;
+}
+
+function clearCorrectionHighlights() {
+  document.querySelectorAll('.pin-center.correction-ref').forEach(element => {
+    element.classList.remove('correction-ref');
+  });
+  document.querySelectorAll('.pin-center.correction1-target').forEach(element => {
+    element.classList.remove('correction1-target');
+  });
+  document.querySelectorAll('.pin.correction-preview').forEach(element => {
+    element.classList.remove('correction-preview');
+  });
+}
+
+function highlightCorrectionPin(pinId, className) {
+  const pinElement = document.querySelector(`.pin[data-pin-id="${pinId}"] .pin-center`);
+  if (pinElement) pinElement.classList.add(className);
+}
+
+function resetCorrectionState(mode) {
+  if (mode === 'all') {
+    isCorrectionMode = false;
+    correctionPhase = CORRECTION_PHASES.idle;
+    correctionRefPin = null;
+    correctionOriginalPoint = null;
+    correctionTargetPoint = null;
+    correctionDisplacement = null;
+    correctionOriginalPositions = [];
+    correctionBar.classList.remove('show');
+    correctionConfirmBtn.disabled = true;
+    correctionOffset.textContent = '';
+    const corregirBtn = document.getElementById('corregir-btn');
+    if (corregirBtn) corregirBtn.classList.remove('active');
+  } else {
+    isCorrection1Mode = false;
+    correction1Phase = CORRECTION_PHASES.idle;
+    correction1TargetPin = null;
+    correction1OriginalPoint = null;
+    correction1TargetPoint = null;
+    correction1Displacement = null;
+    correction1Bar.classList.remove('show');
+    correction1ConfirmBtn.disabled = true;
+    correction1Offset.textContent = '';
+    const corregir1Btn = document.getElementById('corregir1-btn');
+    if (corregir1Btn) corregir1Btn.classList.remove('active');
+  }
+
+  if (!isCorrectionMode && !isCorrection1Mode) {
+    imagePanel.classList.remove('correction-mode');
+  }
+  clearCorrectionHighlights();
+}
 
 function enterCorrectionMode() {
   if (!currentImage) {
@@ -1858,288 +2012,178 @@ function enterCorrectionMode() {
     return;
   }
 
-  // Desactivar otros modos
   if (isPinMode) togglePinMode();
   if (isCorrection1Mode) exitCorrection1Mode(false);
 
   isCorrectionMode = true;
+  correctionPhase = CORRECTION_PHASES.selectingReference;
   correctionRefPin = null;
-  correctionDeltaX = 0;
-  correctionDeltaY = 0;
+  correctionOriginalPoint = null;
+  correctionTargetPoint = null;
+  correctionDisplacement = null;
+  correctionOriginalPositions = pins.map(pin => ({ id: pin.id, x: pin.x, y: pin.y }));
 
-  // Guardar posiciones originales
-  correctionOriginalPositions = pins.map(p => ({ id: p.id, x: p.x, y: p.y }));
-
-  // Mostrar barra de corrección
   correctionBar.classList.add('show');
-  correctionStatus.textContent = 'Seleccione una cámara de referencia haciendo clic en ella';
-  correctionOffset.textContent = '';
   correctionConfirmBtn.disabled = true;
-
-  // Cursor y visual
+  correctionOffset.textContent = '';
   imagePanel.classList.add('correction-mode');
 
-  // Botones toolbar/menu
   const corregirBtn = document.getElementById('corregir-btn');
   if (corregirBtn) corregirBtn.classList.add('active');
 
-  statusText.textContent = 'Modo Corrección activo — seleccione una cámara de referencia';
-  showNotification('Modo Corrección', 'Haga clic sobre la cámara que desea usar como referencia para la corrección.');
+  setCorrectionStatus('all', 'Seleccione una cámara de referencia');
+  showNotification('Modo Corrección', 'Seleccione una cámara de referencia. Luego haga clic en el punto corregido del plano.');
+}
+
+function selectCorrectionReference(mode, pinId) {
+  const pin = pins.find(candidate => candidate.id === pinId);
+  if (!pin) return;
+
+  if (mode === 'all') {
+    correctionRefPin = pin;
+    correctionOriginalPoint = { x: pin.x, y: pin.y };
+    correctionTargetPoint = null;
+    correctionDisplacement = null;
+    correctionPhase = CORRECTION_PHASES.selectingTarget;
+    correctionConfirmBtn.disabled = true;
+    correctionOffset.textContent = '';
+    clearCorrectionHighlights();
+    highlightCorrectionPin(pinId, 'correction-ref');
+    setCorrectionStatus('all', `Referencia seleccionada: ${pin.name}. Haga clic en el punto corregido`);
+  } else {
+    correction1TargetPin = pin;
+    correction1OriginalPoint = { x: pin.x, y: pin.y };
+    correction1TargetPoint = null;
+    correction1Displacement = null;
+    correction1Phase = CORRECTION_PHASES.selectingTarget;
+    correction1ConfirmBtn.disabled = true;
+    correction1Offset.textContent = '';
+    clearCorrectionHighlights();
+    highlightCorrectionPin(pinId, 'correction1-target');
+    setCorrectionStatus('one', `Referencia seleccionada: ${pin.name}. Haga clic en el punto corregido`);
+  }
+}
+
+function setCorrectionTarget(mode, targetPoint) {
+  if (mode === 'all') {
+    if (!correctionRefPin || correctionPhase !== CORRECTION_PHASES.selectingTarget) return;
+    correctionTargetPoint = { x: targetPoint.x, y: targetPoint.y };
+    correctionDisplacement = calculateLinearDisplacement(correctionOriginalPoint, correctionTargetPoint);
+    correctionPhase = CORRECTION_PHASES.awaitingConfirmation;
+    correctionConfirmBtn.disabled = false;
+    correctionOffset.textContent = formatCorrectionSummary({
+      mode: 'all',
+      pin: correctionRefPin,
+      originalPoint: correctionOriginalPoint,
+      targetPoint: correctionTargetPoint,
+      displacement: correctionDisplacement,
+      affectedCount: pins.length
+    });
+    setCorrectionStatus('all', `Resumen listo: ${correctionRefPin.name}. Confirme o cancele`);
+  } else {
+    if (!correction1TargetPin || correction1Phase !== CORRECTION_PHASES.selectingTarget) return;
+    correction1TargetPoint = { x: targetPoint.x, y: targetPoint.y };
+    correction1Displacement = calculateLinearDisplacement(correction1OriginalPoint, correction1TargetPoint);
+    correction1Phase = CORRECTION_PHASES.awaitingConfirmation;
+    correction1ConfirmBtn.disabled = false;
+    correction1Offset.textContent = formatCorrectionSummary({
+      mode: 'one',
+      pin: correction1TargetPin,
+      originalPoint: correction1OriginalPoint,
+      targetPoint: correction1TargetPoint,
+      displacement: correction1Displacement,
+      affectedCount: 1
+    });
+    setCorrectionStatus('one', `Resumen listo: ${correction1TargetPin.name}. Confirme o cancele`);
+  }
+}
+
+function confirmCorrection(mode) {
+  if (mode === 'all') {
+    if (!isCorrectionMode || correctionPhase !== CORRECTION_PHASES.awaitingConfirmation || !correctionDisplacement) return;
+    const { deltaX, deltaY } = correctionDisplacement;
+    applyCorrectionToAll(deltaX, deltaY);
+    statusText.textContent = `Corrección aplicada: ΔX=${Math.round(deltaX)}, ΔY=${Math.round(deltaY)} a ${pins.length} cámaras`;
+    showNotification('Corrección Aplicada', `${pins.length} cámaras reubicadas (ΔX: ${Math.round(deltaX)}, ΔY: ${Math.round(deltaY)})`);
+    resetCorrectionState('all');
+    redrawCorrectionResults();
+  } else {
+    if (!isCorrection1Mode || correction1Phase !== CORRECTION_PHASES.awaitingConfirmation || !correction1Displacement || !correction1TargetPin) return;
+    const pinName = correction1TargetPin.name;
+    const { deltaX, deltaY } = correction1Displacement;
+    applyCorrectionToOne(correction1TargetPin.id, deltaX, deltaY);
+    statusText.textContent = `${pinName} reubicada: ΔX=${Math.round(deltaX)}, ΔY=${Math.round(deltaY)}`;
+    showNotification('Cámara Reubicada', `${pinName} movida (ΔX: ${Math.round(deltaX)}, ΔY: ${Math.round(deltaY)})`);
+    resetCorrectionState('one');
+    redrawCorrectionResults();
+  }
+}
+
+function cancelCorrection(mode) {
+  if (mode === 'all') {
+    statusText.textContent = 'Corrección cancelada — no se modificó ninguna posición';
+    resetCorrectionState('all');
+  } else {
+    statusText.textContent = 'Corrección individual cancelada — no se modificó ninguna posición';
+    resetCorrectionState('one');
+  }
+  redrawCorrectionResults();
 }
 
 function exitCorrectionMode(applyChanges) {
   if (!isCorrectionMode) return;
-
-  if (applyChanges && (correctionDeltaX !== 0 || correctionDeltaY !== 0)) {
-    // Guardar estado para undo
-    saveState();
-
-    // Aplicar delta a todas las cámaras definitivamente
-    pins.forEach(pin => {
-      const orig = correctionOriginalPositions.find(o => o.id === pin.id);
-      if (orig) {
-        pin.x = Math.round(orig.x + correctionDeltaX);
-        pin.y = Math.round(orig.y + correctionDeltaY);
-      }
-    });
-
-    // Actualizar carpetas con las referencias actualizadas
-    Object.keys(SYSTEM_FOLDERS).forEach(key => {
-      SYSTEM_FOLDERS[key].cameras = SYSTEM_FOLDERS[key].cameras.map(cam => {
-        return pins.find(p => p.id === cam.id) || cam;
-      });
-    });
-
-    statusText.textContent = `Corrección aplicada: ΔX=${Math.round(correctionDeltaX)}, ΔY=${Math.round(correctionDeltaY)} a ${pins.length} cámaras`;
-    showNotification('Corrección Aplicada', `${pins.length} cámaras reubicadas (ΔX: ${Math.round(correctionDeltaX)}, ΔY: ${Math.round(correctionDeltaY)})`);
+  if (applyChanges) {
+    confirmCorrection('all');
   } else {
-    // Revertir a posiciones originales
-    if (correctionOriginalPositions.length > 0) {
-      pins.forEach(pin => {
-        const orig = correctionOriginalPositions.find(o => o.id === pin.id);
-        if (orig) {
-          pin.x = orig.x;
-          pin.y = orig.y;
-        }
-      });
-    }
-    statusText.textContent = 'Corrección cancelada — posiciones originales restauradas';
+    cancelCorrection('all');
   }
-
-  // Limpiar estado visual
-  isCorrectionMode = false;
-  correctionRefPin = null;
-  correctionDragging = false;
-  correctionOriginalPositions = [];
-  correctionDeltaX = 0;
-  correctionDeltaY = 0;
-
-  correctionBar.classList.remove('show');
-  imagePanel.classList.remove('correction-mode');
-
-  // Quitar highlight de referencia
-  document.querySelectorAll('.pin-center.correction-ref').forEach(el => {
-    el.classList.remove('correction-ref');
-  });
-  document.querySelectorAll('.pin.correction-preview').forEach(el => {
-    el.classList.remove('correction-preview');
-  });
-
-  const corregirBtn = document.getElementById('corregir-btn');
-  if (corregirBtn) corregirBtn.classList.remove('active');
-
-  // Redibujar
-  document.querySelectorAll('.pin').forEach(p => p.remove());
-  const vg = document.getElementById('vision-group');
-  if (vg) vg.innerHTML = '';
-  pins.forEach(pin => createPinElement(pin));
-  renderConesSync();
-  updateTreeView();
-  updateUI();
 }
 
-function correctionSelectRef(pinId) {
-  correctionRefPin = pins.find(p => p.id === pinId);
-  if (!correctionRefPin) return;
-
-  correctionOrigX = correctionRefPin.x;
-  correctionOrigY = correctionRefPin.y;
-
-  // Highlight visual
-  document.querySelectorAll('.pin-center.correction-ref').forEach(el => {
-    el.classList.remove('correction-ref');
-  });
-  const pinEl = document.querySelector(`.pin[data-pin-id="${pinId}"] .pin-center`);
-  if (pinEl) pinEl.classList.add('correction-ref');
-
-  correctionStatus.textContent = `Referencia: ${correctionRefPin.name} — arrástrela a su posición correcta`;
-  statusText.textContent = `Cámara de referencia: ${correctionRefPin.name} — arrastre para corregir`;
-}
-
-function correctionStartDrag(e, pinId) {
-  if (!isCorrectionMode) return;
-
-  // Si no hay referencia, seleccionar esta como referencia
-  if (!correctionRefPin) {
-    correctionSelectRef(pinId);
-    return;
-  }
-
-  // Solo se puede arrastrar la cámara de referencia
-  if (correctionRefPin.id !== pinId) {
-    // Cambiar la referencia a la nueva cámara
-    correctionSelectRef(pinId);
-    return;
-  }
-
-  correctionDragging = true;
-  correctionDragStartX = e.clientX;
-  correctionDragStartY = e.clientY;
-
-  e.preventDefault();
-  e.stopPropagation();
-}
-
-function correctionMoveDrag(e) {
-  if (!correctionDragging || !correctionRefPin) return;
-
-  e.preventDefault();
-  e.stopPropagation();
-
-  // Calcular delta en pixels de pantalla
-  const screenDX = e.clientX - correctionDragStartX;
-  const screenDY = e.clientY - correctionDragStartY;
-
-  // Convertir a coordenadas de imagen
-  const imageDX = screenDX / scale;
-  const imageDY = screenDY / scale;
-
-  // Delta total = delta previo (de arrastres anteriores) + delta actual
-  // Pero el delta previo ya está aplicado a correctionOriginalPositions
-  // Necesitamos recalcular desde las posiciones originales
-  const prevDeltaX = correctionDeltaX;
-  const prevDeltaY = correctionDeltaY;
-  const newDeltaX = prevDeltaX + imageDX;
-  const newDeltaY = prevDeltaY + imageDY;
-
-  // Actualizar posiciones de preview (temporal) de TODOS los pines
-  pins.forEach(pin => {
-    const orig = correctionOriginalPositions.find(o => o.id === pin.id);
-    if (orig) {
-      pin.x = orig.x + newDeltaX;
-      pin.y = orig.y + newDeltaY;
-    }
-  });
-
-  // Redibujar posiciones
-  updatePinPositionsSync();
-  renderConesSync();
-
-  // Mostrar offset en la barra
-  correctionOffset.textContent = `ΔX: ${Math.round(newDeltaX)}  ΔY: ${Math.round(newDeltaY)}`;
-}
-
-function correctionEndDrag(e) {
-  if (!correctionDragging || !correctionRefPin) return;
-
-  correctionDragging = false;
-
-  // Calcular delta final de este arrastre
-  const screenDX = e.clientX - correctionDragStartX;
-  const screenDY = e.clientY - correctionDragStartY;
-  const imageDX = screenDX / scale;
-  const imageDY = screenDY / scale;
-
-  // Acumular al delta total
-  correctionDeltaX += imageDX;
-  correctionDeltaY += imageDY;
-
-  // Verificar si hay cambio real
-  if (Math.abs(correctionDeltaX) > 0.5 || Math.abs(correctionDeltaY) > 0.5) {
-    correctionConfirmBtn.disabled = false;
-    correctionStatus.textContent = `Referencia: ${correctionRefPin.name} — confirme o siga ajustando`;
-
-    // Marcar todos los pines no-referencia como preview
-    document.querySelectorAll('.pin').forEach(el => {
-      const id = parseInt(el.dataset.pinId);
-      if (id !== correctionRefPin.id) {
-        el.classList.add('correction-preview');
-      }
-    });
-  }
-
-  correctionOffset.textContent = `ΔX: ${Math.round(correctionDeltaX)}  ΔY: ${Math.round(correctionDeltaY)}`;
-  statusText.textContent = `Corrección: ΔX=${Math.round(correctionDeltaX)}, ΔY=${Math.round(correctionDeltaY)} — confirme o siga ajustando`;
-}
-
-// Interceptar eventos del image-panel en modo corrección
-function handleCorrectionMouseDown(e) {
+function handleCorrectionPanelClick(event) {
   if (!isCorrectionMode) return false;
 
-  const pinCenter = e.target.closest('.pin-center');
-  if (pinCenter) {
-    const pinEl = pinCenter.closest('.pin');
-    if (pinEl) {
-      const pinId = parseInt(pinEl.dataset.pinId);
-      correctionStartDrag(e, pinId);
-      return true;  // Evento consumido
-    }
+  if (correctionPhase === CORRECTION_PHASES.selectingReference) {
+    const pinCenter = event.target.closest('.pin-center');
+    const pinElement = pinCenter ? pinCenter.closest('.pin') : null;
+    if (!pinElement) return false;
+    selectCorrectionReference('all', parseInt(pinElement.dataset.pinId));
+    event.preventDefault();
+    event.stopPropagation();
+    return true;
   }
 
-  // Clic en el panel (no en un pin) — no hacer nada especial,
-  // pero podría permitir pan normal si no está arrastrando
+  if (correctionPhase === CORRECTION_PHASES.selectingTarget) {
+    setCorrectionTarget('all', screenToImageCoordinates(event));
+    event.preventDefault();
+    event.stopPropagation();
+    return true;
+  }
+
   return false;
 }
 
-// Integrar modo corrección con handlers existentes.
-// Se usa "capture: true" para interceptar antes de los handlers registrados en setupImageInteraction.
-imagePanel.addEventListener('mousedown', function(e) {
-  if (isCorrectionMode && handleCorrectionMouseDown(e)) {
-    e.stopImmediatePropagation();
+imagePanel.addEventListener('click', function(event) {
+  if (handleCorrectionPanelClick(event)) {
+    event.stopImmediatePropagation();
   }
 }, true);
 
-imagePanel.addEventListener('mousemove', function(e) {
-  if (isCorrectionMode && correctionDragging) {
-    correctionMoveDrag(e);
-    e.stopImmediatePropagation();
-  }
-}, true);
-
-imagePanel.addEventListener('mouseup', function(e) {
-  if (isCorrectionMode && correctionDragging) {
-    correctionEndDrag(e);
-    e.stopImmediatePropagation();
-  }
-}, true);
-
-imagePanel.addEventListener('mouseleave', function(e) {
-  if (isCorrectionMode && correctionDragging) {
-    correctionEndDrag(e);
-    e.stopImmediatePropagation();
-  }
-}, true);
-
-// Botones de la barra de corrección
 correctionConfirmBtn.addEventListener('click', () => {
-  exitCorrectionMode(true);
+  confirmCorrection('all');
 });
 
 correctionCancelBtn.addEventListener('click', () => {
-  exitCorrectionMode(false);
+  cancelCorrection('all');
 });
 
 // ========== MODO CORRECCIÓN INDIVIDUAL (1 CÁMARA) ==========
 
 let isCorrection1Mode = false;
-let correction1TargetPin = null;       // Pin seleccionado para corregir
-let correction1Dragging = false;
-let correction1DragStartX = 0;
-let correction1DragStartY = 0;
-let correction1OrigX = 0;
-let correction1OrigY = 0;
-let correction1DeltaX = 0;
-let correction1DeltaY = 0;
+let correction1Phase = CORRECTION_PHASES.idle;
+let correction1TargetPin = null;
+let correction1OriginalPoint = null;
+let correction1TargetPoint = null;
+let correction1Displacement = null;
 
 const correction1Bar = document.getElementById('correction1-bar');
 const correction1Status = document.getElementById('correction1-status');
@@ -2157,229 +2201,114 @@ function enterCorrection1Mode() {
     return;
   }
 
-  // Desactivar otros modos
   if (isPinMode) togglePinMode();
   if (isCorrectionMode) exitCorrectionMode(false);
 
   isCorrection1Mode = true;
+  correction1Phase = CORRECTION_PHASES.selectingReference;
   correction1TargetPin = null;
-  correction1DeltaX = 0;
-  correction1DeltaY = 0;
+  correction1OriginalPoint = null;
+  correction1TargetPoint = null;
+  correction1Displacement = null;
 
   correction1Bar.classList.add('show');
-  correction1Status.textContent = 'Seleccione la cámara que desea reubicar';
-  correction1Offset.textContent = '';
   correction1ConfirmBtn.disabled = true;
-
+  correction1Offset.textContent = '';
   imagePanel.classList.add('correction-mode');
 
   const corregir1Btn = document.getElementById('corregir1-btn');
   if (corregir1Btn) corregir1Btn.classList.add('active');
 
-  statusText.textContent = 'Modo Corrección Individual — seleccione una cámara';
-  showNotification('Corrección Individual', 'Haga clic sobre la cámara que desea reubicar.');
+  setCorrectionStatus('one', 'Seleccione una cámara de referencia');
+  showNotification('Corrección Individual', 'Seleccione la cámara y luego haga clic en su punto corregido del plano.');
 }
 
 function exitCorrection1Mode(applyChanges) {
   if (!isCorrection1Mode) return;
-
-  if (applyChanges && correction1TargetPin && (correction1DeltaX !== 0 || correction1DeltaY !== 0)) {
-    saveState();
-
-    // Aplicar delta SOLO a la cámara seleccionada
-    correction1TargetPin.x = Math.round(correction1OrigX + correction1DeltaX);
-    correction1TargetPin.y = Math.round(correction1OrigY + correction1DeltaY);
-
-    // Actualizar la referencia en carpetas
-    Object.keys(SYSTEM_FOLDERS).forEach(key => {
-      SYSTEM_FOLDERS[key].cameras = SYSTEM_FOLDERS[key].cameras.map(cam => {
-        return cam.id === correction1TargetPin.id ? correction1TargetPin : cam;
-      });
-    });
-
-    statusText.textContent = `${correction1TargetPin.name} reubicada: ΔX=${Math.round(correction1DeltaX)}, ΔY=${Math.round(correction1DeltaY)}`;
-    showNotification('Cámara Reubicada', `${correction1TargetPin.name} movida (ΔX: ${Math.round(correction1DeltaX)}, ΔY: ${Math.round(correction1DeltaY)})`);
+  if (applyChanges) {
+    confirmCorrection('one');
   } else {
-    // Revertir posición original
-    if (correction1TargetPin) {
-      correction1TargetPin.x = correction1OrigX;
-      correction1TargetPin.y = correction1OrigY;
-    }
-    statusText.textContent = 'Corrección individual cancelada — posición original restaurada';
+    cancelCorrection('one');
   }
-
-  // Limpiar estado
-  isCorrection1Mode = false;
-  correction1TargetPin = null;
-  correction1Dragging = false;
-  correction1DeltaX = 0;
-  correction1DeltaY = 0;
-
-  correction1Bar.classList.remove('show');
-  imagePanel.classList.remove('correction-mode');
-
-  document.querySelectorAll('.pin-center.correction1-target').forEach(el => {
-    el.classList.remove('correction1-target');
-  });
-
-  const corregir1Btn = document.getElementById('corregir1-btn');
-  if (corregir1Btn) corregir1Btn.classList.remove('active');
-
-  // Redibujar
-  document.querySelectorAll('.pin').forEach(p => p.remove());
-  const vg = document.getElementById('vision-group');
-  if (vg) vg.innerHTML = '';
-  pins.forEach(pin => createPinElement(pin));
-  renderConesSync();
-  updateTreeView();
-  updateUI();
 }
 
-function correction1SelectTarget(pinId) {
-  correction1TargetPin = pins.find(p => p.id === pinId);
-  if (!correction1TargetPin) return;
-
-  correction1OrigX = correction1TargetPin.x;
-  correction1OrigY = correction1TargetPin.y;
-  correction1DeltaX = 0;
-  correction1DeltaY = 0;
-
-  // Highlight visual
-  document.querySelectorAll('.pin-center.correction1-target').forEach(el => {
-    el.classList.remove('correction1-target');
-  });
-  const pinEl = document.querySelector(`.pin[data-pin-id="${pinId}"] .pin-center`);
-  if (pinEl) pinEl.classList.add('correction1-target');
-
-  correction1Status.textContent = `Cámara: ${correction1TargetPin.name} — arrástrela a su posición correcta`;
-  correction1Offset.textContent = '';
-  correction1ConfirmBtn.disabled = true;
-  statusText.textContent = `Cámara seleccionada: ${correction1TargetPin.name} — arrastre para reubicar`;
-}
-
-function correction1StartDrag(e, pinId) {
-  if (!isCorrection1Mode) return;
-
-  if (!correction1TargetPin) {
-    correction1SelectTarget(pinId);
-    return;
-  }
-
-  // Si hace clic en otra cámara, cambiar el objetivo
-  if (correction1TargetPin.id !== pinId) {
-    // Revertir la anterior a su posición original antes de cambiar
-    correction1TargetPin.x = correction1OrigX;
-    correction1TargetPin.y = correction1OrigY;
-    updatePinPositionsSync();
-    renderConesSync();
-    correction1SelectTarget(pinId);
-    return;
-  }
-
-  correction1Dragging = true;
-  correction1DragStartX = e.clientX;
-  correction1DragStartY = e.clientY;
-
-  e.preventDefault();
-  e.stopPropagation();
-}
-
-function correction1MoveDrag(e) {
-  if (!correction1Dragging || !correction1TargetPin) return;
-
-  e.preventDefault();
-  e.stopPropagation();
-
-  const screenDX = e.clientX - correction1DragStartX;
-  const screenDY = e.clientY - correction1DragStartY;
-  const imageDX = screenDX / scale;
-  const imageDY = screenDY / scale;
-
-  const newDeltaX = correction1DeltaX + imageDX;
-  const newDeltaY = correction1DeltaY + imageDY;
-
-  // Actualizar posición SOLO de esta cámara
-  correction1TargetPin.x = correction1OrigX + newDeltaX;
-  correction1TargetPin.y = correction1OrigY + newDeltaY;
-
-  updatePinPositionsSync();
-  renderConesSync();
-
-  correction1Offset.textContent = `ΔX: ${Math.round(newDeltaX)}  ΔY: ${Math.round(newDeltaY)}`;
-}
-
-function correction1EndDrag(e) {
-  if (!correction1Dragging || !correction1TargetPin) return;
-
-  correction1Dragging = false;
-
-  const screenDX = e.clientX - correction1DragStartX;
-  const screenDY = e.clientY - correction1DragStartY;
-  const imageDX = screenDX / scale;
-  const imageDY = screenDY / scale;
-
-  correction1DeltaX += imageDX;
-  correction1DeltaY += imageDY;
-
-  if (Math.abs(correction1DeltaX) > 0.5 || Math.abs(correction1DeltaY) > 0.5) {
-    correction1ConfirmBtn.disabled = false;
-    correction1Status.textContent = `Cámara: ${correction1TargetPin.name} — confirme o siga ajustando`;
-  }
-
-  correction1Offset.textContent = `ΔX: ${Math.round(correction1DeltaX)}  ΔY: ${Math.round(correction1DeltaY)}`;
-  statusText.textContent = `${correction1TargetPin.name}: ΔX=${Math.round(correction1DeltaX)}, ΔY=${Math.round(correction1DeltaY)} — confirme o siga ajustando`;
-}
-
-function handleCorrection1MouseDown(e) {
+function handleCorrection1PanelClick(event) {
   if (!isCorrection1Mode) return false;
 
-  const pinCenter = e.target.closest('.pin-center');
-  if (pinCenter) {
-    const pinEl = pinCenter.closest('.pin');
-    if (pinEl) {
-      const pinId = parseInt(pinEl.dataset.pinId);
-      correction1StartDrag(e, pinId);
-      return true;
-    }
+  if (correction1Phase === CORRECTION_PHASES.selectingReference) {
+    const pinCenter = event.target.closest('.pin-center');
+    const pinElement = pinCenter ? pinCenter.closest('.pin') : null;
+    if (!pinElement) return false;
+    selectCorrectionReference('one', parseInt(pinElement.dataset.pinId));
+    event.preventDefault();
+    event.stopPropagation();
+    return true;
   }
+
+  if (correction1Phase === CORRECTION_PHASES.selectingTarget) {
+    setCorrectionTarget('one', screenToImageCoordinates(event));
+    event.preventDefault();
+    event.stopPropagation();
+    return true;
+  }
+
   return false;
 }
 
-// Integrar con capture handlers (compartidos con modo masivo)
-imagePanel.addEventListener('mousedown', function(e) {
-  if (isCorrection1Mode && handleCorrection1MouseDown(e)) {
-    e.stopImmediatePropagation();
-  }
-}, true);
-
-imagePanel.addEventListener('mousemove', function(e) {
-  if (isCorrection1Mode && correction1Dragging) {
-    correction1MoveDrag(e);
-    e.stopImmediatePropagation();
-  }
-}, true);
-
-imagePanel.addEventListener('mouseup', function(e) {
-  if (isCorrection1Mode && correction1Dragging) {
-    correction1EndDrag(e);
-    e.stopImmediatePropagation();
-  }
-}, true);
-
-imagePanel.addEventListener('mouseleave', function(e) {
-  if (isCorrection1Mode && correction1Dragging) {
-    correction1EndDrag(e);
-    e.stopImmediatePropagation();
+imagePanel.addEventListener('click', function(event) {
+  if (handleCorrection1PanelClick(event)) {
+    event.stopImmediatePropagation();
   }
 }, true);
 
 correction1ConfirmBtn.addEventListener('click', () => {
-  exitCorrection1Mode(true);
+  confirmCorrection('one');
 });
 
 correction1CancelBtn.addEventListener('click', () => {
-  exitCorrection1Mode(false);
+  cancelCorrection('one');
 });
+
+window.__correctionTestApi = {
+  screenToImageCoordinates,
+  calculateLinearDisplacement,
+  formatCorrectionSummary,
+  applyCorrectionToAll,
+  applyCorrectionToOne,
+  resetCorrectionState,
+  selectCorrectionReference,
+  setCorrectionTarget,
+  confirmCorrection,
+  cancelCorrection,
+  setState(state = {}) {
+    if (Object.prototype.hasOwnProperty.call(state, 'currentImage')) currentImage = state.currentImage;
+    if (Object.prototype.hasOwnProperty.call(state, 'pins')) pins = JSON.parse(JSON.stringify(state.pins));
+    if (Object.prototype.hasOwnProperty.call(state, 'scale')) scale = state.scale;
+    if (Object.prototype.hasOwnProperty.call(state, 'imagePositionX')) imagePositionX = state.imagePositionX;
+    if (Object.prototype.hasOwnProperty.call(state, 'imagePositionY')) imagePositionY = state.imagePositionY;
+    if (Object.prototype.hasOwnProperty.call(state, 'pinCounter')) pinCounter = state.pinCounter;
+    if (Object.prototype.hasOwnProperty.call(state, 'undoStack')) {
+      undoStack.length = 0;
+      state.undoStack.forEach(item => undoStack.push(item));
+    }
+    if (Object.prototype.hasOwnProperty.call(state, 'redoStack')) {
+      redoStack.length = 0;
+      state.redoStack.forEach(item => redoStack.push(item));
+    }
+  },
+  getState() {
+    return {
+      pins: JSON.parse(JSON.stringify(pins)),
+      scale,
+      imagePositionX,
+      imagePositionY,
+      correctionPhase,
+      correction1Phase,
+      undoStackLength: undoStack.length,
+      redoStackLength: redoStack.length
+    };
+  }
+};
 
 // ========== FIN MODO CORRECCIÓN INDIVIDUAL ==========
 
